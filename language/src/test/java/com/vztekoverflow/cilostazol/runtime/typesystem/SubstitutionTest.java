@@ -24,13 +24,13 @@ public class SubstitutionTest  extends TestBase  {
         Source source = getSourceFromProject(projectName);
 
         IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, source);
+        IAssembly assembly = Assembly.parse(source, domain);
         return assembly;
     }
 
     private IType getType(IAssembly assembly, String namespace, String klass)
     {
-        return assembly.getLocalType(namespace, klass);
+        return assembly.getLocalType(klass, namespace);
     }
 
     public void testSubTypeParameter() throws Exception

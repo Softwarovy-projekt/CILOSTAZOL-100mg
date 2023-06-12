@@ -159,13 +159,13 @@ public class MethodMetadataTests  extends TestBase {
         IMethod[] mFoo1 = getMethod(type, "Foo1");
         assertEquals(1, mFoo1.length);
         assertFalse(mFoo1[0].getReturnType().isByRef());
-        assertEquals(assembly.getLocalType("MethodMetadataTest", "ReturnT"), mFoo1[0].getReturnType().getType());
+        assertEquals(assembly.getLocalType("ReturnT", "MethodMetadataTest"), mFoo1[0].getReturnType().getType());
 
         //public ref ReturnT Foo2()
         IMethod[] mFoo2 = getMethod(type, "Foo2");
         assertEquals(1, mFoo2.length);
         assertTrue(mFoo2[0].getReturnType().isByRef());
-        assertEquals(assembly.getLocalType("MethodMetadataTest", "ReturnT"), mFoo1[0].getReturnType().getType());
+        assertEquals(assembly.getLocalType("ReturnT", "MethodMetadataTest"), mFoo1[0].getReturnType().getType());
     }
 
     public void testMethod_Parameters() throws Exception
@@ -191,7 +191,7 @@ public class MethodMetadataTests  extends TestBase {
         assertEquals("p1", mFoo[1].getParameters()[0].getName());
         assertFalse(mFoo[1].getParameters()[0].getFlags().hasFlag(ParamFlags.Flag.HAS_DEFAULT));
         assertFalse(mFoo[1].getParameters()[0].getFlags().hasFlag(ParamFlags.Flag.OPTIONAL));
-        assertEquals(assembly.getLocalType("MethodMetadataTest", "Param1"), mFoo[1].getParameters()[0].getType());
+        assertEquals(assembly.getLocalType("Param1", "MethodMetadataTest"), mFoo[1].getParameters()[0].getType());
 
         //public static void Foo1(Param1 p1) {}
         IMethod[] mFoo1 = getMethod(type, "Foo1");
@@ -224,9 +224,9 @@ public class MethodMetadataTests  extends TestBase {
         assertTrue(mFoo4[0].getParameters()[0].isByRef());
         assertTrue(mFoo4[0].getParameters()[1].getFlags().hasFlag(ParamFlags.Flag.OUT));
         assertTrue(mFoo4[0].getParameters()[2].getFlags().hasFlag(ParamFlags.Flag.IN));
-        assertEquals(assembly.getLocalType("MethodMetadataTest", "Param1"), mFoo4[0].getParameters()[0].getType());
-        assertEquals(assembly.getLocalType("MethodMetadataTest", "Param1"), mFoo4[0].getParameters()[1].getType());
-        assertEquals(assembly.getLocalType("MethodMetadataTest", "Param1"), mFoo4[0].getParameters()[2].getType());
+        assertEquals(assembly.getLocalType("Param1", "MethodMetadataTest"), mFoo4[0].getParameters()[0].getType());
+        assertEquals(assembly.getLocalType("Param1", "MethodMetadataTest"), mFoo4[0].getParameters()[1].getType());
+        assertEquals(assembly.getLocalType("Param1", "MethodMetadataTest"), mFoo4[0].getParameters()[2].getType());
 
 
         //public void Foo5(Param1 p1 = null) {}
@@ -236,7 +236,7 @@ public class MethodMetadataTests  extends TestBase {
         assertEquals("p1", mFoo5[0].getParameters()[0].getName());
         assertTrue(mFoo5[0].getParameters()[0].getFlags().hasFlag(ParamFlags.Flag.OPTIONAL));
         assertTrue(mFoo5[0].getParameters()[0].getFlags().hasFlag(ParamFlags.Flag.HAS_DEFAULT));
-        assertEquals(assembly.getLocalType("MethodMetadataTest", "Param1"), mFoo5[0].getParameters()[0].getType());
+        assertEquals(assembly.getLocalType("Param1", "MethodMetadataTest"), mFoo5[0].getParameters()[0].getType());
     }
 
     public void testMethod_Extensions() throws Exception
