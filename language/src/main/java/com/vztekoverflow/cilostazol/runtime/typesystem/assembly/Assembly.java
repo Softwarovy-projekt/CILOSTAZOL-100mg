@@ -16,6 +16,7 @@ public class Assembly implements IAssembly {
     private final IComponent[] components;
     private final CLIFile file;
     private IAppDomain appDomain;
+    private AssemblyIdentity identity;
 
     //region IAssembly
     @Override
@@ -28,10 +29,10 @@ public class Assembly implements IAssembly {
     }
 
     @Override
-    public IType getLocalType(String namespace, String name) {
+    public IType getLocalType(String name, String namespace) {
         IType result = null;
         for (int i = 0; i < components.length && result == null; i++) {
-            result = components[i].getLocalType(appDomain.getContext(), namespace, name);
+            result = components[i].getLocalType(name, namespace, appDomain.getContext());
         }
 
         return result;
@@ -39,12 +40,12 @@ public class Assembly implements IAssembly {
 
     @Override
     public AssemblyIdentity getIdentity() {
-        return file.getAssemblyIdentity();
+        return identity;
     }
 
     @Override
-    public void setAppDomain(IAppDomain appdomain) {
-        appDomain = appdomain;
+    public void setAppDomain(IAppDomain appDomain) {
+        this.appDomain = appDomain;
     }
 
     @Override
@@ -59,7 +60,7 @@ public class Assembly implements IAssembly {
         appDomain = null;
     }
 
-    public static IAssembly parse(IAppDomain domain, Source dllSource) {
+    public static IAssembly parse(Source dllSource, IAppDomain appDomain) {
         CLIFile file = CLIFile.parse(dllSource.getName(), dllSource.getPath(), dllSource.getBytes());
 
         if (file.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_MODULE) != 1)
@@ -69,7 +70,7 @@ public class Assembly implements IAssembly {
             throw new CILParserException(CILOSTAZOLBundle.message("cilostazol.exception.multimoduleAssembly"));
 
         Assembly assembly = new Assembly(file, new IComponent[1]);
-        domain.loadAssembly(assembly);
+        appDomain.loadAssembly(assembly);
         assembly.components[0] = CLIComponent.parse(file, assembly);
 
         return assembly;

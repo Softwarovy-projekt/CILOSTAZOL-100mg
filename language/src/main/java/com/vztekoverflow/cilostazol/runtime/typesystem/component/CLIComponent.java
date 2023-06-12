@@ -49,7 +49,7 @@ public class CLIComponent implements IComponent {
     }
 
     @Override
-    public IType getLocalType(CILOSTAZOLContext context, String namespace, String name) {
+    public IType getLocalType(String name, String namespace, CILOSTAZOLContext context) {
         //printAllTypesFile();
 
         //Check typeDefs
@@ -67,7 +67,7 @@ public class CLIComponent implements IComponent {
             if (row.getTypeNamespaceHeapPtr().read(_cliFile.getStringHeap()).equals(namespace) && row.getTypeNameHeapPtr().read(_cliFile.getStringHeap()).equals(name)) {
                 CLIAssemblyRefTableRow assemblyRef = _cliFile.getTableHeads().getAssemblyRefTableHead().skip(row.getImplementationTablePtr());
                 IAssembly assembly = getDefiningAssembly().getAppDomain().getAssembly(AssemblyIdentity.fromAssemblyRefRow(_cliFile.getStringHeap(), assemblyRef));
-                return assembly.getLocalType(namespace, name);
+                return assembly.getLocalType(name, namespace);
             }
         }
 

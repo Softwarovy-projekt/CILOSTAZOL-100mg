@@ -27,10 +27,11 @@ public class TypeParsingTest extends TestBase {
         CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[0]);
         Source source = getSourceFromProject(projectName);
 
-        IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, source);
+        IAppDomain appDomain = new AppDomain(ctx);
+        IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
 
-        assertFalse(domain.getAssemblies().length == 0);
+        assertFalse(appDomain.getAssemblies().length == 0);
     }
 
     public void testFindLocalType() throws Exception {
@@ -44,10 +45,11 @@ public class TypeParsingTest extends TestBase {
                 .build();
 
 
-        IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, source);
+        IAppDomain appDomain = new AppDomain(ctx);
+        IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
 
-        IType type = assembly.getLocalType("FindLocalType", "Class");
+        IType type = assembly.getLocalType("Class", "FindLocalType");
 
         assertEquals("FindLocalType", type.getNamespace());
         assertEquals("Class", type.getName());
@@ -59,9 +61,10 @@ public class TypeParsingTest extends TestBase {
 
         CILOSTAZOLLanguage lang = new CILOSTAZOLLanguage();
         CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[0]);
-        IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, source);
-        IType type = assembly.getLocalType(projectName, "Class");
+        IAppDomain appDomain = new AppDomain(ctx);
+        IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
+        IType type = assembly.getLocalType("Class", projectName);
 
 
         assertEquals("ExtendsTest", type.getNamespace());
@@ -77,9 +80,10 @@ public class TypeParsingTest extends TestBase {
 
         CILOSTAZOLLanguage lang = new CILOSTAZOLLanguage();
         CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[0]);
-        IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, source);
-        IType type = assembly.getLocalType(projectName, "Class");
+        IAppDomain appDomain = new AppDomain(ctx);
+        IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
+        IType type = assembly.getLocalType("Class", projectName);
 
 
         assertEquals("InterfacesTest", type.getNamespace());
@@ -106,44 +110,26 @@ public class TypeParsingTest extends TestBase {
 
         CILOSTAZOLLanguage lang = new CILOSTAZOLLanguage();
         CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[0]);
-        IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, source);
-        IType type = assembly.getLocalType(projectName, "Class`1");
+        IAppDomain appDomain = new AppDomain(ctx);
+        IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
+        IType type = assembly.getLocalType("Class`1", projectName);
 
 
         assertEquals(1, type.getTypeParameters().length);
     }
 
-    public void testFindNonLocalType_OtherModule() throws Exception {
-        final String projectName = "FindNonLocalType";
-        Source source = getSourceFromProject(projectName);
-        Source[] sources = getSourcesFromProjects();
-
-        CILOSTAZOLLanguage lang = new CILOSTAZOLLanguage();
-        CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[0]);
-        IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, source);
-        IType localType = assembly.getLocalType(projectName, "Class1");
-
-        assertEquals(2, localType.getFields().length);
-        assertEquals("Class2", localType.getFields()[1].getType().getName());
-        assertEquals("FindNonLocalType", localType.getFields()[1].getType().getNamespace());
-    }
-
     public void testFindNonLocalType_OtherAssembly() throws Exception {
         final String projectName = "FindNonLocalType";
-        final String otherProjectName = "FindLocalType";
-        Source[] sources = getSourcesFromProjects(projectName, otherProjectName);
+        Source source = getSourceFromProject(projectName);
 
         CILOSTAZOLLanguage lang = new CILOSTAZOLLanguage();
-        CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[0]);
-        IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, sources[0]);
-        //foreign assembly
-        //TODO: this should be done by assembly loader?
-        IAssembly otherAssembly = Assembly.parse(domain, sources[1]);
+        CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[]{getDllDirectoryPath(projectName)});
+        IAppDomain appDomain = new AppDomain(ctx);
+        IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
 
-        IType localType = assembly.getLocalType(projectName, "Class1");
+        IType localType = assembly.getLocalType("Class1", projectName);
 
         assertEquals(2, localType.getFields().length);
         assertEquals("Class", localType.getFields()[0].getType().getName());

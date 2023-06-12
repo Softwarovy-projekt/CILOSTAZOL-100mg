@@ -13,7 +13,7 @@ public interface IComponent {
 
     IAssembly getDefiningAssembly();
 
-    IType getLocalType(CILOSTAZOLContext context, String namespace, String name);
+    IType getLocalType(String name, String namespace, CILOSTAZOLContext context);
 
     IType getLocalType(CILOSTAZOLContext context, CLITablePtr typeIndex);
 

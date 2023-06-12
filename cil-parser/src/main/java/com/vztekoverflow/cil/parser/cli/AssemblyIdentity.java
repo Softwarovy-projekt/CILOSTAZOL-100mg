@@ -45,9 +45,12 @@ public final class AssemblyIdentity {
 
     /**
      * Check whether this assembly matches an assembly reference.
+     *
      * @param reference an assembly reference to check this assembly against
      * @return whether this assembly can resolve the reference
+     * @deprecated use {@link #equals(Object)} instead
      */
+    @Deprecated
     public boolean resolvesRef(AssemblyIdentity reference)
     {
         //The standard is a bit unclear about the necessity of version checks when loading
@@ -115,5 +118,18 @@ public final class AssemblyIdentity {
     @Override
     public String toString() {
         return name + ", Version=" + majorVersion + "." + minorVersion + "." + buildNumber + "." + revisionNumber;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof AssemblyIdentity) {
+            AssemblyIdentity other = (AssemblyIdentity) obj;
+            return majorVersion == other.majorVersion
+                    && minorVersion == other.minorVersion
+                    && buildNumber == other.buildNumber
+                    && revisionNumber == other.revisionNumber
+                    && name.equals(other.name);
+        }
+        return false;
     }
 }

@@ -4,39 +4,34 @@ import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.typesystem.assembly.IAssembly;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AppDomain implements IAppDomain {
-    private final ArrayList<IAssembly> _assemblies;
+    //    private final ArrayList<IAssembly> _assemblies;
+    private final Map<AssemblyIdentity, IAssembly> _assemblies;
     private final CILOSTAZOLContext _ctx;
 
     public AppDomain(CILOSTAZOLContext ctx) {
         _ctx = ctx;
-        _assemblies = new ArrayList<>();
+        _assemblies = new HashMap<>();
     }
 
     //region IAppDomain
     @Override
     public IAssembly[] getAssemblies() {
-        return _assemblies.toArray(new IAssembly[0]);
+        return _assemblies.values().toArray(new IAssembly[0]);
     }
 
     @Override
     public IAssembly getAssembly(AssemblyIdentity identity) {
-        IAssembly result = null;
-
-        for (int i = 0; i < _assemblies.size() && result == null; i++) {
-            if (_assemblies.get(i).getIdentity().resolvesRef(identity))
-                result = _assemblies.get(i);
-        }
-
-        return result;
+        return _assemblies.get(identity);
     }
 
     @Override
-    public void loadAssembly(IAssembly assembly) {
+    public void addAssembly(IAssembly assembly) {
         assembly.setAppDomain(this);
-        _assemblies.add(assembly);
+        _assemblies.put(assembly.getIdentity(), assembly);
     }
 
     @Override

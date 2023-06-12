@@ -32,15 +32,15 @@ public class MethodMetadataTests  extends TestBase {
         CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[0]);
         Source source = getSourceFromProject(projectName);
 
-        IAppDomain domain = new AppDomain(ctx);
-        IAssembly assembly = Assembly.parse(domain, source);
-        domain.loadAssembly(assembly);
+        IAppDomain appDomain = new AppDomain(ctx);
+        IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
         return assembly;
     }
 
     private IType getType(IAssembly assembly, String namespace, String klass)
     {
-        return assembly.getLocalType(namespace, klass);
+        return assembly.getLocalType(klass, namespace);
     }
 
     public void testMethod_Accessibility() throws Exception

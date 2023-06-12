@@ -9,7 +9,6 @@ import com.vztekoverflow.cilostazol.runtime.typesystem.appdomain.IAppDomain;
 import com.vztekoverflow.cilostazol.runtime.typesystem.assembly.Assembly;
 import com.vztekoverflow.cilostazol.runtime.typesystem.assembly.IAssembly;
 import com.vztekoverflow.cilostazol.runtime.typesystem.component.CLIComponent;
-import com.vztekoverflow.cilostazol.runtime.typesystem.component.IComponent;
 import com.vztekoverflow.cilostazol.runtime.typesystem.method.IMethod;
 import com.vztekoverflow.cilostazol.runtime.typesystem.method.factory.MethodFactory;
 import com.vztekoverflow.cilostazol.runtime.typesystem.type.CLIType;
@@ -30,16 +29,17 @@ public class MethodParsingTests extends TestBase {
         Source source = getSourceFromProject(projectName);
 
 
-        final IAppDomain domain = new AppDomain(ctx);
-        final IAssembly assembly = Assembly.parse(domain, source);
+        final IAppDomain appDomain = new AppDomain(ctx);
+        final IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
 
         final CLIComponent component = (CLIComponent) assembly.getComponents()[0];
         //Classes
-        final CLIType classA = (CLIType)component.getLocalType(ctx, "MethodParsingGeneral", "A");
+        final CLIType classA = (CLIType) component.getLocalType("A", "MethodParsingGeneral", ctx);
         //final IType interfaceAI= component.getLocalType("MethodParsingGeneral","AI");
-        final CLIType classG_T = (CLIType)component.getLocalType(ctx, "MethodParsingGeneral", "G`1");
-        final CLIType classBar1 = (CLIType)component.getLocalType(ctx, "MethodParsingGeneral", "Bar1");
-        final CLIType classBar2 = (CLIType)component.getLocalType(ctx,"MethodParsingGeneral", "Bar2`1");
+        final CLIType classG_T = (CLIType) component.getLocalType("G`1", "MethodParsingGeneral", ctx);
+        final CLIType classBar1 = (CLIType) component.getLocalType("Bar1", "MethodParsingGeneral", ctx);
+        final CLIType classBar2 = (CLIType) component.getLocalType("Bar2`1", "MethodParsingGeneral", ctx);
 
         final CLIMethodDefTableRow method_def_Bar1_Foo1 = CLIFileUtils.getMethodByName("Bar1_Foo1", component.getDefiningFile())[0];
         final CLIMethodDefTableRow method_def_Bar1_Foo2 = CLIFileUtils.getMethodByName("Bar1_Foo2", component.getDefiningFile())[0];
@@ -73,9 +73,10 @@ public class MethodParsingTests extends TestBase {
         final CILOSTAZOLLanguage lang = new CILOSTAZOLLanguage();
         CILOSTAZOLContext ctx = new CILOSTAZOLContext(lang, new Path[0]);
         Source source = getSourceFromProject(projectName);
-        final IAppDomain domain = new AppDomain(ctx);
-        final IAssembly assembly = Assembly.parse(domain, source);
-        IType type = assembly.getLocalType(projectName, "A");
+        final IAppDomain appDomain = new AppDomain(ctx);
+        final IAssembly assembly = Assembly.parse(source, appDomain);
+        appDomain.addAssembly(assembly);
+        IType type = assembly.getLocalType("A", projectName);
 
 
         assertTrue(Arrays.stream(type.getMethods()).anyMatch(m -> m.getName().equals("fooPrivate")));

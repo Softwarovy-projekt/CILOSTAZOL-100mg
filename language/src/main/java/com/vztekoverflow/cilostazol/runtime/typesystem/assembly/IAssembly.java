@@ -8,11 +8,15 @@ import com.vztekoverflow.cilostazol.runtime.typesystem.type.IType;
 
 public interface IAssembly {
     //TODO: CLIFIle in IAssembly ... get rid of it, or abandon IAssembly completely?
-    public CLIFile getDefiningFile();
-    public IComponent[] getComponents();
-    public AssemblyIdentity getIdentity();
-    public void setAppDomain(IAppDomain appdomain);
-    public IAppDomain getAppDomain();
+    CLIFile getDefiningFile();
 
-    public IType getLocalType(String namespace, String name);
+    IComponent[] getComponents();
+
+    AssemblyIdentity getIdentity();
+
+    void setAppDomain(IAppDomain appDomain);
+
+    IAppDomain getAppDomain();
+
+    IType getLocalType(String name, String namespace);
 }

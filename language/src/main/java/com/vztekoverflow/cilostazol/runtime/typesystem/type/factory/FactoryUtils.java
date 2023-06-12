@@ -8,8 +8,8 @@ import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
-import com.vztekoverflow.cilostazol.runtime.typesystem.TypeSystemException;
 import com.vztekoverflow.cilostazol.runtime.CILOSTAZOLContext;
+import com.vztekoverflow.cilostazol.runtime.typesystem.TypeSystemException;
 import com.vztekoverflow.cilostazol.runtime.typesystem.component.CLIComponent;
 import com.vztekoverflow.cilostazol.runtime.typesystem.generic.ITypeParameter;
 import com.vztekoverflow.cilostazol.runtime.typesystem.generic.TypeParameter;
@@ -94,16 +94,12 @@ public final class FactoryUtils {
                 .filter(c -> c.getDefiningFile().getName().equals(moduleRefName))
                 .findFirst()
                 .orElseThrow(() -> new TypeSystemException(CILOSTAZOLBundle.message("cilostazol.exception.moduleRefNotFound", moduleRefName)));
-        return definingComponent.getLocalType(context, name, namespace);
+        return definingComponent.getLocalType(namespace, name, context);
     }
 
     static IType getTypeFromDifferentAssembly(CLIComponent component, String name, String namespace, CLITablePtr resolutionScopeTablePtr) {
-        var referencedAssemblyIdentity = AssemblyIdentity.fromAssemblyRefRow(component.getDefiningFile().getStringHeap(), component.getTableHeads().getAssemblyRefTableHead().skip(resolutionScopeTablePtr));
-        var referencedAssembly = component.getDefiningAssembly().getAppDomain().getAssembly(referencedAssemblyIdentity);
-        if (referencedAssembly == null) {
-            //TODO: log CILOSTAZOLBundle.message("cilostazol.warning.referencedAssemblyNotFound", referencedAssemblyIdentity.toString())
-            return null;
-        }
-        return referencedAssembly.getLocalType(namespace, name);
+        var referencedAssemblyIdentity = AssemblyIdentity.fromAssemblyRefRow(component.getDefiningFile().getStringHeap(),
+                component.getTableHeads().getAssemblyRefTableHead().skip(resolutionScopeTablePtr));
+        return component.getDefiningAssembly().getAppDomain().getContext().getType(name, namespace, referencedAssemblyIdentity);
     }
 }

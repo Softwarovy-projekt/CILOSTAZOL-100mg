@@ -7,6 +7,8 @@ import com.vztekoverflow.cilostazol.runtime.typesystem.assembly.IAssembly;
 public interface IAppDomain {
     public IAssembly[] getAssemblies();
     public IAssembly getAssembly(AssemblyIdentity identity);
-    public void loadAssembly(IAssembly assembly);
+
+    public void addAssembly(IAssembly assembly);
+
     public CILOSTAZOLContext getContext();
 }
