@@ -8,23 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: "build"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: '17'
-          distribution: 'graalvm'
-          components: 'native-image'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build with Maven
-        run: mvn install -DskipTests
-
   test:
-    needs: build
     name: "tests"
     runs-on: ubuntu-latest
     steps:
@@ -49,4 +33,4 @@ jobs:
         run: ./build.sh
 
       - name: test
-        run: mvn package
+        run: mvn install
