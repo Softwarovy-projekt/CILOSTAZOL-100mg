@@ -15,6 +15,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class CILOSTAZOLContext {
     language = lang;
     this.env = env;
     getLanguage().initializeGuestAllocator(env);
-    libraryPaths =
+    var temp =
         Arrays.stream(CILOSTAZOLEngineOption.getPolyglotOptionSearchPaths(env))
             .filter(
                 p -> {
@@ -45,6 +46,11 @@ public class CILOSTAZOLContext {
                 })
             .distinct()
             .toArray(Path[]::new);
+    //TODO: Hotfix for github tests
+    if (temp.length == 0)
+      libraryPaths = new Path[] {Paths.get("src/test/resources/dlls")};
+    else
+      libraryPaths = temp;
     appDomain = new AppDomain();
   }
 
@@ -126,7 +132,7 @@ public class CILOSTAZOLContext {
                   .build());
         } catch (Exception e) {
           throw new RuntimeException(
-              "Error loading assembly " + assemblyIdentity.getName() + " from " + path.toString(),
+              "Error loading assembly " + assemblyIdentity.getName() + " from " + path,
               e);
         }
       }
