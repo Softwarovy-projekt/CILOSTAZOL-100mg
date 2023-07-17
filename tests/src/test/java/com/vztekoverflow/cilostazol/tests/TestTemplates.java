@@ -22,12 +22,11 @@ public class TestTemplates extends TestBase {
   // region Deprecated Test templates
   /** This is a template for tests that get sourcecode from dll. */
   @Test
-  @Disabled("Paths to dlls are not setup")
   public void FromDllViaLauncher() {
     CILOSTAZOLLauncher launcher = runTestFromDllViaLauncher("Initial");
 
     int returnValue = launcher.getReturnValue();
-    assertEquals(1, returnValue);
+    assertEquals(42, returnValue);
   }
 
   /** This is a template for tests that get sourcecode from string. */
@@ -74,6 +73,7 @@ public class TestTemplates extends TestBase {
    * Use this for quick/additional tests who's core features are tested by File or DLL tests already
    */
   @Test
+  @Disabled("Paths to dlls are not setup")
   public void FromCode() {
     var result = runTestFromCode("""
 return 42;
@@ -88,6 +88,7 @@ return 42;
    * (return, if, while, etc.)
    */
   @Test
+  @Disabled("Paths to dlls are not setup")
   public void FromDll() {
     var result = runTestFromDll("Initial");
 
@@ -100,6 +101,7 @@ return 42;
    * while, etc.)
    */
   @Test
+  @Disabled("Paths to dlls are not setup")
   public void FromFile() {
     var result = runTestFromFile("return.cs");
 

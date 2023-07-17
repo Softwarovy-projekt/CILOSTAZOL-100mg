@@ -48,7 +48,7 @@ public class CILOSTAZOLLanguage extends TruffleLanguage<CILOSTAZOLContext> {
     return new MyOptionDescriptors();
   }
 
-  public final class MyOptionDescriptors implements OptionDescriptors {
+  public static final class MyOptionDescriptors implements OptionDescriptors {
     public static final String LIBRARY_PATH_NAME = "cil.libraryPath";
     public static final String OPTION_ARRAY_SEPARATOR = ";";
     public static final OptionKey<String> LIBRARY_PATH = new OptionKey<>("");

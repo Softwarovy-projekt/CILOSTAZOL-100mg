@@ -94,10 +94,9 @@ public abstract class TestBase {
    * tests\src\test\resources\BasicTests\*projectName*\bin\Release\.net7.0\*projectName*.dll</code>
    * @Deprecated Use {@link #runTestFromDll(String)} instead
    */
-  @Deprecated()
   protected CILOSTAZOLLauncher runTestFromDllViaLauncher(String projectName) {
     CILOSTAZOLLauncher launcher = new CILOSTAZOLLauncher();
-    launcher.test(new String[] {getDllPathFromProject(projectName).toString()});
+    launcher.test(new String[] {"--cil.libraryPath=" + directoryDlls, getDllPathFromProject(projectName).toString()});
     return launcher;
   }
 
