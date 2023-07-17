@@ -100,7 +100,7 @@ public abstract class TestBase {
    */
   protected CILOSTAZOLLauncher runTestFromDllViaLauncher(String projectName) {
     CILOSTAZOLLauncher launcher = new CILOSTAZOLLauncher();
-    launcher.test(new String[]{"--cil.libraryPath=" + directoryDlls, getDllPathFromProject(projectName).toString()});
+    launcher.test(new String[]{getDllPathFromProject(projectName).toString()});
     return launcher;
   }
 
