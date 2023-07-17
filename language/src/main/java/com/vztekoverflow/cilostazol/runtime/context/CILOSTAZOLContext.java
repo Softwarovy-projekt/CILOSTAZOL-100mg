@@ -5,7 +5,6 @@ import com.oracle.truffle.api.TruffleFile;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.Node;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
-import com.vztekoverflow.cilostazol.CILOSTAZOLEngineOption;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.runtime.other.AppDomain;
 import com.vztekoverflow.cilostazol.runtime.other.GuestAllocator;
@@ -37,7 +36,7 @@ public class CILOSTAZOLContext {
     this.env = env;
     getLanguage().initializeGuestAllocator(env);
     libraryPaths =
-        Arrays.stream(CILOSTAZOLEngineOption.getPolyglotOptionSearchPaths(env))
+        Arrays.stream(CILOSTAZOLLanguage.MyOptionDescriptors.getPolyglotOptionSearchPaths(env))
             .filter(
                 p -> {
                   TruffleFile file = getEnv().getInternalTruffleFile(p.toString());
