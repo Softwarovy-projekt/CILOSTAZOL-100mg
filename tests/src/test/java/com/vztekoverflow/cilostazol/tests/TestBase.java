@@ -1,16 +1,7 @@
 package com.vztekoverflow.cilostazol.tests;
 
-import static com.vztekoverflow.cilostazol.launcher.CILOSTAZOLLauncher.LANGUAGE_ID;
-
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.launcher.CILOSTAZOLLauncher;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.Source;
@@ -18,13 +9,23 @@ import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static com.vztekoverflow.cilostazol.launcher.CILOSTAZOLLauncher.LANGUAGE_ID;
+
 public abstract class TestBase {
   private static final String directoryDlls = "src/test/resources/dlls";
   private static final String directoryDllTests = "src/test/resources/BasicTests";
   private static final String directoryCustomTest =
-      "src/test/resources/InterpreterTests/CustomTest";
+          "src/test/resources/InterpreterTests/CustomTest";
   private static final String testSourcesDirectory =
-      "src/test/resources/InterpreterTests/TestSources";
+          "src/test/resources/InterpreterTests/TestSources";
   private static final String configuration = "Release";
   private static final String dotnetVersion = "net7.0";
 
@@ -58,6 +59,7 @@ public abstract class TestBase {
       deleteDirectory(directory.toFile());
     }
   }
+
   /**
    * Use this or {@link #runTestFromDll(String)} for each major feature of the interpreter (return,
    * if, while, etc.).
@@ -78,6 +80,7 @@ public abstract class TestBase {
       deleteDirectory(directory.toFile());
     }
   }
+
   /**
    * Use this or {@link #runTestFromFile(String)} for each major feature of the interpreter (return,
    * if, while, etc.).
@@ -92,11 +95,12 @@ public abstract class TestBase {
   /**
    * Runs a test with sourcecode from <code>dll</code> located at: <code>
    * tests\src\test\resources\BasicTests\*projectName*\bin\Release\.net7.0\*projectName*.dll</code>
+   *
    * @Deprecated Use {@link #runTestFromDll(String)} instead
    */
   protected CILOSTAZOLLauncher runTestFromDllViaLauncher(String projectName) {
     CILOSTAZOLLauncher launcher = new CILOSTAZOLLauncher();
-    launcher.test(new String[] {"--cil.libraryPath=" + directoryDlls, getDllPathFromProject(projectName).toString()});
+    launcher.test(new String[]{"--cil.libraryPath=" + directoryDlls, getDllPathFromProject(projectName).toString()});
     return launcher;
   }
 
@@ -109,7 +113,7 @@ public abstract class TestBase {
     var randomName = java.util.UUID.randomUUID().toString();
     var directory = Paths.get(directoryCustomTest, randomName);
 
-    launcher.test(new String[] {compileFile(sourceFile, directory).toString()});
+    launcher.test(new String[]{compileFile(sourceFile, directory).toString()});
 
     deleteDirectory(directory.toFile());
     return launcher;
@@ -124,7 +128,7 @@ public abstract class TestBase {
     var randomName = java.util.UUID.randomUUID().toString();
     var directory = Paths.get(directoryCustomTest, randomName);
 
-    launcher.test(new String[] {compileCode(code, directory).toString()});
+    launcher.test(new String[]{compileCode(code, directory).toString()});
 
     deleteDirectory(directory.toFile());
     return launcher;
@@ -148,7 +152,9 @@ public abstract class TestBase {
     return directoryToBeDeleted.delete();
   }
 
-  /** Can NOT be parallelized! */
+  /**
+   * Can NOT be parallelized!
+   */
   private Path compileCode(@Language("cs") String code, Path dummyDirectory) {
     // create dummy directory
     createDirectory(dummyDirectory);
@@ -178,8 +184,8 @@ public abstract class TestBase {
   private static void copyCsproj(Path dummyDirectory) {
     try {
       java.nio.file.Files.copy(
-          Paths.get(directoryCustomTest, "CustomTest.csproj"),
-          Paths.get(dummyDirectory.toString(), "CustomTest.csproj"));
+              Paths.get(directoryCustomTest, "CustomTest.csproj"),
+              Paths.get(dummyDirectory.toString(), "CustomTest.csproj"));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -202,17 +208,19 @@ public abstract class TestBase {
 
     try {
       Runtime.getRuntime()
-          .exec(
-              "dotnet build %s -c %s -f %s -o %s"
-                  .formatted(
-                      dummyDirectory.getParent(), configuration, dotnetVersion, dummyDirectory))
-          .waitFor();
+              .exec(
+                      "dotnet build %s -c %s -f %s -o %s"
+                              .formatted(
+                                      dummyDirectory.getParent(), configuration, dotnetVersion, dummyDirectory))
+              .waitFor();
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
 
-  /** Can NOT be parallelized! */
+  /**
+   * Can NOT be parallelized!
+   */
   private Path compileFile(String sourceFilePath, Path directory) {
     // read content of the file
     @Language("cs")
@@ -235,13 +243,13 @@ public abstract class TestBase {
 
   private Context.Builder setupContext() {
     return Context.newBuilder(LANGUAGE_ID)
-        .engine(
-            Engine.newBuilder(LANGUAGE_ID)
-                .option(CILOSTAZOLLanguage.MyOptionDescriptors.LIBRARY_PATH_NAME, directoryDlls)
-                .build())
-        .out(outputStream)
-        .err(outputStream)
-        .allowAllAccess(true);
+            .engine(
+                    Engine.newBuilder(LANGUAGE_ID)
+                            .option(CILOSTAZOLLanguage.MyOptionDescriptors.LIBRARY_PATH_NAME, directoryDlls)
+                            .build())
+            .out(outputStream)
+            .err(outputStream)
+            .allowAllAccess(true);
   }
 
   private Source getSource(File sourceFile) {
