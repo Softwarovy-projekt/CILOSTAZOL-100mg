@@ -10,13 +10,14 @@ import com.vztekoverflow.cilostazol.nodes.CallEntryPointCallTarget;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.other.GuestAllocator;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
-import org.graalvm.options.*;
-import org.graalvm.polyglot.Source;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
+
+import org.graalvm.options.*;
+import org.graalvm.polyglot.Source;
 
 /** The BACIL language class implementing TruffleLanguage. */
 @TruffleLanguage.Registration(
@@ -55,23 +56,22 @@ public class CILOSTAZOLLanguage extends TruffleLanguage<CILOSTAZOLContext> {
 
     @Override
     public OptionDescriptor get(String optionName) {
-      switch (optionName) {
-        case "cil.libraryPath":
-          return OptionDescriptor.newBuilder(LIBRARY_PATH, "cil.libraryPath")
-              .deprecated(false)
-              .help(
-                  "A list of paths where CILOSTAZOL will search for relative libraries. Paths are delimited by a semicolon ';'.")
-              .usageSyntax("")
-              .category(OptionCategory.USER)
-              .stability(OptionStability.STABLE)
-              .build();
+      if (optionName.equals("cil.libraryPath")) {
+        return OptionDescriptor.newBuilder(LIBRARY_PATH, "cil.libraryPath")
+            .deprecated(false)
+            .help(
+                "A list of paths where CILOSTAZOL will search for relative libraries. Paths are delimited by a semicolon ';'.")
+            .usageSyntax("")
+            .category(OptionCategory.USER)
+            .stability(OptionStability.STABLE)
+            .build();
       }
       return null;
     }
 
     @Override
     public Iterator<OptionDescriptor> iterator() {
-      return Arrays.asList(
+      return List.of(
               OptionDescriptor.newBuilder(LIBRARY_PATH, "cil.libraryPath")
                   .deprecated(false)
                   .help(
