@@ -49,4 +49,4 @@ jobs:
         run: ./build.sh
 
       - name: test
-        run: mvn test
+        run: mvn package
