@@ -46,11 +46,9 @@ public class CILOSTAZOLContext {
                 })
             .distinct()
             .toArray(Path[]::new);
-    //TODO: Hotfix for github tests
-    if (temp.length == 0)
-      libraryPaths = new Path[] {Paths.get("src/test/resources/dlls")};
-    else
-      libraryPaths = temp;
+    // TODO: Hotfix for github tests
+    if (temp.length == 0) libraryPaths = new Path[] {Paths.get("src/test/resources/dlls")};
+    else libraryPaths = temp;
     appDomain = new AppDomain();
   }
 
@@ -132,8 +130,7 @@ public class CILOSTAZOLContext {
                   .build());
         } catch (Exception e) {
           throw new RuntimeException(
-              "Error loading assembly " + assemblyIdentity.getName() + " from " + path,
-              e);
+              "Error loading assembly " + assemblyIdentity.getName() + " from " + path, e);
         }
       }
     }
