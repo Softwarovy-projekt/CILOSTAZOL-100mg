@@ -25,7 +25,7 @@ public abstract class TestBase {
       "src/test/resources/InterpreterTests/CustomTest";
   private static final String testSourcesDirectory =
       "src/test/resources/InterpreterTests/TestSources";
-  private static final String configuration = "Release";
+  private static final String configuration = "Debug";
   private static final String dotnetVersion = "net7.0";
 
   private static OutputStream outputStream;
