@@ -96,9 +96,9 @@ public class CILOSTAZOLContext {
   }
 
   public TypeSymbolCacheKey hardCodedForwarding(TypeSymbolCacheKey cacheKey) {
-    if (cacheKey.assemblyIdentity() == AssemblyIdentity.SystemRuntimeLib()) {
-      if (cacheKey.namespace() == "System") {
-        if (cacheKey.name() == "Int32")
+    if (cacheKey.assemblyIdentity().equals(AssemblyIdentity.SystemRuntimeLib())) {
+      if (cacheKey.namespace().equals("System")) {
+        if (cacheKey.name().equals("Int32"))
           return new TypeSymbolCacheKey(
               cacheKey.name(), cacheKey.namespace(), AssemblyIdentity.SystemPrivateCoreLib());
         else return cacheKey;
@@ -113,6 +113,12 @@ public class CILOSTAZOLContext {
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {
     // Loading assemblies is an expensive task which should be never compiled
     CompilerAsserts.neverPartOfCompilation();
+
+    // TODO: Remove once forwarding is done
+    if (assemblyIdentity.equals(AssemblyIdentity.SystemRuntimeLib())) {
+      assemblyIdentity = AssemblyIdentity.SystemPrivateCoreLib();
+    }
+
     // Locate dlls in paths
     for (Path path : libraryPaths) {
       File file = new File(path.toString() + "/" + assemblyIdentity.getName() + ".dll");

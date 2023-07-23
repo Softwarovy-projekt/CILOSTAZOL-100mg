@@ -90,13 +90,18 @@ public final class CILOSTAZOLFrame {
     assert slot >= 0;
     Object result = frame.getObjectStatic(slot);
     // Avoid keeping track of popped slots in FrameStates.
-    clearPrimitive(frame, slot);
+    clearObject(frame, slot);
     return (StaticObject) result;
   }
 
   private static void clearPrimitive(Frame frame, int slot) {
     assert slot >= 0;
     frame.clearPrimitiveStatic(slot);
+  }
+
+  private static void clearObject(Frame frame, int slot) {
+    assert slot >= 0;
+    frame.clearObjectStatic(slot);
   }
   // endregion
 
