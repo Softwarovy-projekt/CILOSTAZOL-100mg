@@ -210,11 +210,6 @@ public final class CILOSTAZOLFrame {
     return (StaticObject) result;
   }
 
-  public static float getLocalFloat(Frame frame, int localSlot) {
-    assert localSlot >= 0;
-    return frame.getFloatStatic(localSlot);
-  }
-
   public static long getLocalLong(Frame frame, int localSlot) {
     assert localSlot >= 0;
     return frame.getLongStatic(localSlot);

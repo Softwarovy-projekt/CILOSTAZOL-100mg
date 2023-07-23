@@ -77,8 +77,6 @@ public class CILOSTAZOLContext {
 
   // region Symbols
   public NamedTypeSymbol getType(CLITablePtr ptr, MethodSymbol caller) {
-    // get name and namespace from ptr
-
     return switch (ptr.getTableId()) {
         // TODO: support edgecases such as if it can not be found
       case CLITableConstants.CLI_TABLE_TYPE_DEF -> {

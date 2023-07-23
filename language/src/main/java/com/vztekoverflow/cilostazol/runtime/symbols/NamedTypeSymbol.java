@@ -292,6 +292,11 @@ public class NamedTypeSymbol extends TypeSymbol {
     return staticFields;
   }
 
+  @Override
+  public String toString() {
+    return this.namespace + "/" + this.name;
+  }
+
   // TODO
   public void safelyInitialize() {}
 
