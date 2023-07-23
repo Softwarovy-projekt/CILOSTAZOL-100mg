@@ -16,9 +16,7 @@ import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.InvalidCLIException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
-import com.vztekoverflow.cilostazol.nodes.nodeized.INITOBJNodeGen;
-import com.vztekoverflow.cilostazol.nodes.nodeized.LDSTRNode;
-import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
+import com.vztekoverflow.cilostazol.nodes.nodeized.*;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.TypeHelpers;
@@ -230,18 +228,18 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case STFLD:
         case STSFLD:
           // TODO
-          // topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc,
-          // curOpcode);
+          // storeValueToField(frame, bytecodeBuffer.getImmToken(pc), topStack - 2, topStack - 1);
+          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
           break;
 
           // Object manipulation
         case LDOBJ:
         case STOBJ:
         case INITOBJ:
-          nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
+          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
           break;
         case NEWOBJ:
-          nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
+          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
           break;
 
         case CPOBJ:
@@ -493,17 +491,26 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         node = null;
         break;
       case INITOBJ:
-        // var type = method.getContext().getType(token);
-        var type =
-            NamedTypeSymbol.NamedTypeSymbolFactory.create(
-                method
-                    .getModule()
-                    .getDefiningFile()
-                    .getTableHeads()
-                    .getTypeDefTableHead()
-                    .skip(token),
-                method.getModule());
-        node = INITOBJNodeGen.create(type, top);
+        {
+          // TODO: This is not cached and causes issues when working with fields
+          var type =
+              NamedTypeSymbol.NamedTypeSymbolFactory.create(
+                  method
+                      .getModule()
+                      .getDefiningFile()
+                      .getTableHeads()
+                      .getTypeDefTableHead()
+                      .skip(token),
+                  method.getModule());
+          node = INITOBJNodeGen.create(type, top);
+        }
+        break;
+      case STFLD:
+        {
+          var type = taggedFrame[frame.getIntStatic(top - 2)];
+          assert type instanceof NamedTypeSymbol;
+          node = STFLDNodeGen.create((NamedTypeSymbol) type, token, top);
+        }
         break;
       default:
         CompilerAsserts.neverPartOfCompilation();

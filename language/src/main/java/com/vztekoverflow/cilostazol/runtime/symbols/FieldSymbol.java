@@ -14,13 +14,16 @@ public final class FieldSymbol extends Symbol {
   private final short flags;
   private final short visibilityFlags;
   private final TypeSymbol declaringType;
+  public final CLIFieldTableRow tableRow;
 
-  private FieldSymbol(String name, TypeSymbol type, short flags, short visibilityFlags) {
+  private FieldSymbol(
+      String name, TypeSymbol type, short flags, short visibilityFlags, CLIFieldTableRow row) {
     super(ContextProviderImpl.getInstance());
     this.name = name;
     this.type = type;
     this.flags = flags;
     this.visibilityFlags = visibilityFlags;
+    this.tableRow = row;
     // TODO:
     this.declaringType = null;
   }
@@ -77,11 +80,12 @@ public final class FieldSymbol extends Symbol {
       short flags = row.getFlags();
       short visibilityFlags = (short) (row.getFlags() & 0x0007);
 
-      return new FieldSymbol(name, type, flags, visibilityFlags);
+      return new FieldSymbol(name, type, flags, visibilityFlags, row);
     }
 
     public static FieldSymbol createWith(FieldSymbol symbol, TypeSymbol type) {
-      return new FieldSymbol(symbol.name, type, symbol.flags, symbol.visibilityFlags);
+      return new FieldSymbol(
+          symbol.name, type, symbol.flags, symbol.visibilityFlags, symbol.tableRow);
     }
   }
 }

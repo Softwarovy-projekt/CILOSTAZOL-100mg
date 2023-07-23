@@ -5,6 +5,7 @@ import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
+import java.util.Map;
 
 public final class LinkedFieldLayout {
   final StaticShape<StaticObject.StaticObjectFactory> instanceShape;
@@ -20,7 +21,10 @@ public final class LinkedFieldLayout {
   final int fieldTableLength;
 
   LinkedFieldLayout(
-      CILOSTAZOLContext description, NamedTypeSymbol parserTypeSymbol, NamedTypeSymbol superClass) {
+      CILOSTAZOLContext description,
+      NamedTypeSymbol parserTypeSymbol,
+      Map<Integer, StaticField> fieldMapping,
+      NamedTypeSymbol superClass) {
     StaticShape.Builder instanceBuilder = StaticShape.newBuilder(description.getLanguage());
     StaticShape.Builder staticBuilder = StaticShape.newBuilder(description.getLanguage());
 
@@ -37,6 +41,7 @@ public final class LinkedFieldLayout {
       if (parserField.isStatic()) {
         createAndRegisterLinkedField(
             parserField,
+            fieldMapping,
             nextStaticFieldSlot++,
             nextStaticFieldIndex++,
             staticBuilder,
@@ -44,6 +49,7 @@ public final class LinkedFieldLayout {
       } else {
         createAndRegisterLinkedField(
             parserField,
+            fieldMapping,
             nextInstanceFieldSlot++,
             nextInstanceFieldIndex++,
             instanceBuilder,
@@ -63,6 +69,7 @@ public final class LinkedFieldLayout {
 
   private static void createAndRegisterLinkedField(
       FieldSymbol parserField,
+      Map<Integer, StaticField> fieldMapping,
       int slot,
       int index,
       StaticShape.Builder builder,
@@ -70,6 +77,7 @@ public final class LinkedFieldLayout {
     StaticField field = new StaticField(parserField);
     builder.property(field, field.getPropertyType(), storeAsFinal(parserField));
     linkedFields[index] = field;
+    fieldMapping.put(parserField.tableRow.getRowNo(), field);
   }
 
   private static boolean storeAsFinal(FieldSymbol field) {

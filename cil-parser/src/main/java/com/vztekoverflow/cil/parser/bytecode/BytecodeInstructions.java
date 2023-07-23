@@ -435,7 +435,7 @@ public class BytecodeInstructions {
     defPrefixed(CGT_UN, "cgt.un", "o", -1);
     defPrefixed(CLT_UN, "clt.un", "o", -1);
 
-    defPrefixed(INITOBJ, "initobj", "otttt", -1);
+    defPrefixed(INITOBJ, "initobj", "otttt", 0);
 
     def(BEQ, "beq", "otttt", -2);
     def(BGE, "bge", "otttt", -2);

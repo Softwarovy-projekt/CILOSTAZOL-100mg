@@ -27,11 +27,6 @@ public class StaticField extends StaticProperty {
   }
 
   public Class<?> getPropertyType() {
-    // TODO: Remove
-    if (symbol == null) {
-      return int.class;
-    }
-
     return switch (symbol.getKind()) {
       case Boolean -> boolean.class;
       case Char -> char.class;

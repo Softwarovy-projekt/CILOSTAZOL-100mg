@@ -20,9 +20,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.utils.CLIFileUtils;
 import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolLayout;
 import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolSemantics;
 import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolVisibility;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class NamedTypeSymbol extends TypeSymbol {
   private static final int ABSTRACT_FLAG_MASK = 0x80;
@@ -40,6 +38,8 @@ public class NamedTypeSymbol extends TypeSymbol {
   protected final TypeParameterSymbol[] typeParameters;
   protected final TypeMap map;
   protected final CLITablePtr definingRow;
+  protected final Map<Integer, StaticField> fieldMapping = new HashMap<>();
+
   @CompilerDirectives.CompilationFinal protected NamedTypeSymbol lazyDirectBaseClass;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
@@ -171,6 +171,14 @@ public class NamedTypeSymbol extends TypeSymbol {
     return lazyFields;
   }
 
+  public StaticField getAssignableField(CLITablePtr ptr) {
+    if (instanceShape == null) {
+      createShapes();
+    }
+
+    return fieldMapping.get(ptr.getRowNo());
+  }
+
   public ConstructedNamedTypeSymbol construct(TypeSymbol[] typeArguments) {
     return ConstructedNamedTypeSymbol.ConstructedNamedTypeSymbolFactory.create(
         this, this, typeArguments);
@@ -299,7 +307,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     // TODO: Is this invalidation necessary when initializing CompilationFinal fields?
     CompilerDirectives.transferToInterpreterAndInvalidate();
 
-    LinkedFieldLayout layout = new LinkedFieldLayout(getContext(), this, superClass);
+    LinkedFieldLayout layout = new LinkedFieldLayout(getContext(), this, fieldMapping, superClass);
     instanceShape = layout.instanceShape;
     staticShape = layout.staticShape;
     instanceFields = layout.instanceFields;
