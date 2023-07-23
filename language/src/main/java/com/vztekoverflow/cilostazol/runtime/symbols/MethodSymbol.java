@@ -15,6 +15,7 @@ import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLRootNode;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
 
 public class MethodSymbol extends Symbol {
   protected final String name;
@@ -122,7 +123,7 @@ public class MethodSymbol extends Symbol {
   }
 
   public String toString() {
-    return "_ " + getName() + "()";
+    return retType.toString() + " " + getName() + "()";
   }
 
   public ModuleSymbol getModule() {
@@ -143,9 +144,17 @@ public class MethodSymbol extends Symbol {
   }
 
   public RootNode getNode() {
-    if (node == null) node = CILOSTAZOLRootNode.create(this, cil);
+    if (node == null) node = CILOSTAZOLRootNode.create(this);
 
     return node;
+  }
+
+  public boolean hasReturnValue() {
+    return retType.getType().getKind() != SystemTypes.Void;
+  }
+
+  public boolean hasArgs() {
+    return parameters.length > 0;
   }
 
   public static class MethodSymbolFactory {

@@ -3,9 +3,13 @@ package com.vztekoverflow.cilostazol.nodes;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlotKind;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
+import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
+import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import java.util.Objects;
 
@@ -32,15 +36,28 @@ public final class CILOSTAZOLFrame {
   }
 
   public static int getStartArgsOffset(MethodSymbol methodSymbol) {
-    return getStartLocalsOffset(methodSymbol) + methodSymbol.getLocals().length;
+    return isInstantiable(methodSymbol) + methodSymbol.getLocals().length;
   }
 
-  public static int getStartLocalsOffset(MethodSymbol methodSymbol) {
-    return methodSymbol.getMethodFlags().hasFlag(MethodSymbol.MethodFlags.Flag.STATIC) ? 0 : 1;
+  /** Instantiable methods have `this` as the first argument. */
+  public static int isInstantiable(MethodSymbol methodSymbol) {
+    return methodSymbol.getMethodFlags().hasFlag(Flag.STATIC) ? 0 : 1;
   }
   // endregion
 
   // region stack put
+  public static void put(
+      VirtualFrame frame, Object obj, CILOSTAZOLFrame.StackType stackType, int topStack) {
+    switch (stackType) {
+      case Int -> CILOSTAZOLFrame.putInt(frame, topStack, (int) obj);
+      case Long -> CILOSTAZOLFrame.putLong(frame, topStack, (long) obj);
+      case Double -> CILOSTAZOLFrame.putDouble(frame, topStack, (double) obj);
+      case Object -> CILOSTAZOLFrame.putObject(frame, topStack, (StaticObject) obj);
+      case Void -> throw new InterpreterException(
+          CILOSTAZOLBundle.message("cilostazol.exception.voidStackType"));
+    }
+  }
+
   public static void putObject(Frame frame, int slot, StaticObject value) {
     assert slot >= 0;
     assert value != null;
@@ -64,6 +81,17 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack pop
+  public static Object pop(VirtualFrame frame, CILOSTAZOLFrame.StackType stackType, int topStack) {
+    return switch (stackType) {
+      case Int -> CILOSTAZOLFrame.popInt(frame, topStack);
+      case Long -> CILOSTAZOLFrame.popLong(frame, topStack);
+      case Double -> CILOSTAZOLFrame.popDouble(frame, topStack);
+      case Object -> CILOSTAZOLFrame.popObject(frame, topStack);
+      case Void -> throw new InterpreterException(
+          CILOSTAZOLBundle.message("cilostazol.exception.voidStackType"));
+    };
+  }
+
   public static int popInt(Frame frame, int slot) {
     assert slot >= 0;
     int result = frame.getIntStatic(slot);
@@ -123,6 +151,18 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack set
+  public static void setLocal(
+      VirtualFrame frame, Object obj, CILOSTAZOLFrame.StackType stackType, int topStack) {
+    switch (stackType) {
+      case Int -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
+      case Long -> CILOSTAZOLFrame.setLocalLong(frame, topStack, (long) obj);
+      case Double -> CILOSTAZOLFrame.setLocalDouble(frame, topStack, (double) obj);
+      case Object -> CILOSTAZOLFrame.setLocalObject(frame, topStack, (StaticObject) obj);
+      case Void -> throw new InterpreterException(
+          CILOSTAZOLBundle.message("cilostazol.exception.voidLocalType"));
+    }
+  }
+
   public static void setLocalObject(Frame frame, int localSlot, StaticObject value) {
     assert localSlot >= 0;
     assert value != null;
@@ -132,11 +172,6 @@ public final class CILOSTAZOLFrame {
   public static void setLocalInt(Frame frame, int localSlot, int value) {
     assert localSlot >= 0;
     frame.setIntStatic(localSlot, value);
-  }
-
-  public static void setLocalFloat(Frame frame, int localSlot, float value) {
-    assert localSlot >= 0;
-    frame.setFloatStatic(localSlot, value);
   }
 
   public static void setLocalLong(Frame frame, int localSlot, long value) {
@@ -151,6 +186,18 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack get
+  public static Object getLocal(
+      VirtualFrame frame, CILOSTAZOLFrame.StackType stackType, int topStack) {
+    return switch (stackType) {
+      case Int -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
+      case Long -> CILOSTAZOLFrame.getLocalLong(frame, topStack);
+      case Double -> CILOSTAZOLFrame.getLocalDouble(frame, topStack);
+      case Object -> CILOSTAZOLFrame.getLocalObject(frame, topStack);
+      case Void -> throw new InterpreterException(
+          CILOSTAZOLBundle.message("cilostazol.exception.voidLocalType"));
+    };
+  }
+
   public static int getLocalInt(Frame frame, int localSlot) {
     assert localSlot >= 0;
     return frame.getIntStatic(localSlot);

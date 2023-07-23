@@ -14,14 +14,15 @@ import com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
-import com.vztekoverflow.cilostazol.exceptions.InvalidCLIException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
+import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
 import com.vztekoverflow.cilostazol.nodes.nodeized.LDSTRNode;
 import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.TypeHelpers;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
+import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
 import java.util.Arrays;
 
 public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
@@ -33,9 +34,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   @Children private NodeizedNodeBase[] nodes = new NodeizedNodeBase[0];
 
-  private CILMethodNode(MethodSymbol method, byte[] cilCode) {
+  private CILMethodNode(MethodSymbol method) {
     this.method = method;
-    cil = cilCode;
+    cil = method.getCIL();
     frameDescriptor =
         CILOSTAZOLFrame.create(
             method.getParameters().length, method.getLocals().length, method.getMaxStack());
@@ -56,8 +57,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     return taggedFrame;
   }
 
-  public static CILMethodNode create(MethodSymbol method, byte[] cilCode) {
-    return new CILMethodNode(method, cilCode);
+  public static CILMethodNode create(MethodSymbol method) {
+    return new CILMethodNode(method); // TODO: not method.createNode()?
   }
 
   public MethodSymbol getMethod() {
@@ -79,9 +80,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     // Init arguments
     Object[] args = frame.getArguments();
 
-    boolean hasReceiver =
-        !getMethod().getMethodFlags().hasFlag(MethodSymbol.MethodFlags.Flag.STATIC);
-    int receiverSlot = CILOSTAZOLFrame.getStartLocalsOffset(getMethod());
+    boolean hasReceiver = !getMethod().getMethodFlags().hasFlag(Flag.STATIC);
+    int receiverSlot = CILOSTAZOLFrame.isInstantiable(getMethod());
     if (hasReceiver) {
       throw new NotImplementedException();
     }
@@ -93,22 +93,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     int topStack = CILOSTAZOLFrame.getStartArgsOffset(getMethod());
 
     for (int i = 0; i < method.getParameters().length; i++) {
-      switch (argTypes[i].getStackTypeKind()) {
-        case Int:
-          CILOSTAZOLFrame.putInt(frame, topStack, (int) args[i + receiverSlot]);
-          break;
-        case Long:
-          CILOSTAZOLFrame.putLong(frame, topStack, (long) args[i + receiverSlot]);
-          break;
-        case Double:
-          CILOSTAZOLFrame.putDouble(frame, topStack, (double) args[i + receiverSlot]);
-          break;
-        case Object:
-          CILOSTAZOLFrame.putObject(frame, topStack, (StaticObject) args[i + receiverSlot]);
-          break;
-        default:
-          throw new NotImplementedException();
-      }
+      CILOSTAZOLFrame.put(frame, args[i + receiverSlot], argTypes[i].getStackTypeKind(), topStack);
       CILOSTAZOLFrame.putTaggedStack(taggedFrame, topStack, argTypes[i + receiverSlot]);
       topStack--;
     }
@@ -312,7 +297,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           return getReturnValue(frame, topStack - 1);
 
         case CALL:
-          System.out.println("CALLING");
+          var methodToken = bytecodeBuffer.getImmToken(pc);
+          topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALL);
           break;
 
           // Store indirect
@@ -420,7 +406,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void loadLocalToTop(VirtualFrame frame, int localIdx, int top) {
-    int localSlot = CILOSTAZOLFrame.getStartLocalsOffset(getMethod()) + localIdx;
+    int localSlot = CILOSTAZOLFrame.isInstantiable(getMethod()) + localIdx;
     CILOSTAZOLFrame.copyStatic(frame, localSlot, top);
     // Tag the top of the stack
     CILOSTAZOLFrame.putTaggedStack(
@@ -436,7 +422,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void loadLocalRefToTop(VirtualFrame frame, int localIdx, int top) {
-    int localSlot = CILOSTAZOLFrame.getStartLocalsOffset(getMethod()) + localIdx;
+    int localSlot = CILOSTAZOLFrame.isInstantiable(getMethod()) + localIdx;
     CILOSTAZOLFrame.putInt(frame, top, localSlot);
     CILOSTAZOLFrame.putTaggedStack(
         taggedFrame,
@@ -471,26 +457,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     TypeSymbol retType = getMethod().getReturnType().getType();
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
     // TODO: type checking
-    switch (retType.getStackTypeKind()) {
-      case Int -> {
-        return CILOSTAZOLFrame.popInt(frame, top);
-      }
-      case Long -> {
-        return CILOSTAZOLFrame.popLong(frame, top);
-      }
-      case Double -> {
-        return CILOSTAZOLFrame.popDouble(frame, top);
-      }
-      case Void -> {
-        return null;
-      }
-      case Object -> {
-        return CILOSTAZOLFrame.popObject(frame, top);
-      }
-      default -> {
-        throw new InvalidCLIException();
-      }
-    }
+    return CILOSTAZOLFrame.pop(frame, retType.getStackTypeKind(), top);
   }
   // endregion
 
@@ -518,16 +485,29 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private int nodeizeOpToken(VirtualFrame frame, int top, CLITablePtr token, int pc, int opcode) {
     CompilerDirectives.transferToInterpreterAndInvalidate();
     final NodeizedNodeBase node;
-    if (opcode == LDSTR) {
-      CLIUSHeapPtr ptr = new CLIUSHeapPtr(token.getRowNo());
-      node =
-          new LDSTRNode(
-              ptr.readString(method.getModule().getDefiningFile().getUSHeap()),
-              top,
-              method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.String));
-    } else {
-      CompilerAsserts.neverPartOfCompilation();
-      throw new InterpreterException();
+
+    switch (opcode) {
+      case LDSTR -> {
+        CLIUSHeapPtr ptr = new CLIUSHeapPtr(token.getRowNo());
+        node =
+            new LDSTRNode(
+                ptr.readString(method.getModule().getDefiningFile().getUSHeap()),
+                top,
+                CILOSTAZOLContext.get(this).getType(CILOSTAZOLContext.CILBuiltInType.String));
+      }
+      case CALL -> {
+        // if method is local
+        //        CILOSTAZOLContext.get(this).get(token);
+        var method = getMethod().getModule().getLocalMethod(token.getRowNo());
+
+        node = new CALLNode(method, top);
+        // run with args
+
+      }
+      default -> {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+        throw new InterpreterException();
+      }
     }
 
     int index = addNode(node);
