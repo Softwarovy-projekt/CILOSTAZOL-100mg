@@ -6,7 +6,6 @@ import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
-import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
