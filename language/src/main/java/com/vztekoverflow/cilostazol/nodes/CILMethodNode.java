@@ -216,6 +216,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           // Loading fields
         case LDFLD:
+          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
+          break;
         case LDFLDA:
         case LDSFLD:
         case LDSFLDA:
@@ -226,10 +228,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           // Storing fields
         case STFLD:
+          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
+          break;
         case STSFLD:
           // TODO
-          // storeValueToField(frame, bytecodeBuffer.getImmToken(pc), topStack - 2, topStack - 1);
-          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
           break;
 
           // Object manipulation
@@ -505,9 +507,28 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           node = INITOBJNodeGen.create(type, top);
         }
         break;
+      case LDFLD:
+        {
+          // TODO: Object can be type O or &
+          TypeSymbol type;
+          if (taggedFrame[top - 1] instanceof ReferenceSymbol) {
+            type = taggedFrame[frame.getIntStatic(top - 1)];
+          } else {
+            type = taggedFrame[top - 1];
+          }
+          assert type instanceof NamedTypeSymbol;
+          node = LDFLDNodeGen.create((NamedTypeSymbol) type, token, top);
+        }
+        break;
       case STFLD:
         {
-          var type = taggedFrame[frame.getIntStatic(top - 2)];
+          // TODO: Object can be type O or &
+          TypeSymbol type;
+          if (taggedFrame[top - 2] instanceof ReferenceSymbol) {
+            type = taggedFrame[frame.getIntStatic(top - 2)];
+          } else {
+            type = taggedFrame[top - 2];
+          }
           assert type instanceof NamedTypeSymbol;
           node = STFLDNodeGen.create((NamedTypeSymbol) type, token, top);
         }

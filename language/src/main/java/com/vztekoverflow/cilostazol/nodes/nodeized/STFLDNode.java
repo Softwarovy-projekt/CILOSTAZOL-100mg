@@ -5,27 +5,23 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 
-public abstract class STFLDNode extends NodeizedNodeBase {
-
-  protected final StaticField field;
+public abstract class STFLDNode extends FieldManipulationBaseNode {
   private final CLITablePtr fieldPtr;
   private final int top;
 
   // TODO: Check ModuleSymbol::getLocalMethod for a way of getting the type for a field
   public STFLDNode(NamedTypeSymbol type, CLITablePtr fieldPtr, int top) {
-    this.field = type.getAssignableField(fieldPtr);
+    super(type.getAssignableField(fieldPtr));
     this.fieldPtr = fieldPtr;
     this.top = top;
   }
 
   @Specialization(guards = "isInt()")
   public int executeInt(VirtualFrame frame, TypeSymbol[] taggedFrame) {
-    var objectReference = CILOSTAZOLFrame.popInt(frame, top - 2);
-    var object = CILOSTAZOLFrame.getLocalObject(frame, objectReference);
+    var object = getObjectFromFrame(frame, taggedFrame, top - 2);
     var value = CILOSTAZOLFrame.popInt(frame, top - 1);
     object.getTypeSymbol().getAssignableField(this.fieldPtr).setInt(object, value);
     return top - 2;
@@ -71,29 +67,5 @@ public abstract class STFLDNode extends NodeizedNodeBase {
     var staticObject = CILOSTAZOLFrame.popObject(frame, top - 2);
     field.setObject(staticObject, CILOSTAZOLFrame.popObject(frame, top - 1));
     return top - 2;
-  }
-
-  protected boolean isBool() {
-    return field.getPropertyType() == boolean.class;
-  }
-
-  protected boolean isChar() {
-    return field.getPropertyType() == char.class;
-  }
-
-  protected boolean isFloat() {
-    return field.getPropertyType() == float.class;
-  }
-
-  protected boolean isDouble() {
-    return field.getPropertyType() == double.class;
-  }
-
-  protected boolean isInt() {
-    return field.getPropertyType() == int.class;
-  }
-
-  protected boolean isLong() {
-    return field.getPropertyType() == long.class;
   }
 }
