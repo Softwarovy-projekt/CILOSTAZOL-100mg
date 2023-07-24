@@ -45,8 +45,22 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack put
+  public static void putTotal(
+      VirtualFrame frame,
+      Object obj,
+      TypeSymbol[] taggedFrame,
+      int topStack,
+      TypeSymbol typeSymbol) {
+    putTaggedStack(taggedFrame, topStack, typeSymbol);
+    put(frame, obj, topStack, typeSymbol);
+  }
+
+  public static void put(VirtualFrame frame, Object obj, int topStack, TypeSymbol typeSymbol) {
+    put(frame, obj, topStack, typeSymbol.getStackTypeKind());
+  }
+
   public static void put(
-      VirtualFrame frame, Object obj, CILOSTAZOLFrame.StackType stackType, int topStack) {
+      VirtualFrame frame, Object obj, int topStack, CILOSTAZOLFrame.StackType stackType) {
     switch (stackType) {
       case Int -> CILOSTAZOLFrame.putInt(frame, topStack, (int) obj);
       case Long -> CILOSTAZOLFrame.putLong(frame, topStack, (long) obj);
@@ -80,12 +94,22 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack pop
-  public static Object pop(VirtualFrame frame, CILOSTAZOLFrame.StackType stackType, int topStack) {
+  public static Object popTotal(
+      VirtualFrame frame, TypeSymbol[] taggedFrame, int topStack, TypeSymbol typeSymbol) {
+    popTaggedStack(taggedFrame, topStack);
+    return pop(frame, topStack, typeSymbol);
+  }
+
+  public static Object pop(VirtualFrame frame, int topStack, TypeSymbol typeSymbol) {
+    return pop(frame, topStack, typeSymbol.getStackTypeKind());
+  }
+
+  public static Object pop(VirtualFrame frame, int topStack, CILOSTAZOLFrame.StackType stackType) {
     return switch (stackType) {
-      case Int -> CILOSTAZOLFrame.popInt(frame, topStack);
-      case Long -> CILOSTAZOLFrame.popLong(frame, topStack);
-      case Double -> CILOSTAZOLFrame.popDouble(frame, topStack);
-      case Object -> CILOSTAZOLFrame.popObject(frame, topStack);
+      case Int -> popInt(frame, topStack);
+      case Long -> popLong(frame, topStack);
+      case Double -> popDouble(frame, topStack);
+      case Object -> popObject(frame, topStack);
       case Void -> throw new InterpreterException(
           CILOSTAZOLBundle.message("cilostazol.exception.voidStackType"));
     };
@@ -123,26 +147,6 @@ public final class CILOSTAZOLFrame {
     return (StaticObject) result;
   }
 
-  public static void pop(Frame frame, int slot, TypeSymbol type) {
-    switch (type.getStackTypeKind()) {
-      case Object -> {
-        popObject(frame, slot);
-      }
-      case Int -> {
-        popInt(frame, slot);
-      }
-      case Long -> {
-        popLong(frame, slot);
-      }
-      case Double -> {
-        popDouble(frame, slot);
-      }
-      case Void -> {
-        throw new InterpreterException();
-      }
-    }
-  }
-
   private static void clearPrimitive(Frame frame, int slot) {
     assert slot >= 0;
     frame.clearPrimitiveStatic(slot);
@@ -150,8 +154,12 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack set
+  public static void setLocal(VirtualFrame frame, Object obj, int topStack, TypeSymbol typeSymbol) {
+    setLocal(frame, obj, topStack, typeSymbol.getStackTypeKind());
+  }
+
   public static void setLocal(
-      VirtualFrame frame, Object obj, CILOSTAZOLFrame.StackType stackType, int topStack) {
+      VirtualFrame frame, Object obj, int topStack, CILOSTAZOLFrame.StackType stackType) {
     switch (stackType) {
       case Int -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
       case Long -> CILOSTAZOLFrame.setLocalLong(frame, topStack, (long) obj);
@@ -185,8 +193,12 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack get
+  public static Object getLocal(VirtualFrame frame, int topStack, TypeSymbol typeSymbol) {
+    return getLocal(frame, topStack, typeSymbol.getStackTypeKind());
+  }
+
   public static Object getLocal(
-      VirtualFrame frame, CILOSTAZOLFrame.StackType stackType, int topStack) {
+      VirtualFrame frame, int topStack, CILOSTAZOLFrame.StackType stackType) {
     return switch (stackType) {
       case Int -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
       case Long -> CILOSTAZOLFrame.getLocalLong(frame, topStack);

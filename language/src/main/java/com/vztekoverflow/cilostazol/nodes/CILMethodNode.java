@@ -99,7 +99,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     int topStack = CILOSTAZOLFrame.getStartArgsOffset(getMethod());
 
     for (int i = 0; i < method.getParameters().length; i++) {
-      CILOSTAZOLFrame.put(frame, args[i + receiverSlot], argTypes[i].getStackTypeKind(), topStack);
+      CILOSTAZOLFrame.put(frame, args[i + receiverSlot], topStack, argTypes[i]);
       CILOSTAZOLFrame.putTaggedStack(taggedFrame, topStack, argTypes[i + receiverSlot]);
       topStack--;
     }
@@ -467,7 +467,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       TypeSymbol retType = getMethod().getReturnType().getType();
       CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
       // TODO: type checking
-      return CILOSTAZOLFrame.pop(frame, retType.getStackTypeKind(), top);
+      return CILOSTAZOLFrame.pop(frame, top, retType);
     }
     // return code 0;
     return 0;
@@ -528,7 +528,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
               node = getCheckedCALLNode(method, top);
             } else {
-              CompilerDirectives.transferToInterpreterAndInvalidate();
+              CompilerDirectives.transferToInterpreter();
               throw new InterpreterException();
             }
           }

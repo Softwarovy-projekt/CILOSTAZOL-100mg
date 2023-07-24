@@ -11,11 +11,13 @@ import org.jetbrains.annotations.NotNull;
 public final class CALLNode extends NodeizedNodeBase {
   private final MethodSymbol method;
   private final int topStack;
+  private final int returnStackTop;
 
   @Child private IndirectCallNode indirectCallNode;
 
   public CALLNode(MethodSymbol method, int topStack) {
     this.method = method;
+    this.returnStackTop = topStack - method.getParameters().length;
     this.topStack = topStack;
     this.indirectCallNode = IndirectCallNode.create();
   }
@@ -25,14 +27,26 @@ public final class CALLNode extends NodeizedNodeBase {
     Object[] args = getMethodArgsFromStack(frame);
     Object returnValue = indirectCallNode.call(method.getNode().getCallTarget(), args);
 
+    clearArgsFromStack(frame, taggedFrame);
+
     if (method.hasReturnValue()) {
-      CILOSTAZOLFrame.put(
-          frame, returnValue, method.getReturnType().getType().getStackTypeKind(), topStack);
-      // +1 for return value
-      return topStack + 1;
+      CILOSTAZOLFrame.put(frame, returnValue, returnStackTop, method.getReturnType().getType());
+      CILOSTAZOLFrame.putTaggedStack(taggedFrame, returnStackTop, method.getReturnType().getType());
     }
 
-    return topStack;
+    // +1 for return value
+    return returnStackTop + 1;
+  }
+
+  @ExplodeLoop
+  private void clearArgsFromStack(VirtualFrame frame, TypeSymbol[] taggedFrame) {
+    // Clear the stack
+    var topStack = this.topStack - 1;
+    for (var arg : method.getParameters()) {
+      CILOSTAZOLFrame.pop(frame, topStack, arg.getType());
+      CILOSTAZOLFrame.popTaggedStack(taggedFrame, topStack);
+      topStack--;
+    }
   }
 
   @NotNull
@@ -42,7 +56,7 @@ public final class CALLNode extends NodeizedNodeBase {
     final Object[] args = new Object[argTypes.length];
     for (int i = 0; i < args.length; i++) {
       final var idx = topStack - args.length + i;
-      args[i] = CILOSTAZOLFrame.getLocal(frame, argTypes[idx].getType().getStackTypeKind(), idx);
+      args[i] = CILOSTAZOLFrame.getLocal(frame, idx, argTypes[i].getType());
     }
     return args;
   }
