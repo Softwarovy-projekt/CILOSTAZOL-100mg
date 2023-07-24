@@ -56,6 +56,14 @@ public final class ModuleSymbol extends Symbol {
   }
 
   /**
+   * @return the method with the given ptr, or null if not found in this module.
+   * @apiNote If found, the method is cached in the ModuleSymbol.
+   */
+  public MethodSymbol getLocalMethod(CLITablePtr ptr) {
+    return getLocalMethod(ptr.getRowNo());
+  }
+
+  /**
    * @return the method with the given index(Obtained from MethodDefPtr), or null if not found in
    *     this module.
    * @apiNote If found, the method is cached in the ModuleSymbol.

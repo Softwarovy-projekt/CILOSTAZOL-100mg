@@ -1,6 +1,7 @@
 package com.vztekoverflow.cilostazol.nodes;
 
 import static com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions.*;
+import static com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants.*;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -11,15 +12,20 @@ import com.oracle.truffle.api.nodes.BytecodeOSRNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cil.parser.bytecode.BytecodeBuffer;
 import com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions;
+import com.vztekoverflow.cil.parser.cli.signature.MethodDefSig;
+import com.vztekoverflow.cil.parser.cli.signature.SignatureReader;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
+import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
 import com.vztekoverflow.cilostazol.nodes.nodeized.LDSTRNode;
 import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
+import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
+import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
 import com.vztekoverflow.cilostazol.runtime.other.TypeHelpers;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
@@ -126,6 +132,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       int nextpc = bytecodeBuffer.nextInstruction(pc);
       switch (curOpcode) {
         case NOP:
+          break;
         case POP:
           CILOSTAZOLFrame.popTaggedStack(taggedFrame, topStack - 1);
           break;
@@ -454,10 +461,14 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private Object getReturnValue(VirtualFrame frame, int top) {
-    TypeSymbol retType = getMethod().getReturnType().getType();
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
-    // TODO: type checking
-    return CILOSTAZOLFrame.pop(frame, retType.getStackTypeKind(), top);
+    if (getMethod().hasReturnValue()) {
+      TypeSymbol retType = getMethod().getReturnType().getType();
+      CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
+      // TODO: type checking
+      return CILOSTAZOLFrame.pop(frame, retType.getStackTypeKind(), top);
+    }
+    // return code 0;
+    return 0;
   }
   // endregion
 
@@ -498,11 +509,49 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case CALL -> {
         // if method is local
         //        CILOSTAZOLContext.get(this).get(token);
-        var method = getMethod().getModule().getLocalMethod(token.getRowNo());
+        switch (token.getTableId()) {
+          case CLITableConstants.CLI_TABLE_MEMBER_REF -> {
+            /* Can point to method or field ref
+            We can be sure that here we only have method refs */
+            var row = TableRowUtils.getMemberRefRow(method.getModule(), token);
+            var name =
+                row.getNameHeapPtr().read(method.getModule().getDefiningFile().getStringHeap());
+            var klass = row.getKlassTablePtr();
+            var signature =
+                row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
+            var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
+            if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
+              var containingType = CILOSTAZOLContext.get(this).getType(klass, method);
+              var method = findMatchingMethod(name, methodSignature, containingType);
 
-        node = new CALLNode(method, top);
-        // run with args
-
+              node = getCheckedCALLNode(method, top);
+            } else {
+              CompilerDirectives.transferToInterpreterAndInvalidate();
+              throw new InterpreterException();
+            }
+          }
+          case CLITableConstants.CLI_TABLE_METHOD_DEF -> {
+            var methodDef = method.getModule().getLocalMethod(token);
+            node = new CALLNode(methodDef, top);
+          }
+          case CLI_TABLE_METHOD_SPEC -> {
+            var row =
+                method
+                    .getModule()
+                    .getDefiningFile()
+                    .getTableHeads()
+                    .getMethodSpecTableHead()
+                    .skip(token);
+            var instantiation =
+                row.getInstantiationHeapPtr()
+                    .read(this.getMethod().getModule().getDefiningFile().getBlobHeap());
+            throw new NotImplementedException();
+          }
+          default -> {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            throw new InterpreterException();
+          }
+        }
       }
       default -> {
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -521,6 +570,57 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
     // execute the new node
     return nodes[index].execute(frame, taggedFrame);
+  }
+
+  private NodeizedNodeBase getCheckedCALLNode(MethodSymbol method, int top) {
+    if (method.getMethodFlags().hasFlag(Flag.UNMANAGED_EXPORT)) {
+      // Either native support must be supported or some workaround must be implemented
+      throw new NotImplementedException();
+    }
+    if (method.getName().equals("WriteLine")
+        && method.getDefiningType().getName().equals("Console")
+        && method.getDefiningType().getNamespace().equals("System")) {
+      return new PRINTNode(top);
+    }
+
+    return new CALLNode(method, top);
+  }
+
+  private MethodSymbol findMatchingMethod(
+      String name, MethodDefSig methodSignature, NamedTypeSymbol definingType) {
+    var parameterTypes =
+        Arrays.stream(methodSignature.getParams())
+            .map(
+                x ->
+                    TypeSymbol.TypeSymbolFactory.create(
+                        x.getTypeSig(),
+                        new TypeSymbol[0],
+                        new TypeSymbol[0],
+                        this.method.getModule()))
+            .toArray(TypeSymbol[]::new);
+    var returnType =
+        TypeSymbol.TypeSymbolFactory.create(
+            methodSignature.getRetType().getTypeSig(),
+            new TypeSymbol[0],
+            new TypeSymbol[0],
+            this.method.getModule());
+    var matchingMethods =
+        Arrays.stream(definingType.getMethods())
+            .filter(
+                type ->
+                    type.getName().equals(name)
+                        && type.getReturnType().getType().equals(returnType)
+                        && Arrays.equals(
+                            Arrays.stream(type.getParameters())
+                                .map(ParameterSymbol::getType)
+                                .toArray(),
+                            parameterTypes))
+            .toArray(MethodSymbol[]::new);
+
+    // There must be a unique method
+    assert matchingMethods.length == 1;
+
+    return matchingMethods[0];
   }
 
   private int addNode(NodeizedNodeBase node) {
