@@ -245,6 +245,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           break;
 
         case CPOBJ:
+          copyObject(frame, topStack - 2, topStack - 1);
         case ISINST:
           // TODO
           break;
@@ -422,6 +423,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     CILOSTAZOLFrame.copyStatic(frame, top, localIdx);
     // pop taggedFrame
     taggedFrame[top] = null;
+  }
+
+  private void copyObject(VirtualFrame frame, int sourceIdx, int descIdx) {
+    int localsOffset = CILOSTAZOLFrame.getStartLocalsOffset(getMethod());
+    int sourceSlot = localsOffset + CILOSTAZOLFrame.popInt(frame, sourceIdx);
+    int descSlot = localsOffset + CILOSTAZOLFrame.popInt(frame, descIdx);
+    CILOSTAZOLFrame.copyStatic(frame, sourceSlot, descSlot);
   }
 
   private void popStack(int top) {
