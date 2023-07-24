@@ -1,6 +1,5 @@
 package com.vztekoverflow.cil.parser.cli.signature;
 
-
 public class MethodDefSig {
   private final MethodDefFlags _flags;
   private final int _genParamCount;
