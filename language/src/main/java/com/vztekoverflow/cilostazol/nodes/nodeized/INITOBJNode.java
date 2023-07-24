@@ -21,16 +21,19 @@ public abstract class INITOBJNode extends NodeizedNodeBase {
 
   @Specialization(guards = "isValueType()")
   protected int executeValueType(VirtualFrame frame, TypeSymbol[] taggedFrame) {
-    var dest = CILOSTAZOLFrame.popInt(frame, top - 1);
-    var value = type.getContext().getAllocator().createNew(type);
-    CILOSTAZOLFrame.setLocalObject(frame, dest, value);
+    int dest = CILOSTAZOLFrame.popInt(frame, top - 1);
+    CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+    StaticObject object = type.getContext().getAllocator().createNew(type);
+    CILOSTAZOLFrame.setLocalObject(frame, dest, object);
+    CILOSTAZOLFrame.setTaggedStack(taggedFrame, dest, type);
     return top - 1;
   }
 
   @Fallback
   protected int executeReferenceType(VirtualFrame frame, TypeSymbol[] taggedFrame) {
-    var dest = CILOSTAZOLFrame.popInt(frame, top - 1);
+    int dest = CILOSTAZOLFrame.popInt(frame, top - 1);
     CILOSTAZOLFrame.setLocalObject(frame, dest, StaticObject.NULL);
+    CILOSTAZOLFrame.setTaggedStack(taggedFrame, dest, type);
     return top - 1;
   }
 

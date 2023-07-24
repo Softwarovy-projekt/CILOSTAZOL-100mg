@@ -597,26 +597,26 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         {
           // TODO: Object can be type O or &
           TypeSymbol type;
-          if (taggedFrame[top - 1] instanceof ReferenceSymbol) {
-            type = taggedFrame[frame.getIntStatic(top - 1)];
+          if (CILOSTAZOLFrame.getTaggedStack(taggedFrame, top - 1) instanceof ReferenceSymbol) {
+            type = CILOSTAZOLFrame.getTaggedStack(taggedFrame, frame.getIntStatic(top - 1));
           } else {
-            type = taggedFrame[top - 1];
+            type = CILOSTAZOLFrame.getTaggedStack(taggedFrame, top - 1);
           }
           assert type instanceof NamedTypeSymbol;
-          node = LDFLDNodeGen.create((NamedTypeSymbol) type, token, top);
+          node = LDFLDNodeGen.create(method, (NamedTypeSymbol) type, token, top);
         }
         break;
       case STFLD:
         {
           // TODO: Object can be type O or &
           TypeSymbol type;
-          if (taggedFrame[top - 2] instanceof ReferenceSymbol) {
-            type = taggedFrame[frame.getIntStatic(top - 2)];
+          if (CILOSTAZOLFrame.getTaggedStack(taggedFrame, top - 2) instanceof ReferenceSymbol) {
+            type = CILOSTAZOLFrame.getTaggedStack(taggedFrame, frame.getIntStatic(top - 2));
           } else {
-            type = taggedFrame[top - 2];
+            type = CILOSTAZOLFrame.getTaggedStack(taggedFrame, top - 2);
           }
           assert type instanceof NamedTypeSymbol;
-          node = STFLDNodeGen.create((NamedTypeSymbol) type, token, top);
+          node = STFLDNodeGen.create(method, (NamedTypeSymbol) type, token, top);
         }
         break;
       default:

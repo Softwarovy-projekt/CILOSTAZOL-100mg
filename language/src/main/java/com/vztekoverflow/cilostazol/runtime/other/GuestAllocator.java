@@ -48,7 +48,7 @@ public final class GuestAllocator {
     for (StaticField f : typeSymbol.getInstanceFields()) {
       assert !f.isStatic();
       if (f.getKind() == SystemTypes.Object) {
-        f.setObjectValue(obj, StaticObject.NULL);
+        f.setObject(obj, StaticObject.NULL);
       }
     }
   }
@@ -57,7 +57,7 @@ public final class GuestAllocator {
     for (StaticField f : typeSymbol.getInstanceFields()) {
       assert !f.isStatic();
       if (f.getKind() == SystemTypes.Object) {
-        f.setObjectValue(obj, StaticObject.NULL);
+        f.setObject(obj, StaticObject.NULL);
       }
     }
   }

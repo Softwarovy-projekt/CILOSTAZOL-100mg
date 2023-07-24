@@ -242,5 +242,9 @@ public final class CILOSTAZOLFrame {
     return taggedFrame[top];
   }
 
+  public static void setTaggedStack(TypeSymbol[] taggedFrame, int top, TypeSymbol type) {
+    taggedFrame[top] = type;
+  }
+
   // endregion
 }
