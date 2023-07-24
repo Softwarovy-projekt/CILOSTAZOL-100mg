@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled("WIP")
 public class NonVirtualCallsTests extends TestBase {
   @Test
   public void simpleStaticCall() {
@@ -60,6 +59,7 @@ public class NonVirtualCallsTests extends TestBase {
   }
 
   @Test
+  @Disabled("WIP. missing comparison of strings")
   public void callWithReturnString() {
     var result =
         runTestFromCode(
@@ -96,10 +96,7 @@ public class NonVirtualCallsTests extends TestBase {
 
   @Test
   public void consoleWriteLine() {
-    var result =
-        runTestFromCode("""
-            Console.WriteLine("Hello World!");
-            """);
+    var result = runTestFromDll("ConsoleWriteLine");
     assertEquals(0, result.exitCode());
     assertEquals(String.format("Hello World!%s", System.lineSeparator()), result.output());
   }

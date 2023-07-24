@@ -21,6 +21,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolLayout;
 import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolSemantics;
 import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolVisibility;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -246,19 +247,10 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof NamedTypeSymbol other) {
-      if (!other.getName().equals(getName()) || !other.getNamespace().equals(getNamespace()))
-        return false;
-
-      if (other.getTypeArguments().length != getTypeArguments().length) return false;
-
-      for (int i = 0; i < other.getTypeArguments().length; i++) {
-        if (other.getTypeArguments()[i].equals(getTypeArguments()[i])) return false;
-      }
-
-      return true;
-    }
-    return super.equals(obj);
+    return obj instanceof NamedTypeSymbol other
+        && other.getName().equals(getName())
+        && other.getNamespace().equals(getNamespace())
+        && Arrays.equals(other.getTypeArguments(), getTypeArguments());
   }
 
   @Override

@@ -1,6 +1,5 @@
 package com.vztekoverflow.cil.parser.cli.signature;
 
-import com.vztekoverflow.cil.parser.cli.CLIFile;
 
 public class MethodDefSig {
   private final MethodDefFlags _flags;
@@ -16,7 +15,7 @@ public class MethodDefSig {
     this._params = _params;
   }
 
-  public static MethodDefSig parse(SignatureReader reader, CLIFile file) {
+  public static MethodDefSig parse(SignatureReader reader) {
     MethodDefFlags flags = new MethodDefFlags(reader.getUnsigned());
 
     int genParamCount = 0;

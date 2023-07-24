@@ -105,41 +105,34 @@ public class CILOSTAZOLContext {
     };
   }
 
+  /** This should be use on any path that queries a type. @ApiNote uses cache. */
   public NamedTypeSymbol getType(String name, String namespace, AssemblyIdentity assembly) {
-    var cacheKey = hardCodedForwarding(new TypeSymbolCacheKey(name, namespace, assembly));
+    assembly = AssemblyForwarder.forwardedAssembly(assembly);
+    // Note: Assembly in cacheKey is different from what is came in as an argument due to lack of
+    // forwarding implementation
+    var cacheKey = new TypeSymbolCacheKey(name, namespace, assembly);
 
     return typeSymbolCache.computeIfAbsent(
         cacheKey,
         k -> {
-          AssemblySymbol assemblySymbol = appDomain.getAssembly(assembly);
+          AssemblySymbol assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
           if (assemblySymbol == null) {
-            assemblySymbol = findAssembly(assembly);
+            assemblySymbol = findAssembly(cacheKey.assemblyIdentity());
           }
 
-          if (assemblySymbol != null) return assemblySymbol.getLocalType(name, namespace);
+          if (assemblySymbol != null)
+            return assemblySymbol.getLocalType(cacheKey.name(), cacheKey.namespace());
 
           return null;
         });
   }
 
-  public TypeSymbolCacheKey hardCodedForwarding(TypeSymbolCacheKey cacheKey) {
-    if (cacheKey.assemblyIdentity() == AssemblyIdentity.SystemRuntimeLib()) {
-      if (cacheKey.namespace() == "System") {
-        if (cacheKey.name() == "Int32")
-          return new TypeSymbolCacheKey(
-              cacheKey.name(), cacheKey.namespace(), AssemblyIdentity.SystemPrivateCoreLib());
-        else return cacheKey;
-      } else {
-        return cacheKey;
-      }
-    } else {
-      return cacheKey;
-    }
-  }
-
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {
     // Loading assemblies is an expensive task which should be never compiled
     CompilerAsserts.neverPartOfCompilation();
+
+    assemblyIdentity = AssemblyForwarder.forwardedAssembly(assemblyIdentity);
+
     // Locate dlls in paths
     for (Path path : libraryPaths) {
       File file = new File(path.toString() + "/" + assemblyIdentity.getName() + ".dll");
@@ -194,8 +187,13 @@ public class CILOSTAZOLContext {
     }
   }
 
+  /**
+   * Method to get a built-in type assembly
+   *
+   * @return Assembly of a built-in type.
+   */
   public NamedTypeSymbol getType(CILBuiltInType type) {
-    return getType(type.Name, "System", AssemblyIdentity.SystemPrivateCoreLib());
+    return getType(type.Name, "System", AssemblyIdentity.SystemPrivateCoreLib700());
   }
   // endregion
 }
