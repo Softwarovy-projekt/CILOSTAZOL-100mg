@@ -55,7 +55,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     if (!getMethod().getMethodFlags().hasFlag(MethodSymbol.MethodFlags.Flag.STATIC))
       CILOSTAZOLFrame.putTaggedStack(taggedFrame, 0, getMethod().getDefiningType());
 
-    final int localOffset = CILOSTAZOLFrame.getStartLocalsOffset(getMethod());
+    final int localOffset = CILOSTAZOLFrame.isInstantiable(getMethod());
     for (int i = 0; i < localSymbols.length; i++) {
       CILOSTAZOLFrame.putTaggedStack(taggedFrame, localOffset + i, localSymbols[i].getType());
     }
@@ -358,22 +358,24 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
     int index = CILOSTAZOLFrame.popInt(frame, top);
 
+    index = updateByStackType(referenceType, index);
+    CILOSTAZOLFrame.copyStatic(frame, index, top);
+    CILOSTAZOLFrame.putTaggedStack(taggedFrame, top, referenceType.getUnderlyingTypeSymbol());
+  }
+
+  private int updateByStackType(ReferenceSymbol referenceType, int index) {
     if (referenceType instanceof ArgReferenceSymbol)
       index += CILOSTAZOLFrame.getStartArgsOffset(getMethod());
     else if (referenceType instanceof LocalReferenceSymbol)
-      index += CILOSTAZOLFrame.getStartLocalsOffset(getMethod());
-    CILOSTAZOLFrame.copyStatic(frame, index, top);
-    CILOSTAZOLFrame.putTaggedStack(taggedFrame, top, referenceType.getUnderlyingTypeSymbol());
+      index += CILOSTAZOLFrame.isInstantiable(getMethod());
+    return index;
   }
 
   private void storeIndirect(VirtualFrame frame, int top) {
     // TODO: Check types
     var referenceType = (ReferenceSymbol) CILOSTAZOLFrame.getTaggedStack(taggedFrame, top - 1);
     int index = CILOSTAZOLFrame.getLocalInt(frame, top - 1);
-    if (referenceType instanceof ArgReferenceSymbol)
-      index += CILOSTAZOLFrame.getStartArgsOffset(getMethod());
-    else if (referenceType instanceof LocalReferenceSymbol)
-      index += CILOSTAZOLFrame.getStartLocalsOffset(getMethod());
+    index = updateByStackType(referenceType, index);
     CILOSTAZOLFrame.copyStatic(frame, top, index);
 
     CILOSTAZOLFrame.pop(frame, top, CILOSTAZOLFrame.popTaggedStack(taggedFrame, top));
