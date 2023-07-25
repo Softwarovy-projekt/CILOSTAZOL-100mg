@@ -22,7 +22,7 @@ public class LDSTRNode extends NodeizedNodeBase {
   @Override
   public int execute(VirtualFrame frame, TypeSymbol[] taggedFrame) {
     CILOSTAZOLFrame.putObject(frame, top, value);
-    taggedFrame[top] = stringTypeSymbol;
+    CILOSTAZOLFrame.putTaggedStack(taggedFrame, top, stringTypeSymbol);
     return top + 1;
   }
 }

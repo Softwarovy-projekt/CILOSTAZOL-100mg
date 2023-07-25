@@ -35,6 +35,8 @@ public enum SystemTypes {
         case "Int64":
         case "UInt64":
           return SystemTypes.Long;
+        case "Void":
+          return SystemTypes.Void;
           // Decimal, UIntPtr, IntPtr ??
       }
     }

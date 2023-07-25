@@ -13,6 +13,11 @@ public final class ReturnSymbol extends Symbol {
     this.type = type;
   }
 
+  @Override
+  public String toString() {
+    return type.toString();
+  }
+
   public boolean isByRef() {
     return byRef;
   }

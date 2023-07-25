@@ -6,5 +6,5 @@ foreach ($project in $projects)
 {
 
   Write-Host $project
-  dotnet build -c=Release $project --output $project\..\bin
+  dotnet build -c=Debug $project --output $project\..\bin
 }
