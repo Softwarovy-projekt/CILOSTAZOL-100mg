@@ -1,6 +1,5 @@
 package com.vztekoverflow.cilostazol.nodes.nodeized;
 
-import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
@@ -29,7 +28,7 @@ public abstract class INITOBJNode extends NodeizedNodeBase {
     return top - 1;
   }
 
-  @Fallback
+  @Specialization(replaces = "executeValueType")
   protected int executeReferenceType(VirtualFrame frame, TypeSymbol[] taggedFrame) {
     int dest = CILOSTAZOLFrame.popInt(frame, top - 1);
     CILOSTAZOLFrame.setLocalObject(frame, dest, StaticObject.NULL);

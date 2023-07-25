@@ -1,6 +1,5 @@
 package com.vztekoverflow.cilostazol.nodes.nodeized;
 
-import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
@@ -80,7 +79,15 @@ public abstract class STFLDNode extends FieldManipulationBaseNode {
     return top - 2;
   }
 
-  @Fallback
+  @Specialization(
+      replaces = {
+        "executeInt",
+        "executeLong",
+        "executeFloat",
+        "executeDouble",
+        "executeBool",
+        "executeChar"
+      })
   public int executeReference(VirtualFrame frame, TypeSymbol[] taggedFrame) {
     StaticObject object = getObjectFromFrame(frame, taggedFrame, top - 2);
     StaticObject value = CILOSTAZOLFrame.popObject(frame, top - 1);
