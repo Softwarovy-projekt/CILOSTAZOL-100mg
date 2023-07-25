@@ -4,17 +4,17 @@ package com.vztekoverflow.cilostazol.runtime.other;
 public final class TypeHelpers {
 
   /** Sign-extend the 8 least significant bits of the value. */
-  public static long signExtend8(long value) {
+  public static int signExtend8(long value) {
     return (byte) value;
   }
 
   /** Sign-extend the 16 least significant bits of the value. */
-  public static long signExtend16(long value) {
+  public static int signExtend16(long value) {
     return (short) value;
   }
 
   /** Sign-extend the 32 least significant bits of the value. */
-  public static long signExtend32(long value) {
+  public static int signExtend32(long value) {
     return (int) value;
   }
 
@@ -35,13 +35,13 @@ public final class TypeHelpers {
   }
 
   /** Zero-extend the 8 least significant bits of the value. */
-  public static long zeroExtend8(long value) {
-    return value & 0xFFL;
+  public static int zeroExtend8(long value) {
+    return (int) (value & 0xFFL);
   }
 
   /** Zero-extend the 16 least significant bits of the value. */
-  public static long zeroExtend16(long value) {
-    return value & 0xFFFFL;
+  public static int zeroExtend16(long value) {
+    return (int) (value & 0xFFFFL);
   }
 
   /** Zero-extend the 32 least significant bits of the value. */

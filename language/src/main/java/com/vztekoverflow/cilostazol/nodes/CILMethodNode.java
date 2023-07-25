@@ -143,6 +143,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case POP:
           CILOSTAZOLFrame.popTaggedStack(taggedFrame, topStack - 1);
           break;
+        case DUP:
+          duplicateSlot(frame, topStack - 1);
+          break;
 
           // Loading on top of the stack
         case LDNULL:
@@ -241,13 +244,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           // Object manipulation
         case LDOBJ:
         case STOBJ:
-        case INITOBJ:
-          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
+          // TODO
           break;
+
+        case INITOBJ:
         case NEWOBJ:
           topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
           break;
-
         case CPOBJ:
           copyObject(frame, topStack - 2, topStack - 1);
         case ISINST:
@@ -377,6 +380,25 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           loadIndirect(frame, topStack - 1);
           break;
 
+        case CONV_I:
+        case CONV_I1:
+        case CONV_I2:
+        case CONV_I4:
+        case CONV_I8:
+          convertToInteger(curOpcode, frame, topStack - 1, true);
+          break;
+        case CONV_U:
+        case CONV_U1:
+        case CONV_U2:
+        case CONV_U4:
+        case CONV_U8:
+          convertToInteger(curOpcode, frame, topStack - 1, false);
+          break;
+
+        case CONV_R4:
+        case CONV_R8:
+          break;
+
         case TRUFFLE_NODE:
           topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame, taggedFrame);
           break;
@@ -502,11 +524,21 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
   }
 
+  private void duplicateSlot(VirtualFrame frame, int top) {
+    CILOSTAZOLFrame.copyStatic(frame, top, top + 1);
+    CILOSTAZOLFrame.putTaggedStack(
+        taggedFrame, top + 1, CILOSTAZOLFrame.getTaggedStack(taggedFrame, top));
+  }
+
   private void copyObject(VirtualFrame frame, int sourceIdx, int descIdx) {
     int localsOffset = CILOSTAZOLFrame.getStartLocalsOffset(getMethod());
     int sourceSlot = localsOffset + CILOSTAZOLFrame.popInt(frame, sourceIdx);
+    CILOSTAZOLFrame.popTaggedStack(taggedFrame, sourceIdx);
     int descSlot = localsOffset + CILOSTAZOLFrame.popInt(frame, descIdx);
+    CILOSTAZOLFrame.popTaggedStack(taggedFrame, descIdx);
     CILOSTAZOLFrame.copyStatic(frame, sourceSlot, descSlot);
+    CILOSTAZOLFrame.putTaggedStack(
+        taggedFrame, descSlot, CILOSTAZOLFrame.getTaggedStack(taggedFrame, sourceSlot));
   }
 
   private void popStack(int top) {
@@ -595,7 +627,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         break;
       case LDFLD:
         {
-          // TODO: Object can be type O or &
           TypeSymbol type;
           if (CILOSTAZOLFrame.getTaggedStack(taggedFrame, top - 1) instanceof ReferenceSymbol) {
             type = CILOSTAZOLFrame.getTaggedStack(taggedFrame, frame.getIntStatic(top - 1));
@@ -608,7 +639,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         break;
       case STFLD:
         {
-          // TODO: Object can be type O or &
           TypeSymbol type;
           if (CILOSTAZOLFrame.getTaggedStack(taggedFrame, top - 2) instanceof ReferenceSymbol) {
             type = CILOSTAZOLFrame.getTaggedStack(taggedFrame, frame.getIntStatic(top - 2));
@@ -643,6 +673,73 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     int nodeIndex = nodes.length - 1; // latest empty slot
     nodes[nodeIndex] = insert(node);
     return nodeIndex;
+  }
+  // endregion
+
+  // region Conversion
+  private void convertToInteger(int opcode, VirtualFrame frame, int top, boolean signed) {
+    var type = CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
+    long value =
+        switch (type.getStackTypeKind()) {
+          case Int -> signed
+              ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popInt(frame, top))
+              : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popInt(frame, top));
+          case Long -> CILOSTAZOLFrame.popLong(frame, top);
+          case Double -> (long) CILOSTAZOLFrame.popDouble(frame, top);
+          default -> throw new InterpreterException(
+              "Invalid type for conversion: " + type.getStackTypeKind());
+        };
+
+    switch (opcode) {
+      case CONV_I1:
+        CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.signExtend8(value));
+        CILOSTAZOLFrame.putTaggedStack(
+            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.SByte));
+        break;
+      case CONV_I2:
+        CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.signExtend16(value));
+        CILOSTAZOLFrame.putTaggedStack(
+            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int16));
+        break;
+      case CONV_I4:
+        CILOSTAZOLFrame.putInt(frame, top, (int) TypeHelpers.truncate32(value));
+        CILOSTAZOLFrame.putTaggedStack(
+            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int32));
+        break;
+      case CONV_I8:
+        CILOSTAZOLFrame.putLong(frame, top, value);
+        CILOSTAZOLFrame.putTaggedStack(
+            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int64));
+        break;
+      case CONV_U1:
+        CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.zeroExtend8(value));
+        CILOSTAZOLFrame.putTaggedStack(
+            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Byte));
+        break;
+      case CONV_U2:
+        CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.zeroExtend16(value));
+        CILOSTAZOLFrame.putTaggedStack(
+            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.UInt16));
+        break;
+      case CONV_U4:
+        CILOSTAZOLFrame.putLong(frame, top, TypeHelpers.zeroExtend32(value));
+        CILOSTAZOLFrame.putTaggedStack(
+            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.UInt32));
+        break;
+      case CONV_U8:
+        CILOSTAZOLFrame.putLong(frame, top, value);
+        CILOSTAZOLFrame.putTaggedStack(
+            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.UInt64));
+        break;
+      case CONV_U:
+      case CONV_I:
+        // TODO
+        CompilerAsserts.neverPartOfCompilation();
+        throw new InterpreterException("CONV_U/I not implemented");
+      default:
+        CompilerAsserts.neverPartOfCompilation();
+        throw new InterpreterException("Invalid opcode for conversion");
+    }
   }
   // endregion
 

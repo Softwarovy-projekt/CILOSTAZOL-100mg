@@ -110,7 +110,7 @@ public class ObjectManipulationTests extends TestBase {
   }
 
   @Test
-  public void fieldAccessPrimitive() {
+  public void fieldAccessInt32() {
     var result =
         runTestFromCode(
             """
@@ -121,6 +121,147 @@ public class ObjectManipulationTests extends TestBase {
                     public struct TestStruct
                     {
                         public int a;
+                    }
+                    """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void fieldAccessInt64() {
+    var result =
+        runTestFromCode(
+            """
+                      TestStruct obj = default;
+                      obj.a = 42L;
+                      if (obj.a == 42L)
+                        return 42;
+
+                      return 0;
+
+                      public struct TestStruct
+                      {
+                          public long a;
+                      }
+                      """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void fieldAccessFloat32() {
+    var result =
+        runTestFromCode(
+            """
+                      TestStruct obj = default;
+                      obj.a = 42;
+
+                      if (obj.a == 42)
+                        return 42;
+
+                      return 0;
+
+                      public struct TestStruct
+                      {
+                          public float a;
+                      }
+                      """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void fieldAccessFloat64() {
+    var result =
+        runTestFromCode(
+            """
+                      TestStruct obj = default;
+                      obj.a = 42;
+
+                      if (obj.a == 42)
+                        return 42;
+
+                      return 0;
+                      public struct TestStruct
+                      {
+                          public double a;
+                      }
+                      """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void fieldAccessChar() {
+    var result =
+        runTestFromCode(
+            """
+                      TestStruct obj = default;
+                      obj.a = 'a';
+                      return obj.a;
+
+                      public struct TestStruct
+                      {
+                          public char a;
+                      }
+                      """);
+
+    assertEquals('a', result.exitCode());
+  }
+
+  @Test
+  public void fieldAccessBoolean() {
+    var result =
+        runTestFromCode(
+            """
+                      TestStruct obj = default;
+                      obj.a = true;
+                      if (obj.a)
+                        return 1;
+
+                      return 0;
+
+                      public struct TestStruct
+                      {
+                          public bool a;
+                      }
+                      """);
+
+    assertEquals(1, result.exitCode());
+  }
+
+  @Test
+  public void fieldAccessObject() {
+    var result =
+        runTestFromCode(
+            """
+                    TestStruct obj = default;
+                    obj.a = default;
+                    if (obj.a == default(object))
+                        return 1;
+
+                    return 0;
+
+                    public struct TestStruct
+                    {
+                        public object a;
+                    }
+                    """);
+
+    assertEquals(1, result.exitCode());
+  }
+
+  @Test
+  public void staticFieldAccessInt32() {
+    var result =
+        runTestFromCode(
+            """
+                    TestStruct.a = 42;
+                    return TestStruct.a;
+
+                    public struct TestStruct
+                    {
+                        public static int a;
                     }
                     """);
 
