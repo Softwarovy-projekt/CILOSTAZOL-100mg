@@ -358,7 +358,7 @@ public class BytecodeInstructions {
     def(STIND_R8, "stind.r8", "o", -2);
     def(STIND_REF, "stind.ref", "o", -2);
 
-    def(STFLD, "stfld", "otttt", 0);
+    def(STFLD, "stfld", "otttt", -2);
     def(LDFLD, "ldfld", "otttt", 0);
     def(LDSFLD, "ldsfld", "otttt", 0);
     def(STSFLD, "stsfld", "otttt", 0);
@@ -435,7 +435,7 @@ public class BytecodeInstructions {
     defPrefixed(CGT_UN, "cgt.un", "o", -1);
     defPrefixed(CLT_UN, "clt.un", "o", -1);
 
-    defPrefixed(INITOBJ, "initobj", "otttt", 0);
+    defPrefixed(INITOBJ, "initobj", "otttt", -1);
 
     def(BEQ, "beq", "otttt", -2);
     def(BGE, "bge", "otttt", -2);
