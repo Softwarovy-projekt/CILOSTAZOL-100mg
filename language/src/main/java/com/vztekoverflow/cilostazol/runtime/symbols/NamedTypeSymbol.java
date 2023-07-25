@@ -38,8 +38,8 @@ public class NamedTypeSymbol extends TypeSymbol {
   protected final TypeParameterSymbol[] typeParameters;
   protected final TypeMap map;
   protected final CLITablePtr definingRow;
-  protected final Map<Integer, StaticField> fieldMapping = new HashMap<>();
-
+  protected final Map<Integer, Integer> instanceFieldIndexMapping = new HashMap<>();
+  protected final Map<Integer, Integer> staticFieldIndexMapping = new HashMap<>();
   @CompilerDirectives.CompilationFinal protected NamedTypeSymbol lazyDirectBaseClass;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
@@ -105,6 +105,19 @@ public class NamedTypeSymbol extends TypeSymbol {
     this.typeParameters = typeParameters;
     this.definingRow = definingRow;
     this.map = map;
+  }
+
+  private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
+    if (Objects.equals(type.getNamespace(), "System")
+        && Objects.equals(type.getName(), "String")
+        && symbol.getName().equals("_firstChar")) {
+      return FieldSymbol.FieldSymbolFactory.createWith(
+          symbol,
+          ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
+              type.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char),
+              type.getDefiningModule()));
+    }
+    return symbol;
   }
 
   // region Getters
@@ -176,7 +189,26 @@ public class NamedTypeSymbol extends TypeSymbol {
       createShapes();
     }
 
-    return fieldMapping.get(ptr.getRowNo());
+    var index = instanceFieldIndexMapping.get(ptr.getRowNo());
+    if (index != null) {
+      return instanceFields[index];
+    }
+
+    index = staticFieldIndexMapping.get(ptr.getRowNo());
+    return staticFields[index];
+  }
+
+  public int getFieldIndex(CLITablePtr ptr) {
+    if (instanceShape == null) {
+      createShapes();
+    }
+
+    var index = instanceFieldIndexMapping.get(ptr.getRowNo());
+    if (index == null) {
+      index = staticFieldIndexMapping.get(ptr.getRowNo());
+    }
+
+    return index;
   }
 
   public ConstructedNamedTypeSymbol construct(TypeSymbol[] typeArguments) {
@@ -269,12 +301,12 @@ public class NamedTypeSymbol extends TypeSymbol {
     return super.equals(obj);
   }
 
+  // endregion
+
   @Override
   public Symbol getType() {
     return NamedTypeSymbol.this;
   }
-
-  // endregion
 
   public StaticShape<StaticObject.StaticObjectFactory> getShape(boolean isStatic) {
     if (isStatic && staticShape == null || !isStatic && instanceShape == null) {
@@ -307,7 +339,9 @@ public class NamedTypeSymbol extends TypeSymbol {
     // TODO: Is this invalidation necessary when initializing CompilationFinal fields?
     CompilerDirectives.transferToInterpreterAndInvalidate();
 
-    LinkedFieldLayout layout = new LinkedFieldLayout(getContext(), this, fieldMapping, superClass);
+    LinkedFieldLayout layout =
+        new LinkedFieldLayout(
+            getContext(), this, instanceFieldIndexMapping, staticFieldIndexMapping, superClass);
     instanceShape = layout.instanceShape;
     staticShape = layout.staticShape;
     instanceFields = layout.instanceFields;
@@ -440,19 +474,6 @@ public class NamedTypeSymbol extends TypeSymbol {
 
       return fields.toArray(new FieldSymbol[0]);
     }
-  }
-
-  private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
-    if (Objects.equals(type.getNamespace(), "System")
-        && Objects.equals(type.getName(), "String")
-        && symbol.getName().equals("_firstChar")) {
-      return FieldSymbol.FieldSymbolFactory.createWith(
-          symbol,
-          ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
-              type.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char),
-              type.getDefiningModule()));
-    }
-    return symbol;
   }
 
   public static class NamedTypeSymbolFactory {

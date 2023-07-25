@@ -23,7 +23,8 @@ public final class LinkedFieldLayout {
   LinkedFieldLayout(
       CILOSTAZOLContext description,
       NamedTypeSymbol parserTypeSymbol,
-      Map<Integer, StaticField> fieldMapping,
+      Map<Integer, Integer> instanceFieldMapping,
+      Map<Integer, Integer> staticFieldMapping,
       NamedTypeSymbol superClass) {
     StaticShape.Builder instanceBuilder = StaticShape.newBuilder(description.getLanguage());
     StaticShape.Builder staticBuilder = StaticShape.newBuilder(description.getLanguage());
@@ -41,7 +42,7 @@ public final class LinkedFieldLayout {
       if (parserField.isStatic()) {
         createAndRegisterLinkedField(
             parserField,
-            fieldMapping,
+            staticFieldMapping,
             nextStaticFieldSlot++,
             nextStaticFieldIndex++,
             staticBuilder,
@@ -49,7 +50,7 @@ public final class LinkedFieldLayout {
       } else {
         createAndRegisterLinkedField(
             parserField,
-            fieldMapping,
+            instanceFieldMapping,
             nextInstanceFieldSlot++,
             nextInstanceFieldIndex++,
             instanceBuilder,
@@ -69,7 +70,7 @@ public final class LinkedFieldLayout {
 
   private static void createAndRegisterLinkedField(
       FieldSymbol parserField,
-      Map<Integer, StaticField> fieldMapping,
+      Map<Integer, Integer> fieldMapping,
       int slot,
       int index,
       StaticShape.Builder builder,
@@ -77,7 +78,7 @@ public final class LinkedFieldLayout {
     StaticField field = new StaticField(parserField);
     builder.property(field, field.getPropertyType(), storeAsFinal(parserField));
     linkedFields[index] = field;
-    fieldMapping.put(parserField.tableRow.getRowNo(), field);
+    fieldMapping.put(parserField.tableRow.getRowNo(), index);
   }
 
   private static boolean storeAsFinal(FieldSymbol field) {
