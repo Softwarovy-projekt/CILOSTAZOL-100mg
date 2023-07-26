@@ -3,6 +3,7 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
+import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
 import com.vztekoverflow.cil.parser.cli.signature.ElementTypeFlag;
 import com.vztekoverflow.cil.parser.cli.signature.TypeSpecSig;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
@@ -13,19 +14,17 @@ import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.CLIFileUtils;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolLayout;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolSemantics;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolVisibility;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 public class NamedTypeSymbol extends TypeSymbol {
+  // region constants
   private static final int ABSTRACT_FLAG_MASK = 0x80;
   private static final int SEALED_FLAG_MASK = 0x100;
   private static final int SPECIAL_NAME_FLAG_MASK = 0x400;
@@ -35,6 +34,8 @@ public class NamedTypeSymbol extends TypeSymbol {
   private static final int RT_SPECIAL_NAME_FLAG_MASK = 0x800;
   private static final int HAS_SECURITY_FLAG_MASK = 0x40000;
   private static final int IS_TYPE_FORWARDER_FLAG_MASK = 0x200000;
+  // endregion
+
   protected final int flags;
   protected final String name;
   protected final String namespace;
@@ -55,6 +56,7 @@ public class NamedTypeSymbol extends TypeSymbol {
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected FieldSymbol[] lazyFields;
 
+  // region SOM - fields
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> instanceShape;
 
@@ -66,8 +68,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private StaticField[] staticFields;
-
-  @CompilerDirectives.CompilationFinal private NamedTypeSymbol superClass;
+  // endregion
 
   protected NamedTypeSymbol(
       ModuleSymbol definingModule,
@@ -97,7 +98,8 @@ public class NamedTypeSymbol extends TypeSymbol {
     super(
         definingModule,
         CILOSTAZOLFrame.getStackTypeKind(name, namespace),
-        SystemTypes.getTypeKind(name, namespace));
+        SystemTypes.getTypeKind(
+            name, namespace, definingModule.getDefiningFile().getAssemblyIdentity()));
     assert definingRow.getTableId() == CLITableConstants.CLI_TABLE_TYPE_DEF;
 
     this.flags = flags;
@@ -260,6 +262,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   // endregion
 
+  // region SOM shapes
   public StaticShape<StaticObject.StaticObjectFactory> getShape(boolean isStatic) {
     if (isStatic && staticShape == null || !isStatic && instanceShape == null) {
       createShapes();
@@ -284,23 +287,24 @@ public class NamedTypeSymbol extends TypeSymbol {
     return staticFields;
   }
 
-  @Override
-  public String toString() {
-    return this.namespace + "/" + this.name;
-  }
-
-  // TODO
-  public void safelyInitialize() {}
-
   private void createShapes() {
-    // TODO: Is this invalidation necessary when initializing CompilationFinal fields?
     CompilerDirectives.transferToInterpreterAndInvalidate();
 
-    LinkedFieldLayout layout = new LinkedFieldLayout(getContext(), this, superClass);
+    LinkedFieldLayout layout = new LinkedFieldLayout(getContext(), this, getDirectBaseClass());
     instanceShape = layout.instanceShape;
     staticShape = layout.staticShape;
     instanceFields = layout.instanceFields;
     staticFields = layout.staticFields;
+  }
+
+  public void safelyInitialize() {
+    // TODO
+  }
+  // endregion
+
+  @Override
+  public String toString() {
+    return this.namespace + "/" + this.name;
   }
 
   private static class LazyFactory {
@@ -431,6 +435,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     }
   }
 
+  /** We have to patch type of String to be able to represent it in SOM. */
   private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
     if (Objects.equals(type.getNamespace(), "System")
         && Objects.equals(type.getName(), "String")
@@ -546,4 +551,43 @@ public class NamedTypeSymbol extends TypeSymbol {
       }
     }
   }
+
+  // region Flags
+  public enum NamedTypeSymbolLayout {
+    Auto,
+    Sequential,
+    Explicit;
+    public static final int MASK = 0x18;
+
+    public static NamedTypeSymbolLayout fromFlags(int flags) {
+      return NamedTypeSymbolLayout.values()[(flags & MASK) >> 3];
+    }
+  }
+
+  public enum NamedTypeSymbolSemantics {
+    Class,
+    Interface;
+    public static final int MASK = 0x20;
+
+    public static NamedTypeSymbolSemantics fromFlags(int flags) {
+      return NamedTypeSymbolSemantics.values()[(flags & MASK) >> 5];
+    }
+  }
+
+  public enum NamedTypeSymbolVisibility {
+    NotPublic,
+    Public,
+    NestedPublic,
+    NestedPrivate,
+    NestedFamily,
+    NestedAssembly,
+    NestedFamANDAssem,
+    NestedFamORAssem;
+    public static final int MASK = 0x7;
+
+    public static NamedTypeSymbolVisibility fromFlags(int flags) {
+      return NamedTypeSymbolVisibility.values()[flags & MASK];
+    }
+  }
+  // endregion
 }

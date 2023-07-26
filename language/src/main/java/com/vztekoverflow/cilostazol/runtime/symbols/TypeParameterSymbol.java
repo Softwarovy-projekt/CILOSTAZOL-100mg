@@ -1,5 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIGenericParamConstraintTableRow;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIGenericParamTableRow;
@@ -9,7 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class TypeParameterSymbol extends TypeSymbol {
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
   private TypeSymbol[] constraints;
+
   private final GenericParameterFlags flags;
   private final int ordinal;
   private final String name;
@@ -74,7 +77,9 @@ public final class TypeParameterSymbol extends TypeSymbol {
           }
         }
       }
-
+      // Constrains are compilation final after the creation. But we have to create them iteratively
+      // during the creation.
+      CompilerDirectives.transferToInterpreter();
       return result;
     }
 
