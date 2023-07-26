@@ -3,6 +3,7 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
+import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
 import com.vztekoverflow.cil.parser.cli.signature.ElementTypeFlag;
 import com.vztekoverflow.cil.parser.cli.signature.TypeSpecSig;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
@@ -16,7 +17,6 @@ import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.CLIFileUtils;
 import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolLayout;
 import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolSemantics;
 import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolVisibility;
@@ -166,7 +166,11 @@ public class NamedTypeSymbol extends TypeSymbol {
   public FieldSymbol[] getFields() {
     if (lazyFields == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      lazyFields = LazyFactory.createFields(this);
+      lazyFields = LazyFactory.createFields(this, definingModule
+              .getDefiningFile()
+              .getTableHeads()
+              .getTypeDefTableHead()
+              .skip(definingRow));
     }
 
     return lazyFields;
@@ -318,7 +322,7 @@ public class NamedTypeSymbol extends TypeSymbol {
       var methods = new MethodSymbol[methodRange.getRight() - methodRange.getLeft()];
       while (methodRow.getRowNo() < methodRange.getRight()) {
         methods[methodRow.getRowNo() - methodRange.getLeft()] =
-            symbol.getDefiningModule().getLocalMethod(methodRow.getRowNo());
+            symbol.getDefiningModule().getLocalMethod(methodRow.getPtr());
         methodRow = methodRow.skip(1);
       }
 
@@ -394,16 +398,8 @@ public class NamedTypeSymbol extends TypeSymbol {
                   namedTypeSymbol.definingModule);
     }
 
-    public static FieldSymbol[] createFields(NamedTypeSymbol namedTypeSymbol) {
-      var row =
-          namedTypeSymbol
-              .definingModule
-              .getDefiningFile()
-              .getTableHeads()
-              .getTypeDefTableHead()
-              .skip(namedTypeSymbol.definingRow);
-      var fieldTablePtr = row.getFieldListTablePtr();
-      var fieldListEndPtr = row.skip(1).getFieldListTablePtr();
+    public static FieldSymbol[] createFields(NamedTypeSymbol namedTypeSymbol, CLITypeDefTableRow row) {
+      var fieldRange = CLIFileUtils.getFieldRange(namedTypeSymbol.definingModule.getDefiningFile(), row);
 
       var fieldRow =
           namedTypeSymbol
@@ -411,23 +407,22 @@ public class NamedTypeSymbol extends TypeSymbol {
               .getDefiningFile()
               .getTableHeads()
               .getFieldTableHead()
-              .skip(fieldTablePtr);
+              .skip(new CLITablePtr(CLITableConstants.CLI_TABLE_FIELD, fieldRange.getLeft()));
 
-      var fields = new ArrayList<FieldSymbol>();
-      while (fieldRow.getRowNo() < fieldListEndPtr.getRowNo() && fieldRow.hasNext()) {
+      var fields = new FieldSymbol[fieldRange.getRight() - fieldRange.getLeft()];
+      while (fieldRow.getRowNo() < fieldRange.getRight() && fieldRow.hasNext()) {
         var field =
             FieldSymbol.FieldSymbolFactory.create(
                 fieldRow,
                 new TypeSymbol[0],
                 namedTypeSymbol.getTypeArguments(),
                 namedTypeSymbol.getDefiningModule());
-        field = patch(field, namedTypeSymbol);
 
-        fields.add(field);
+        fields[fieldRow.getRowNo() - fieldRange.getLeft()] =  patch(field, namedTypeSymbol);
         fieldRow = fieldRow.next();
       }
 
-      return fields.toArray(new FieldSymbol[0]);
+      return fields;
     }
   }
 

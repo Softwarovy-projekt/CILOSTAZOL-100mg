@@ -1,16 +1,14 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
 import com.vztekoverflow.cil.parser.cli.CLIFile;
+import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
-import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.CLIFileUtils;
 
 public final class ModuleSymbol extends Symbol {
   private final CLIFile definingFile;
   private final MethodSymbol[] methodCache;
-  private final int[] methodToClassIndex;
 
   public ModuleSymbol(CLIFile definingFile) {
     super(ContextProviderImpl.getInstance());
@@ -18,20 +16,6 @@ public final class ModuleSymbol extends Symbol {
     this.methodCache =
         new MethodSymbol
             [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF)];
-    // Fill method to class indices
-    this.methodToClassIndex =
-        new int
-            [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF)
-                + 1];
-    for (CLITypeDefTableRow klass : definingFile.getTableHeads().getTypeDefTableHead()) {
-      var methodRange = CLIFileUtils.getMethodRange(definingFile, klass);
-      int startIdx = methodRange.getLeft();
-      int endIdx = methodRange.getRight();
-      while (startIdx < endIdx) {
-        methodToClassIndex[startIdx] = klass.getPtr().getRowNo();
-        startIdx++;
-      }
-    }
   }
 
   public CLIFile getDefiningFile() {
@@ -60,29 +44,20 @@ public final class ModuleSymbol extends Symbol {
    * @apiNote If found, the method is cached in the ModuleSymbol.
    */
   public MethodSymbol getLocalMethod(CLITablePtr ptr) {
-    return getLocalMethod(ptr.getRowNo());
-  }
-
-  /**
-   * @return the method with the given index(Obtained from MethodDefPtr), or null if not found in
-   *     this module.
-   * @apiNote If found, the method is cached in the ModuleSymbol.
-   */
-  public MethodSymbol getLocalMethod(int index) {
-    if (methodCache[index] == null) {
+    if (methodCache[ptr.getRowNo()] == null) {
       var classRow =
           definingFile
               .getTableHeads()
               .getTypeDefTableHead()
               .skip(
-                  new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, methodToClassIndex[index]));
+                  new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, getDefiningFile().getIndicies().getMethodToClassIndex(ptr).getRowNo()));
       var nameAndNamespace = CLIFileUtils.getNameAndNamespace(definingFile, classRow);
-      methodCache[index] =
+      methodCache[ptr.getRowNo()] =
           MethodSymbol.MethodSymbolFactory.create(
               definingFile
                   .getTableHeads()
                   .getMethodDefTableHead()
-                  .skip(new CLITablePtr(CLITableConstants.CLI_TABLE_METHOD_DEF, index)),
+                  .skip(new CLITablePtr(CLITableConstants.CLI_TABLE_METHOD_DEF, ptr.getRowNo())),
               getContext()
                   .getType(
                       nameAndNamespace.getLeft(),
@@ -90,7 +65,7 @@ public final class ModuleSymbol extends Symbol {
                       definingFile.getAssemblyIdentity()));
     }
 
-    return methodCache[index];
+    return methodCache[ptr.getRowNo()];
   }
 
   public static final class ModuleSymbolFactory {
