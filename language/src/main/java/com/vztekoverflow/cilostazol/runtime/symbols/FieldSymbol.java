@@ -5,7 +5,6 @@ import com.vztekoverflow.cil.parser.cli.signature.SignatureReader;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIFieldTableRow;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.FieldSymbolVisibility;
 
 public final class FieldSymbol extends Symbol {
 
@@ -86,6 +85,22 @@ public final class FieldSymbol extends Symbol {
     public static FieldSymbol createWith(FieldSymbol symbol, TypeSymbol type) {
       return new FieldSymbol(
           symbol.name, type, symbol.flags, symbol.visibilityFlags, symbol.tableRow);
+    }
+  }
+
+  public enum FieldSymbolVisibility {
+    CompilerControlled,
+    Private,
+    FamANDAssem,
+    Assembly,
+    Family,
+    FamORAssem,
+    Public;
+
+    public static final int MASK = 0x7;
+
+    public static FieldSymbolVisibility fromFlags(int flags) {
+      return FieldSymbolVisibility.values()[flags & MASK];
     }
   }
 }

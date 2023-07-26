@@ -58,12 +58,12 @@ public final class AssemblyIdentity {
   }
 
   // region PredefinedStandardLibraries
-  public static AssemblyIdentity SystemPrivateCoreLib() {
+  public static AssemblyIdentity SystemPrivateCoreLib700() {
     return new AssemblyIdentity(
         (short) 7, (short) 0, (short) 0, (short) 0, "System.Private.CoreLib");
   }
 
-  public static AssemblyIdentity SystemRuntimeLib() {
+  public static AssemblyIdentity SystemRuntimeLib700() {
     return new AssemblyIdentity((short) 7, (short) 0, (short) 0, (short) 0, "System.Runtime");
   }
   // endregion
@@ -152,18 +152,20 @@ public final class AssemblyIdentity {
 
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof AssemblyIdentity other) {
-      return majorVersion == other.majorVersion
-          && minorVersion == other.minorVersion
-          && buildNumber == other.buildNumber
-          && revisionNumber == other.revisionNumber
-          && name.equals(other.name);
-    }
-    return false;
+    return obj instanceof AssemblyIdentity other
+        && majorVersion == other.majorVersion
+        && minorVersion == other.minorVersion
+        && buildNumber == other.buildNumber
+        && revisionNumber == other.revisionNumber
+        && name.equals(other.name);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(majorVersion, minorVersion, buildNumber, revisionNumber, name);
+  }
+
+  public boolean equalsVersionAgnostic(AssemblyIdentity other) {
+    return name.equals(other.name);
   }
 }

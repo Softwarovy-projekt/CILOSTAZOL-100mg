@@ -5,13 +5,15 @@ import com.oracle.truffle.api.TruffleFile;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.Node;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
+import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
+import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
+import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.CILOSTAZOLEngineOption;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.GuestAllocator;
 import com.vztekoverflow.cilostazol.runtime.other.AppDomain;
-import com.vztekoverflow.cilostazol.runtime.other.GuestAllocator;
 import com.vztekoverflow.cilostazol.runtime.other.TypeSymbolCacheKey;
-import com.vztekoverflow.cilostazol.runtime.symbols.AssemblySymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
+import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,51 +75,59 @@ public class CILOSTAZOLContext {
     return env;
   }
 
-  public Path[] getLibsPaths() {
-    return libraryPaths;
+  // region Symbols
+  public NamedTypeSymbol getType(CLITablePtr ptr, ModuleSymbol module) {
+    return switch (ptr.getTableId()) {
+        // TODO: support edgecases such as if it can not be found
+      case CLITableConstants.CLI_TABLE_TYPE_DEF -> {
+        var row = module.getDefiningFile().getTableHeads().getTypeDefTableHead().skip(ptr);
+        var nameAndNamespace = CLIFileUtils.getNameAndNamespace(module.getDefiningFile(), row);
+
+        yield getType(
+            nameAndNamespace.getLeft(),
+            nameAndNamespace.getRight(),
+            module.getDefiningFile().getAssemblyIdentity());
+      }
+      case CLITableConstants.CLI_TABLE_TYPE_REF -> {
+        var row = module.getDefiningFile().getTableHeads().getTypeRefTableHead().skip(ptr);
+        yield NamedTypeSymbol.NamedTypeSymbolFactory.create(row, module);
+      }
+      case CLITableConstants.CLI_TABLE_TYPE_SPEC -> {
+        var row = module.getDefiningFile().getTableHeads().getTypeSpecTableHead().skip(ptr);
+        yield (NamedTypeSymbol)
+            TypeSymbol.TypeSymbolFactory.create(row, new TypeSymbol[0], new TypeSymbol[0], module);
+      }
+      default -> throw new RuntimeException("Not implemented yet");
+    };
   }
 
-  // region Symbols
+  /** This should be use on any path that queries a type. @ApiNote uses cache. */
   public NamedTypeSymbol getType(String name, String namespace, AssemblyIdentity assembly) {
-    var cacheKey = hardCodedForwarding(new TypeSymbolCacheKey(name, namespace, assembly));
+    assembly = AssemblyForwarder.forwardedAssembly(assembly);
+    // Note: Assembly in cacheKey is different from what is came in as an argument due to lack of
+    // forwarding implementation
+    var cacheKey = new TypeSymbolCacheKey(name, namespace, assembly);
 
     return typeSymbolCache.computeIfAbsent(
         cacheKey,
         k -> {
-          AssemblySymbol assemblySymbol = appDomain.getAssembly(assembly);
+          AssemblySymbol assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
           if (assemblySymbol == null) {
-            assemblySymbol = findAssembly(assembly);
+            assemblySymbol = findAssembly(cacheKey.assemblyIdentity());
           }
 
-          if (assemblySymbol != null) return assemblySymbol.getLocalType(name, namespace);
+          if (assemblySymbol != null)
+            return assemblySymbol.getLocalType(cacheKey.name(), cacheKey.namespace());
 
           return null;
         });
-  }
-
-  public TypeSymbolCacheKey hardCodedForwarding(TypeSymbolCacheKey cacheKey) {
-    if (cacheKey.assemblyIdentity().equals(AssemblyIdentity.SystemRuntimeLib())) {
-      if (cacheKey.namespace().equals("System")) {
-        if (cacheKey.name().equals("Int32"))
-          return new TypeSymbolCacheKey(
-              cacheKey.name(), cacheKey.namespace(), AssemblyIdentity.SystemPrivateCoreLib());
-        else return cacheKey;
-      } else {
-        return cacheKey;
-      }
-    } else {
-      return cacheKey;
-    }
   }
 
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {
     // Loading assemblies is an expensive task which should be never compiled
     CompilerAsserts.neverPartOfCompilation();
 
-    // TODO: Remove once forwarding is done
-    if (assemblyIdentity.equals(AssemblyIdentity.SystemRuntimeLib())) {
-      assemblyIdentity = AssemblyIdentity.SystemPrivateCoreLib();
-    }
+    assemblyIdentity = AssemblyForwarder.forwardedAssembly(assemblyIdentity);
 
     // Locate dlls in paths
     for (Path path : libraryPaths) {
@@ -173,8 +183,13 @@ public class CILOSTAZOLContext {
     }
   }
 
+  /**
+   * Method to get a built-in type assembly
+   *
+   * @return Assembly of a built-in type.
+   */
   public NamedTypeSymbol getType(CILBuiltInType type) {
-    return getType(type.Name, "System", AssemblyIdentity.SystemPrivateCoreLib());
+    return getType(type.Name, "System", AssemblyIdentity.SystemPrivateCoreLib700());
   }
   // endregion
 }

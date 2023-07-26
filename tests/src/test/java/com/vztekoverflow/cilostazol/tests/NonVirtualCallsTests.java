@@ -5,10 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled("WIP")
 public class NonVirtualCallsTests extends TestBase {
   @Test
-  public void simpleCall() {
+  public void simpleStaticCall() {
     var result =
         runTestFromCode(
             """
@@ -34,11 +33,70 @@ public class NonVirtualCallsTests extends TestBase {
   }
 
   @Test
-  public void consoleWriteLine() {
+  public void simpleStaticCallWithArgs() {
     var result =
-        runTestFromCode("""
-            Console.WriteLine("Hello World!");
+        runTestFromCode(
+            """
+          using System;
+          namespace CustomTest
+          {
+            public class Program
+            {
+                public static int Main()
+                {
+                    return Foo(42);
+                }
+
+                public static int Foo(int x)
+                {
+                    return x;
+                }
+            }
+          }
             """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  @Disabled("WIP. missing comparison of strings")
+  public void callWithReturnString() {
+    var result =
+        runTestFromCode(
+            """
+                  using System;
+                  namespace CustomTest
+                  {
+                    public class Program
+                    {
+                        public static int Main()
+                        {
+                            var result = Foo();
+
+                            if (result == "Hello World!")
+                            {
+                                return 42;
+                            }
+                            else
+                            {
+                                return -42;
+                            }
+                        }
+
+                        public static string Foo()
+                        {
+                            return "Hello World!";
+                        }
+                    }
+                  }
+                    """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void consoleWriteLine() {
+    var result = runTestFromDll("ConsoleWriteLine");
     assertEquals(0, result.exitCode());
     assertEquals(String.format("Hello World!%s", System.lineSeparator()), result.output());
   }

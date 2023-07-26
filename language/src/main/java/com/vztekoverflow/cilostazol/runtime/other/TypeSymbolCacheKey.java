@@ -18,8 +18,7 @@ public record TypeSymbolCacheKey(String name, String namespace, AssemblyIdentity
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    TypeSymbolCacheKey that = (TypeSymbolCacheKey) o;
+    if (!(o instanceof TypeSymbolCacheKey that)) return false;
     return Objects.equals(name, that.name)
         && Objects.equals(namespace, that.namespace)
         && Objects.equals(assemblyIdentity, that.assemblyIdentity);

@@ -1,5 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.vztekoverflow.cil.parser.ByteSequenceBuffer;
 import com.vztekoverflow.cil.parser.CILParserException;
@@ -15,6 +16,9 @@ import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLRootNode;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class MethodSymbol extends Symbol {
   protected final String name;
@@ -34,7 +38,8 @@ public class MethodSymbol extends Symbol {
   // body
   protected final int maxStack;
   protected final MethodHeaderFlags methodHeaderFlags;
-  protected RootNode node;
+
+  @CompilerDirectives.CompilationFinal protected RootNode node;
 
   protected MethodSymbol(
       String name,
@@ -122,7 +127,14 @@ public class MethodSymbol extends Symbol {
   }
 
   public String toString() {
-    return "_ " + getName() + "()";
+    return retType.toString()
+        + " "
+        + getName()
+        + "("
+        + Arrays.stream(getTypeParameters())
+            .map(TypeParameterSymbol::getName)
+            .collect(Collectors.joining())
+        + ")";
   }
 
   public ModuleSymbol getModule() {
@@ -143,9 +155,32 @@ public class MethodSymbol extends Symbol {
   }
 
   public RootNode getNode() {
-    if (node == null) node = CILOSTAZOLRootNode.create(this, cil);
+    if (node == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      node = CILOSTAZOLRootNode.create(this);
+    }
 
     return node;
+  }
+
+  public boolean hasReturnValue() {
+    return retType.getType().getKind() != SystemTypes.Void;
+  }
+
+  public boolean hasArgs() {
+    return parameters.length > 0;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof MethodSymbol other && equals(other);
+  }
+
+  public boolean equals(MethodSymbol other) {
+    return getName().equals(other.getName())
+        && getReturnType().equals(other.getReturnType())
+        && getDefiningType().equals(other.getDefiningType())
+        && Arrays.equals(getTypeParameters(), other.getTypeParameters());
   }
 
   public static class MethodSymbolFactory {
@@ -154,7 +189,7 @@ public class MethodSymbol extends Symbol {
       final CLIFile file = definingType.definingModule.getDefiningFile();
       final MethodDefSig mSignature =
           MethodDefSig.parse(
-              new SignatureReader(mDef.getSignatureHeapPtr().read(file.getBlobHeap())), file);
+              new SignatureReader(mDef.getSignatureHeapPtr().read(file.getBlobHeap())));
       final String name = mDef.getNameHeapPtr().read(file.getStringHeap());
       final MethodFlags flags = new MethodFlags(mDef.getFlags());
 
@@ -301,13 +336,11 @@ public class MethodSymbol extends Symbol {
     }
 
     public boolean hasFlag(MethodHeaderFlags.Flag flag) {
-      switch (flag) {
-        case CORILMETHOD_TINYFORMAT:
-        case CORILMETHOD_FATFORMAT:
-          return (_flags & F_CORILMETHOD_FORMAT_MASK) == flag.code;
-        default:
-          return (_flags & flag.code) == flag.code;
-      }
+      return switch (flag) {
+        case CORILMETHOD_TINYFORMAT, CORILMETHOD_FATFORMAT -> (_flags & F_CORILMETHOD_FORMAT_MASK)
+            == flag.code;
+        default -> (_flags & flag.code) == flag.code;
+      };
     }
 
     public enum Flag {
@@ -371,7 +404,7 @@ public class MethodSymbol extends Symbol {
       ABSTRACT(0x0400),
       SPECIAL_NAME(0x0800),
       P_INVOKE_IMPL(0x2000),
-      UNMANAGED_EXPORT(0x0000),
+      UNMANAGED_EXPORT(0x0008),
       RT_SPECIAL_NAME(0x1000),
       HAS_SECURITY(0x4000),
       REQUIRE_SEC_OBJECT(0x8000);

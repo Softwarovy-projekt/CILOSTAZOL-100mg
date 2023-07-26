@@ -32,6 +32,7 @@ public abstract class TypeSymbol extends Symbol {
     this.staticObjType = staticObjType;
   }
 
+  // region SOM
   protected static int fastLookup(TypeSymbol target, TypeSymbol[] types) {
     if (!CompilerDirectives.isPartialEvaluationConstant(types)) {
       return fastLookupBoundary(target, types);
@@ -55,39 +56,6 @@ public abstract class TypeSymbol extends Symbol {
   @CompilerDirectives.TruffleBoundary(allowInlining = true)
   protected static int fastLookupBoundary(TypeSymbol target, TypeSymbol[] types) {
     return fastLookupImpl(target, types);
-  }
-
-  public ModuleSymbol getDefiningModule() {
-    return definingModule;
-  }
-
-  public boolean isInterface() {
-    return false;
-  }
-
-  public boolean isArray() {
-    return false;
-  }
-
-  public NamedTypeSymbol[] getInterfaces() {
-    return new NamedTypeSymbol[0];
-  }
-
-  public NamedTypeSymbol[] getSuperTypes() {
-    return new NamedTypeSymbol[0];
-  }
-
-  protected int getHierarchyDepth() {
-    // TODO
-    return 0;
-  }
-
-  public SystemTypes getKind() {
-    return staticObjType;
-  }
-
-  public CILOSTAZOLFrame.StackType getStackTypeKind() {
-    return stackTypeKind;
   }
 
   public boolean isAssignableFrom(TypeSymbol other) {
@@ -125,6 +93,40 @@ public abstract class TypeSymbol extends Symbol {
   public boolean checkInterfaceSubclassing(TypeSymbol other) {
     NamedTypeSymbol[] interfaces = other.getInterfaces();
     return fastLookup(this, interfaces) >= 0;
+  }
+
+  protected int getHierarchyDepth() {
+    // TODO
+    return 0;
+  }
+  // endregion
+
+  public ModuleSymbol getDefiningModule() {
+    return definingModule;
+  }
+
+  public boolean isInterface() {
+    return false;
+  }
+
+  public boolean isArray() {
+    return false;
+  }
+
+  public NamedTypeSymbol[] getInterfaces() {
+    return new NamedTypeSymbol[0];
+  }
+
+  public NamedTypeSymbol[] getSuperTypes() {
+    return new NamedTypeSymbol[0];
+  }
+
+  public SystemTypes getKind() {
+    return staticObjType;
+  }
+
+  public CILOSTAZOLFrame.StackType getStackTypeKind() {
+    return stackTypeKind;
   }
 
   public static final class TypeSymbolFactory {
