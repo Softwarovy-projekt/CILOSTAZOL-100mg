@@ -29,6 +29,18 @@ public class CLIFileUtils {
     return Pair.create(methodTablePtr.getRowNo(), lastIdx);
   }
 
+  public static Pair<Integer, Integer> getFieldRange(CLIFile file, CLITypeDefTableRow row) {
+    final var fieldTablePtr = row.getFieldListTablePtr();
+    final boolean isLastType =
+        row.getRowNo() == file.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_TYPE_DEF);
+    final int lastIdx =
+        isLastType
+            ? file.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_FIELD)
+            : row.skip(1).getFieldListTablePtr().getRowNo();
+
+    return Pair.create(fieldTablePtr.getRowNo(), lastIdx);
+  }
+
   public static Pair<String, String> getNameAndNamespace(CLIFile file, CLITypeDefTableRow row) {
     final var name = row.getTypeNameHeapPtr().read(file.getStringHeap());
     final var namespace = row.getTypeNamespaceHeapPtr().read(file.getStringHeap());

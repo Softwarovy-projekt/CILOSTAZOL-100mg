@@ -168,7 +168,14 @@ public class NamedTypeSymbol extends TypeSymbol {
   public FieldSymbol[] getFields() {
     if (lazyFields == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      lazyFields = LazyFactory.createFields(this);
+      lazyFields =
+          LazyFactory.createFields(
+              this,
+              definingModule
+                  .getDefiningFile()
+                  .getTableHeads()
+                  .getTypeDefTableHead()
+                  .skip(definingRow));
     }
 
     return lazyFields;
@@ -322,7 +329,7 @@ public class NamedTypeSymbol extends TypeSymbol {
       var methods = new MethodSymbol[methodRange.getRight() - methodRange.getLeft()];
       while (methodRow.getRowNo() < methodRange.getRight()) {
         methods[methodRow.getRowNo() - methodRange.getLeft()] =
-            symbol.getDefiningModule().getLocalMethod(methodRow.getRowNo());
+            symbol.getDefiningModule().getLocalMethod(methodRow.getPtr());
         methodRow = methodRow.skip(1);
       }
 
@@ -398,16 +405,10 @@ public class NamedTypeSymbol extends TypeSymbol {
                   namedTypeSymbol.definingModule);
     }
 
-    public static FieldSymbol[] createFields(NamedTypeSymbol namedTypeSymbol) {
-      var row =
-          namedTypeSymbol
-              .definingModule
-              .getDefiningFile()
-              .getTableHeads()
-              .getTypeDefTableHead()
-              .skip(namedTypeSymbol.definingRow);
-      var fieldTablePtr = row.getFieldListTablePtr();
-      var fieldListEndPtr = row.skip(1).getFieldListTablePtr();
+    public static FieldSymbol[] createFields(
+        NamedTypeSymbol namedTypeSymbol, CLITypeDefTableRow row) {
+      var fieldRange =
+          CLIFileUtils.getFieldRange(namedTypeSymbol.definingModule.getDefiningFile(), row);
 
       var fieldRow =
           namedTypeSymbol
@@ -415,23 +416,22 @@ public class NamedTypeSymbol extends TypeSymbol {
               .getDefiningFile()
               .getTableHeads()
               .getFieldTableHead()
-              .skip(fieldTablePtr);
+              .skip(new CLITablePtr(CLITableConstants.CLI_TABLE_FIELD, fieldRange.getLeft()));
 
-      var fields = new ArrayList<FieldSymbol>();
-      while (fieldRow.getRowNo() < fieldListEndPtr.getRowNo() && fieldRow.hasNext()) {
+      var fields = new FieldSymbol[fieldRange.getRight() - fieldRange.getLeft()];
+      while (fieldRow.getRowNo() < fieldRange.getRight() && fieldRow.hasNext()) {
         var field =
             FieldSymbol.FieldSymbolFactory.create(
                 fieldRow,
                 new TypeSymbol[0],
                 namedTypeSymbol.getTypeArguments(),
                 namedTypeSymbol.getDefiningModule());
-        field = patch(field, namedTypeSymbol);
 
-        fields.add(field);
+        fields[fieldRow.getRowNo() - fieldRange.getLeft()] = patch(field, namedTypeSymbol);
         fieldRow = fieldRow.next();
       }
 
-      return fields.toArray(new FieldSymbol[0]);
+      return fields;
     }
   }
 
