@@ -1,25 +1,25 @@
-package com.vztekoverflow.cilostazol.runtime.symbols;
+package com.vztekoverflow.cilostazol.runtime.objectmodel;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
+import com.vztekoverflow.cilostazol.runtime.symbols.FieldSymbol;
+import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 
 public final class LinkedFieldLayout {
-  final StaticShape<StaticObject.StaticObjectFactory> instanceShape;
-  final StaticShape<StaticObject.StaticObjectFactory> staticShape;
+  public final StaticShape<StaticObject.StaticObjectFactory> instanceShape;
+  public final StaticShape<StaticObject.StaticObjectFactory> staticShape;
 
   // instance fields declared in the corresponding LinkedKlass (includes hidden fields)
   @CompilerDirectives.CompilationFinal(dimensions = 1) //
-  final StaticField[] instanceFields;
+  public final StaticField[] instanceFields;
   // static fields declared in the corresponding LinkedKlass (no hidden fields)
   @CompilerDirectives.CompilationFinal(dimensions = 1) //
-  final StaticField[] staticFields;
+  public final StaticField[] staticFields;
 
   final int fieldTableLength;
 
-  LinkedFieldLayout(
+  public LinkedFieldLayout(
       CILOSTAZOLContext description, NamedTypeSymbol parserTypeSymbol, NamedTypeSymbol superClass) {
     StaticShape.Builder instanceBuilder = StaticShape.newBuilder(description.getLanguage());
     StaticShape.Builder staticBuilder = StaticShape.newBuilder(description.getLanguage());

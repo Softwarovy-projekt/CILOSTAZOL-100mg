@@ -1,5 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.vztekoverflow.cil.parser.ByteSequenceBuffer;
 import com.vztekoverflow.cil.parser.CILParserException;
@@ -37,7 +38,8 @@ public class MethodSymbol extends Symbol {
   // body
   protected final int maxStack;
   protected final MethodHeaderFlags methodHeaderFlags;
-  protected RootNode node;
+
+  @CompilerDirectives.CompilationFinal protected RootNode node;
 
   protected MethodSymbol(
       String name,
@@ -153,7 +155,10 @@ public class MethodSymbol extends Symbol {
   }
 
   public RootNode getNode() {
-    if (node == null) node = CILOSTAZOLRootNode.create(this);
+    if (node == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      node = CILOSTAZOLRootNode.create(this);
+    }
 
     return node;
   }
