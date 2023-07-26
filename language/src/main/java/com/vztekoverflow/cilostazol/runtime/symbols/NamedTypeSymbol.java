@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class NamedTypeSymbol extends TypeSymbol {
-  //region constants
+  // region constants
   private static final int ABSTRACT_FLAG_MASK = 0x80;
   private static final int SEALED_FLAG_MASK = 0x100;
   private static final int SPECIAL_NAME_FLAG_MASK = 0x400;
@@ -34,7 +34,7 @@ public class NamedTypeSymbol extends TypeSymbol {
   private static final int RT_SPECIAL_NAME_FLAG_MASK = 0x800;
   private static final int HAS_SECURITY_FLAG_MASK = 0x40000;
   private static final int IS_TYPE_FORWARDER_FLAG_MASK = 0x200000;
-  //endregion
+  // endregion
 
   protected final int flags;
   protected final String name;
@@ -56,7 +56,7 @@ public class NamedTypeSymbol extends TypeSymbol {
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected FieldSymbol[] lazyFields;
 
-  //region SOM - fields
+  // region SOM - fields
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> instanceShape;
 
@@ -68,7 +68,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private StaticField[] staticFields;
-  //endregion
+  // endregion
 
   protected NamedTypeSymbol(
       ModuleSymbol definingModule,
@@ -262,7 +262,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   // endregion
 
-  //region SOM shapes
+  // region SOM shapes
   public StaticShape<StaticObject.StaticObjectFactory> getShape(boolean isStatic) {
     if (isStatic && staticShape == null || !isStatic && instanceShape == null) {
       createShapes();
@@ -297,11 +297,10 @@ public class NamedTypeSymbol extends TypeSymbol {
     staticFields = layout.staticFields;
   }
 
-  public void safelyInitialize()
-  {
+  public void safelyInitialize() {
     // TODO
   }
-  //endregion
+  // endregion
 
   @Override
   public String toString() {
@@ -436,9 +435,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     }
   }
 
-  /**
-   * We have to patch type of String to be able to represent it in SOM.
-   */
+  /** We have to patch type of String to be able to represent it in SOM. */
   private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
     if (Objects.equals(type.getNamespace(), "System")
         && Objects.equals(type.getName(), "String")
@@ -555,7 +552,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     }
   }
 
-  //region Flags
+  // region Flags
   public enum NamedTypeSymbolLayout {
     Auto,
     Sequential,
@@ -592,5 +589,5 @@ public class NamedTypeSymbol extends TypeSymbol {
       return NamedTypeSymbolVisibility.values()[flags & MASK];
     }
   }
-  //endregion
+  // endregion
 }

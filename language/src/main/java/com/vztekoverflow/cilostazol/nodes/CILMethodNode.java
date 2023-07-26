@@ -522,7 +522,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
             var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
             if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
-              var containingType = CILOSTAZOLContext.get(this).getType(klass, getMethod().getModule());
+              var containingType =
+                  CILOSTAZOLContext.get(this).getType(klass, getMethod().getModule());
               var method = findMatchingMethod(name, methodSignature, containingType);
 
               node = getCheckedCALLNode(method, top);

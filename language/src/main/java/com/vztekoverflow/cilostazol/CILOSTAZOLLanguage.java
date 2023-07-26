@@ -38,7 +38,7 @@ public class CILOSTAZOLLanguage extends TruffleLanguage<CILOSTAZOLContext> {
     return REFERENCE.get(node);
   }
 
-  //region initialization
+  // region initialization
   @Override
   protected OptionDescriptors getOptionDescriptors() {
     return new CILOSTAZOLEngineOptionOptionDescriptors();
@@ -63,9 +63,9 @@ public class CILOSTAZOLLanguage extends TruffleLanguage<CILOSTAZOLContext> {
     return new CallEntryPointCallTarget(
         main.getNode().getCallTarget(), main.getParameters().length == 1);
   }
-  //endregion
+  // endregion
 
-  //region allocator
+  // region allocator
   public boolean isAllocationTrackingDisabled() {
     return noAllocationTracking.isValid();
   }
@@ -81,5 +81,5 @@ public class CILOSTAZOLLanguage extends TruffleLanguage<CILOSTAZOLContext> {
   public void initializeGuestAllocator(TruffleLanguage.Env env) {
     this.allocator = new GuestAllocator(this, env.lookup(AllocationReporter.class));
   }
-  //endregion
+  // endregion
 }

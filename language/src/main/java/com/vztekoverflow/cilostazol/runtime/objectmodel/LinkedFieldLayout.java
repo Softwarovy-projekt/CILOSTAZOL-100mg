@@ -20,7 +20,7 @@ public final class LinkedFieldLayout {
   final int fieldTableLength;
 
   public LinkedFieldLayout(
-          CILOSTAZOLContext description, NamedTypeSymbol parserTypeSymbol, NamedTypeSymbol superClass) {
+      CILOSTAZOLContext description, NamedTypeSymbol parserTypeSymbol, NamedTypeSymbol superClass) {
     StaticShape.Builder instanceBuilder = StaticShape.newBuilder(description.getLanguage());
     StaticShape.Builder staticBuilder = StaticShape.newBuilder(description.getLanguage());
 

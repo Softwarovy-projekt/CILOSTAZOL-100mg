@@ -10,8 +10,8 @@ import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.CILOSTAZOLEngineOption;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
-import com.vztekoverflow.cilostazol.runtime.other.AppDomain;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.GuestAllocator;
+import com.vztekoverflow.cilostazol.runtime.other.AppDomain;
 import com.vztekoverflow.cilostazol.runtime.other.TypeSymbolCacheKey;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import java.io.File;
@@ -89,16 +89,13 @@ public class CILOSTAZOLContext {
             module.getDefiningFile().getAssemblyIdentity());
       }
       case CLITableConstants.CLI_TABLE_TYPE_REF -> {
-        var row =
-                module.getDefiningFile().getTableHeads().getTypeRefTableHead().skip(ptr);
+        var row = module.getDefiningFile().getTableHeads().getTypeRefTableHead().skip(ptr);
         yield NamedTypeSymbol.NamedTypeSymbolFactory.create(row, module);
       }
       case CLITableConstants.CLI_TABLE_TYPE_SPEC -> {
-        var row =
-                module.getDefiningFile().getTableHeads().getTypeSpecTableHead().skip(ptr);
+        var row = module.getDefiningFile().getTableHeads().getTypeSpecTableHead().skip(ptr);
         yield (NamedTypeSymbol)
-            TypeSymbol.TypeSymbolFactory.create(
-                row, new TypeSymbol[0], new TypeSymbol[0], module);
+            TypeSymbol.TypeSymbolFactory.create(row, new TypeSymbol[0], new TypeSymbol[0], module);
       }
       default -> throw new RuntimeException("Not implemented yet");
     };
@@ -194,6 +191,6 @@ public class CILOSTAZOLContext {
   public NamedTypeSymbol getType(CILBuiltInType type) {
     return getType(type.Name, "System", AssemblyIdentity.SystemPrivateCoreLib700());
   }
-  //endregion
-  //endregion
+  // endregion
+  // endregion
 }

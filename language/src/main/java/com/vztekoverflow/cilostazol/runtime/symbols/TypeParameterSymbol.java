@@ -12,6 +12,7 @@ import java.util.List;
 public final class TypeParameterSymbol extends TypeSymbol {
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private TypeSymbol[] constraints;
+
   private final GenericParameterFlags flags;
   private final int ordinal;
   private final String name;
@@ -76,7 +77,8 @@ public final class TypeParameterSymbol extends TypeSymbol {
           }
         }
       }
-      // Constrains are compilation final after the creation. But we have to create them iteratively during the creation.
+      // Constrains are compilation final after the creation. But we have to create them iteratively
+      // during the creation.
       CompilerDirectives.transferToInterpreter();
       return result;
     }

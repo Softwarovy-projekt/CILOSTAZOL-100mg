@@ -1,7 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.objectmodel;
 
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
-
 import java.util.Objects;
 
 public enum SystemTypes {
@@ -15,10 +14,9 @@ public enum SystemTypes {
   Object,
   Array; // TODO: Klepitko -> array bude jako objekt
 
-
   public static SystemTypes getTypeKind(String name, String namespace, AssemblyIdentity assembly) {
     if (AssemblyIdentity.SystemPrivateCoreLib700().equalsVersionAgnostic(assembly)
-      && Objects.equals(namespace, "System")) {
+        && Objects.equals(namespace, "System")) {
       switch (name) {
         case "Boolean":
           return SystemTypes.Boolean;

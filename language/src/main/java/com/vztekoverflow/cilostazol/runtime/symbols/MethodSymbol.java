@@ -39,8 +39,7 @@ public class MethodSymbol extends Symbol {
   protected final int maxStack;
   protected final MethodHeaderFlags methodHeaderFlags;
 
-  @CompilerDirectives.CompilationFinal
-  protected RootNode node;
+  @CompilerDirectives.CompilationFinal protected RootNode node;
 
   protected MethodSymbol(
       String name,

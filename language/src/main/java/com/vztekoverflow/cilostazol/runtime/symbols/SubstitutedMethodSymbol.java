@@ -32,7 +32,7 @@ public class SubstitutedMethodSymbol extends MethodSymbol {
     this.map = map;
   }
 
-  //region create helpers
+  // region create helpers
   private static TypeParameterSymbol[] createTypeParameters(
       TypeParameterSymbol[] symbols, TypeMap map) {
     return Arrays.stream(symbols)
@@ -71,7 +71,7 @@ public class SubstitutedMethodSymbol extends MethodSymbol {
                     x, map.substitute(x.getHandlerException())))
         .toArray(ExceptionHandlerSymbol[]::new);
   }
-  //endregion
+  // endregion
 
   public static final class SubstitutedMethodSymbolFactory {
     public static SubstitutedMethodSymbol create(

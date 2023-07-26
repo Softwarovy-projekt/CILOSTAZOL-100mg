@@ -32,7 +32,7 @@ public abstract class TypeSymbol extends Symbol {
     this.staticObjType = staticObjType;
   }
 
-  //region SOM
+  // region SOM
   protected static int fastLookup(TypeSymbol target, TypeSymbol[] types) {
     if (!CompilerDirectives.isPartialEvaluationConstant(types)) {
       return fastLookupBoundary(target, types);
@@ -99,7 +99,7 @@ public abstract class TypeSymbol extends Symbol {
     // TODO
     return 0;
   }
-  //endregion
+  // endregion
 
   public ModuleSymbol getDefiningModule() {
     return definingModule;

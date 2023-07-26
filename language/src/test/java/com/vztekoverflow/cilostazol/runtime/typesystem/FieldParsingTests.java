@@ -109,7 +109,8 @@ public class FieldParsingTests extends TestBase {
             .filter(f -> f.getName().equals("fieldProtectedInternal"))
             .findFirst()
             .get();
-    assertEquals(FieldSymbol.FieldSymbolVisibility.FamORAssem, fieldProtectedInternal.getVisibility());
+    assertEquals(
+        FieldSymbol.FieldSymbolVisibility.FamORAssem, fieldProtectedInternal.getVisibility());
 
     assertTrue(
         Arrays.stream(type.getFields()).anyMatch(f -> f.getName().equals("fieldPrivateProtected")));
@@ -118,7 +119,8 @@ public class FieldParsingTests extends TestBase {
             .filter(f -> f.getName().equals("fieldPrivateProtected"))
             .findFirst()
             .get();
-    assertEquals(FieldSymbol.FieldSymbolVisibility.FamANDAssem, fieldPrivateProtected.getVisibility());
+    assertEquals(
+        FieldSymbol.FieldSymbolVisibility.FamANDAssem, fieldPrivateProtected.getVisibility());
   }
 
   @SuppressWarnings("OptionalGetWithoutIsPresent")
