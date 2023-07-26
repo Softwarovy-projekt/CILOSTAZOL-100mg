@@ -50,7 +50,9 @@ public final class ModuleSymbol extends Symbol {
               .getTableHeads()
               .getTypeDefTableHead()
               .skip(
-                  new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, getDefiningFile().getIndicies().getMethodToClassIndex(ptr).getRowNo()));
+                  new CLITablePtr(
+                      CLITableConstants.CLI_TABLE_TYPE_DEF,
+                      getDefiningFile().getIndicies().getMethodToClassIndex(ptr).getRowNo()));
       var nameAndNamespace = CLIFileUtils.getNameAndNamespace(definingFile, classRow);
       methodCache[ptr.getRowNo()] =
           MethodSymbol.MethodSymbolFactory.create(

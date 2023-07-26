@@ -191,23 +191,23 @@ public class CLIFile {
     return assemblyIdentity.getName();
   }
 
-  public class IndiciesHelper
-  {
+  public class IndiciesHelper {
     @CompilationFinal(dimensions = 1)
     private final int[] methodToClassIndex;
+
     @CompilationFinal(dimensions = 1)
     private final int[] fieldToClassIndex;
 
-    public IndiciesHelper()
-    {
-      methodToClassIndex = new int[getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF) + 1];
-      fieldToClassIndex = new int[getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_FIELD) + 1];
+    public IndiciesHelper() {
+      methodToClassIndex =
+          new int[getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF) + 1];
+      fieldToClassIndex =
+          new int[getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_FIELD) + 1];
       initMethodIndicies();
       initFieldIndicies();
     }
 
-    private void initMethodIndicies()
-    {
+    private void initMethodIndicies() {
       for (CLITypeDefTableRow klass : getTableHeads().getTypeDefTableHead()) {
         var methodRange = CLIFileUtils.getMethodRange(CLIFile.this, klass);
         int startIdx = methodRange.getLeft();
@@ -218,8 +218,8 @@ public class CLIFile {
         }
       }
     }
-    private void initFieldIndicies()
-    {
+
+    private void initFieldIndicies() {
       for (CLITypeDefTableRow klass : getTableHeads().getTypeDefTableHead()) {
         var fieldRange = CLIFileUtils.getFieldRange(CLIFile.this, klass);
         int startIdx = fieldRange.getLeft();
@@ -232,11 +232,13 @@ public class CLIFile {
     }
 
     public CLITablePtr getMethodToClassIndex(CLITablePtr method) {
-      return new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, methodToClassIndex[method.getRowNo()]);
+      return new CLITablePtr(
+          CLITableConstants.CLI_TABLE_TYPE_DEF, methodToClassIndex[method.getRowNo()]);
     }
 
     public CLITablePtr getFieldToClassIndex(CLITablePtr field) {
-      return new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, methodToClassIndex[field.getRowNo()]);
+      return new CLITablePtr(
+          CLITableConstants.CLI_TABLE_TYPE_DEF, methodToClassIndex[field.getRowNo()]);
     }
   }
 }

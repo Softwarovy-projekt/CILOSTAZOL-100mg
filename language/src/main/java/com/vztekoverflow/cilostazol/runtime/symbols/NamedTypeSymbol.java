@@ -166,11 +166,14 @@ public class NamedTypeSymbol extends TypeSymbol {
   public FieldSymbol[] getFields() {
     if (lazyFields == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      lazyFields = LazyFactory.createFields(this, definingModule
-              .getDefiningFile()
-              .getTableHeads()
-              .getTypeDefTableHead()
-              .skip(definingRow));
+      lazyFields =
+          LazyFactory.createFields(
+              this,
+              definingModule
+                  .getDefiningFile()
+                  .getTableHeads()
+                  .getTypeDefTableHead()
+                  .skip(definingRow));
     }
 
     return lazyFields;
@@ -398,8 +401,10 @@ public class NamedTypeSymbol extends TypeSymbol {
                   namedTypeSymbol.definingModule);
     }
 
-    public static FieldSymbol[] createFields(NamedTypeSymbol namedTypeSymbol, CLITypeDefTableRow row) {
-      var fieldRange = CLIFileUtils.getFieldRange(namedTypeSymbol.definingModule.getDefiningFile(), row);
+    public static FieldSymbol[] createFields(
+        NamedTypeSymbol namedTypeSymbol, CLITypeDefTableRow row) {
+      var fieldRange =
+          CLIFileUtils.getFieldRange(namedTypeSymbol.definingModule.getDefiningFile(), row);
 
       var fieldRow =
           namedTypeSymbol
@@ -418,7 +423,7 @@ public class NamedTypeSymbol extends TypeSymbol {
                 namedTypeSymbol.getTypeArguments(),
                 namedTypeSymbol.getDefiningModule());
 
-        fields[fieldRow.getRowNo() - fieldRange.getLeft()] =  patch(field, namedTypeSymbol);
+        fields[fieldRow.getRowNo() - fieldRange.getLeft()] = patch(field, namedTypeSymbol);
         fieldRow = fieldRow.next();
       }
 
