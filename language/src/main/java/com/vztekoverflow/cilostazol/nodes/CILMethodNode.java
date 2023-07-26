@@ -26,7 +26,6 @@ import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
-import com.vztekoverflow.cilostazol.runtime.other.TypeHelpers;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
 import java.util.Arrays;
@@ -523,7 +522,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
             var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
             if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
-              var containingType = CILOSTAZOLContext.get(this).getType(klass, method);
+              var containingType = CILOSTAZOLContext.get(this).getType(klass, getMethod().getModule());
               var method = findMatchingMethod(name, methodSignature, containingType);
 
               node = getCheckedCALLNode(method, top);

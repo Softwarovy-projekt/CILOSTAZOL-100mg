@@ -5,15 +5,15 @@ import com.oracle.truffle.api.TruffleFile;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.Node;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
+import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.CILOSTAZOLEngineOption;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.runtime.other.AppDomain;
-import com.vztekoverflow.cilostazol.runtime.other.GuestAllocator;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.GuestAllocator;
 import com.vztekoverflow.cilostazol.runtime.other.TypeSymbolCacheKey;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.CLIFileUtils;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -76,11 +76,10 @@ public class CILOSTAZOLContext {
   }
 
   // region Symbols
-  public NamedTypeSymbol getType(CLITablePtr ptr, MethodSymbol caller) {
+  public NamedTypeSymbol getType(CLITablePtr ptr, ModuleSymbol module) {
     return switch (ptr.getTableId()) {
         // TODO: support edgecases such as if it can not be found
       case CLITableConstants.CLI_TABLE_TYPE_DEF -> {
-        var module = caller.getModule();
         var row = module.getDefiningFile().getTableHeads().getTypeDefTableHead().skip(ptr);
         var nameAndNamespace = CLIFileUtils.getNameAndNamespace(module.getDefiningFile(), row);
 
@@ -91,15 +90,15 @@ public class CILOSTAZOLContext {
       }
       case CLITableConstants.CLI_TABLE_TYPE_REF -> {
         var row =
-            caller.getModule().getDefiningFile().getTableHeads().getTypeRefTableHead().skip(ptr);
-        yield NamedTypeSymbol.NamedTypeSymbolFactory.create(row, caller.getModule());
+                module.getDefiningFile().getTableHeads().getTypeRefTableHead().skip(ptr);
+        yield NamedTypeSymbol.NamedTypeSymbolFactory.create(row, module);
       }
       case CLITableConstants.CLI_TABLE_TYPE_SPEC -> {
         var row =
-            caller.getModule().getDefiningFile().getTableHeads().getTypeSpecTableHead().skip(ptr);
+                module.getDefiningFile().getTableHeads().getTypeSpecTableHead().skip(ptr);
         yield (NamedTypeSymbol)
             TypeSymbol.TypeSymbolFactory.create(
-                row, new TypeSymbol[0], new TypeSymbol[0], caller.getModule());
+                row, new TypeSymbol[0], new TypeSymbol[0], module);
       }
       default -> throw new RuntimeException("Not implemented yet");
     };
@@ -195,5 +194,6 @@ public class CILOSTAZOLContext {
   public NamedTypeSymbol getType(CILBuiltInType type) {
     return getType(type.Name, "System", AssemblyIdentity.SystemPrivateCoreLib700());
   }
-  // endregion
+  //endregion
+  //endregion
 }

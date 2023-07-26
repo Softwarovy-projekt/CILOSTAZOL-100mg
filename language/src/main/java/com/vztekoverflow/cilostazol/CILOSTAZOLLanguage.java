@@ -8,7 +8,7 @@ import com.oracle.truffle.api.instrumentation.AllocationReporter;
 import com.oracle.truffle.api.nodes.Node;
 import com.vztekoverflow.cilostazol.nodes.CallEntryPointCallTarget;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
-import com.vztekoverflow.cilostazol.runtime.other.GuestAllocator;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.GuestAllocator;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import org.graalvm.options.OptionDescriptors;
 import org.graalvm.polyglot.Source;
@@ -38,6 +38,7 @@ public class CILOSTAZOLLanguage extends TruffleLanguage<CILOSTAZOLContext> {
     return REFERENCE.get(node);
   }
 
+  //region initialization
   @Override
   protected OptionDescriptors getOptionDescriptors() {
     return new CILOSTAZOLEngineOptionOptionDescriptors();
@@ -62,7 +63,9 @@ public class CILOSTAZOLLanguage extends TruffleLanguage<CILOSTAZOLContext> {
     return new CallEntryPointCallTarget(
         main.getNode().getCallTarget(), main.getParameters().length == 1);
   }
+  //endregion
 
+  //region allocator
   public boolean isAllocationTrackingDisabled() {
     return noAllocationTracking.isValid();
   }
@@ -78,4 +81,5 @@ public class CILOSTAZOLLanguage extends TruffleLanguage<CILOSTAZOLContext> {
   public void initializeGuestAllocator(TruffleLanguage.Env env) {
     this.allocator = new GuestAllocator(this, env.lookup(AllocationReporter.class));
   }
+  //endregion
 }

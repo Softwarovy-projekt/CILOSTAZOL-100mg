@@ -1,5 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import java.util.Arrays;
 
 public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
@@ -38,6 +39,7 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   @Override
   public NamedTypeSymbol getDirectBaseClass() {
     if (lazyDirectBaseClass == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyDirectBaseClass = map.substitute(constructedFrom.getDirectBaseClass());
     }
 
@@ -47,6 +49,7 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   @Override
   public NamedTypeSymbol[] getInterfaces() {
     if (lazyInterfaces == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyInterfaces =
           Arrays.stream(constructedFrom.getInterfaces())
               .map(map::substitute)
@@ -59,6 +62,7 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   @Override
   public MethodSymbol[] getMethods() {
     if (lazyMethods == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyMethods =
           Arrays.stream(constructedFrom.getMethods())
               .map(
@@ -74,6 +78,7 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   @Override
   public MethodSymbol[] getVMT() {
     if (lazyVMethodTable == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyVMethodTable =
           Arrays.stream(constructedFrom.getMethods())
               .map(
@@ -89,6 +94,7 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   @Override
   public FieldSymbol[] getFields() {
     if (lazyFields == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyFields =
           Arrays.stream(constructedFrom.getFields())
               .map(x -> FieldSymbol.FieldSymbolFactory.createWith(x, map.substitute(x.getType())))

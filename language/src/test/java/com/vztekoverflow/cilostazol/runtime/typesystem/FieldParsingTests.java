@@ -2,8 +2,8 @@ package com.vztekoverflow.cilostazol.runtime.typesystem;
 
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
+import com.vztekoverflow.cilostazol.runtime.symbols.FieldSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.utils.FieldSymbolVisibility;
 import java.nio.file.Path;
 import java.util.Arrays;
 
@@ -75,7 +75,7 @@ public class FieldParsingTests extends TestBase {
             .filter(f -> f.getName().equals("fieldPrivate"))
             .findFirst()
             .get();
-    assertEquals(FieldSymbolVisibility.Private, fieldPrivate.getVisibility());
+    assertEquals(FieldSymbol.FieldSymbolVisibility.Private, fieldPrivate.getVisibility());
 
     assertTrue(Arrays.stream(type.getFields()).anyMatch(f -> f.getName().equals("fieldPublic")));
     var fieldPublic =
@@ -83,7 +83,7 @@ public class FieldParsingTests extends TestBase {
             .filter(f -> f.getName().equals("fieldPublic"))
             .findFirst()
             .get();
-    assertEquals(FieldSymbolVisibility.Public, fieldPublic.getVisibility());
+    assertEquals(FieldSymbol.FieldSymbolVisibility.Public, fieldPublic.getVisibility());
 
     assertTrue(Arrays.stream(type.getFields()).anyMatch(f -> f.getName().equals("fieldInternal")));
     var fieldInternal =
@@ -91,7 +91,7 @@ public class FieldParsingTests extends TestBase {
             .filter(f -> f.getName().equals("fieldInternal"))
             .findFirst()
             .get();
-    assertEquals(FieldSymbolVisibility.Assembly, fieldInternal.getVisibility());
+    assertEquals(FieldSymbol.FieldSymbolVisibility.Assembly, fieldInternal.getVisibility());
 
     assertTrue(Arrays.stream(type.getFields()).anyMatch(f -> f.getName().equals("fieldProtected")));
     var fieldProtected =
@@ -99,7 +99,7 @@ public class FieldParsingTests extends TestBase {
             .filter(f -> f.getName().equals("fieldProtected"))
             .findFirst()
             .get();
-    assertEquals(FieldSymbolVisibility.Family, fieldProtected.getVisibility());
+    assertEquals(FieldSymbol.FieldSymbolVisibility.Family, fieldProtected.getVisibility());
 
     assertTrue(
         Arrays.stream(type.getFields())
@@ -109,7 +109,7 @@ public class FieldParsingTests extends TestBase {
             .filter(f -> f.getName().equals("fieldProtectedInternal"))
             .findFirst()
             .get();
-    assertEquals(FieldSymbolVisibility.FamORAssem, fieldProtectedInternal.getVisibility());
+    assertEquals(FieldSymbol.FieldSymbolVisibility.FamORAssem, fieldProtectedInternal.getVisibility());
 
     assertTrue(
         Arrays.stream(type.getFields()).anyMatch(f -> f.getName().equals("fieldPrivateProtected")));
@@ -118,7 +118,7 @@ public class FieldParsingTests extends TestBase {
             .filter(f -> f.getName().equals("fieldPrivateProtected"))
             .findFirst()
             .get();
-    assertEquals(FieldSymbolVisibility.FamANDAssem, fieldPrivateProtected.getVisibility());
+    assertEquals(FieldSymbol.FieldSymbolVisibility.FamANDAssem, fieldPrivateProtected.getVisibility());
   }
 
   @SuppressWarnings("OptionalGetWithoutIsPresent")

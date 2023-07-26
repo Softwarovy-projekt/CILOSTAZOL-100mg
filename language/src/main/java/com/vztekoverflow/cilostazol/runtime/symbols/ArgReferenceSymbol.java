@@ -1,6 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
-public class ArgReferenceSymbol extends ReferenceSymbol {
+public final class ArgReferenceSymbol extends ReferenceSymbol {
   public ArgReferenceSymbol(TypeSymbol underlyingTypeSymbol) {
     super(underlyingTypeSymbol);
   }
