@@ -16,10 +16,7 @@ public final class ArrayTypeSymbol extends TypeSymbol {
       int[] lengths,
       int[] lowerBounds,
       ModuleSymbol definingModule) {
-    super(
-        definingModule,
-        CILOSTAZOLFrame.StackType.Object,
-        SystemTypes.Array); // TODO: Klepitko -> arrays will be objects
+    super(definingModule, CILOSTAZOLFrame.StackType.Object, SystemTypes.Object);
     this.elementType = elementType;
     this.rank = rank;
     this.lengths = lengths;
@@ -40,6 +37,16 @@ public final class ArrayTypeSymbol extends TypeSymbol {
 
   public int[] getLowerBounds() {
     return lowerBounds;
+  }
+
+  @Override
+  public boolean isInterface() {
+    return false;
+  }
+
+  @Override
+  public boolean isArray() {
+    return true;
   }
 
   public static class ArrayTypeSymbolFactory {

@@ -7,9 +7,12 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.exceptions.InstantiationError;
 import com.vztekoverflow.cilostazol.exceptions.InstantiationException;
+import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NegativeArraySizeException;
+import com.vztekoverflow.cilostazol.runtime.symbols.ArrayTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.Symbol;
+import java.util.Arrays;
 
 public final class GuestAllocator {
   private final CILOSTAZOLLanguage language;
@@ -108,6 +111,64 @@ public final class GuestAllocator {
     }
     return object;
   }
+
+  // region array creation
+  public StaticObject createNewPrimitiveArray(ArrayTypeSymbol arrayType, int length) {
+    var elementType = (NamedTypeSymbol) arrayType.getElementType();
+    Object arr;
+    switch (elementType.getKind()) {
+      case Boolean -> {
+        arr = new boolean[length];
+      }
+      case Char -> {
+        arr = new char[length];
+      }
+      case Short -> {
+        arr = new short[length];
+      }
+      case Int -> {
+        arr = new int[length];
+      }
+      case Float -> {
+        arr = new float[length];
+      }
+      case Long -> {
+        arr = new long[length];
+      }
+      case Double -> {
+        arr = new double[length];
+      }
+      default -> {
+        throw new InterpreterException();
+      }
+    }
+
+    return wrapArrayAs(arrayType, arr);
+  }
+
+  public StaticObject createNewReferenceArray(ArrayTypeSymbol arrayType, int length) {
+    StaticObject[] arr = new StaticObject[length];
+    Arrays.fill(arr, StaticObject.NULL);
+    return wrapArrayAs(arrayType, arr);
+  }
+
+  public StaticObject createNewMultiArray(ArrayTypeSymbol arrayType, int[] dimensions) {
+    int elemCount = 0;
+    for (int i = 0; i < dimensions.length; i++) {
+      elemCount += dimensions[i];
+    }
+
+    if (arrayType.getElementType().getKind() != SystemTypes.Object)
+      return createNewPrimitiveArray(arrayType, elemCount);
+    else return createNewReferenceArray(arrayType, elemCount);
+  }
+
+  public StaticObject wrapArrayAs(ArrayTypeSymbol typeSymbol, Object array) {
+    StaticObject newObj = typeSymbol.getContext().getArrayShape().getFactory().create(typeSymbol);
+    typeSymbol.getContext().getArrayProperty().setObject(newObj, array);
+    return trackAllocation(newObj);
+  }
+  // endregion
 
   public interface AllocationProfiler {
     AllocationProfiler NO_PROFILE =

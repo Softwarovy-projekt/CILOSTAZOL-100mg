@@ -2,14 +2,14 @@ package com.vztekoverflow.cilostazol.runtime.objectmodel;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.TruffleObject;
-import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
+import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 
 public class StaticObject implements TruffleObject, Cloneable {
   public static final StaticObject[] EMPTY_ARRAY = new StaticObject[0];
   public static final StaticObject NULL = new StaticObject(null);
-  private final NamedTypeSymbol typeSymbol;
+  private final TypeSymbol typeSymbol;
 
-  protected StaticObject(NamedTypeSymbol typeSymbol) {
+  protected StaticObject(TypeSymbol typeSymbol) {
     this.typeSymbol = typeSymbol;
   }
 
@@ -26,7 +26,7 @@ public class StaticObject implements TruffleObject, Cloneable {
     return super.clone();
   }
 
-  public final NamedTypeSymbol getTypeSymbol() {
+  public final TypeSymbol getTypeSymbol() {
     return typeSymbol;
   }
 
@@ -35,6 +35,6 @@ public class StaticObject implements TruffleObject, Cloneable {
   }
 
   public interface StaticObjectFactory {
-    StaticObject create(NamedTypeSymbol type);
+    StaticObject create(TypeSymbol type);
   }
 }
