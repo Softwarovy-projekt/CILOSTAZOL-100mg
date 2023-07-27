@@ -17,8 +17,13 @@ public final class LDSTRNode extends NodeizedNodeBase {
     var stringChar = value.toCharArray();
 
     final var charType = stringType.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char);
-    final var charArrayType = ArrayTypeSymbol.ArrayTypeSymbolFactory.create(charType, charType.getDefiningModule());
-    final var charArray = stringType.getContext().getAllocator().createNewPrimitiveArray(charArrayType, stringChar.length);
+    final var charArrayType =
+        ArrayTypeSymbol.ArrayTypeSymbolFactory.create(charType, charType.getDefiningModule());
+    final var charArray =
+        stringType
+            .getContext()
+            .getAllocator()
+            .createNewPrimitiveArray(charArrayType, stringChar.length);
     CILOSTAZOLContext.get(null).getArrayProperty().setObject(charArray, stringChar);
 
     this.value = stringType.getContext().getAllocator().createNew(stringType);
