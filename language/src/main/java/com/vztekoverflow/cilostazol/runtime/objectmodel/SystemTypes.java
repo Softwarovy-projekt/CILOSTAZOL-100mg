@@ -7,12 +7,12 @@ public enum SystemTypes {
   Boolean,
   Char,
   Int,
+  Short,
   Float,
   Long,
   Double,
   Void,
-  Object,
-  Array; // TODO: Klepitko -> array bude jako objekt
+  Object;
 
   public static SystemTypes getTypeKind(String name, String namespace, AssemblyIdentity assembly) {
     if (AssemblyIdentity.SystemPrivateCoreLib700().equalsVersionAgnostic(assembly)
@@ -26,6 +26,7 @@ public enum SystemTypes {
           return SystemTypes.Char;
         case "Int16":
         case "UInt16":
+          return SystemTypes.Short;
         case "Int32":
         case "UInt32":
           return SystemTypes.Int;

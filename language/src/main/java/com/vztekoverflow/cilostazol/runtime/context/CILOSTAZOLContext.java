@@ -1,9 +1,13 @@
 package com.vztekoverflow.cilostazol.runtime.context;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.TruffleFile;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.staticobject.DefaultStaticProperty;
+import com.oracle.truffle.api.staticobject.StaticProperty;
+import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
@@ -11,6 +15,7 @@ import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.CILOSTAZOLEngineOption;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.GuestAllocator;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.AppDomain;
 import com.vztekoverflow.cilostazol.runtime.other.TypeSymbolCacheKey;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
@@ -192,5 +197,31 @@ public class CILOSTAZOLContext {
     return getType(type.Name, "System", AssemblyIdentity.SystemPrivateCoreLib700());
   }
   // endregion
+  // endregion
+
+  // region SOM
+  @CompilerDirectives.CompilationFinal private StaticProperty arrayProperty;
+
+  @CompilerDirectives.CompilationFinal
+  private StaticShape<StaticObject.StaticObjectFactory> arrayShape;
+
+  public StaticProperty getArrayProperty() {
+    if (arrayProperty == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      arrayProperty = new DefaultStaticProperty("array");
+    }
+    return arrayProperty;
+  }
+
+  public StaticShape<StaticObject.StaticObjectFactory> getArrayShape() {
+    if (arrayShape == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      arrayShape =
+          StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
+              .property(getArrayProperty(), Object.class, true)
+              .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
+    }
+    return arrayShape;
+  }
   // endregion
 }

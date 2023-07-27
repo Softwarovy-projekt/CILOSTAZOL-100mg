@@ -6,6 +6,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
+import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -50,9 +51,9 @@ public class PRINTNode extends NodeizedNodeBase {
   @ExplodeLoop
   private StringBuilder getStringFromFrame(VirtualFrame frame) {
     var stringObject = CILOSTAZOLFrame.getLocalObject(frame, argumentTop);
-    var namedTypeSymbol = stringObject.getTypeSymbol();
+    var namedTypeSymbol = (NamedTypeSymbol)stringObject.getTypeSymbol();
     var length = namedTypeSymbol.getInstanceFields()[0].getInt(stringObject);
-    var charArray = namedTypeSymbol.getInstanceFields()[1].getObject(stringObject);
+    var charArray = CILOSTAZOLContext.get(null).getArrayProperty().getObject(namedTypeSymbol.getInstanceFields()[1].getObject(stringObject));
 
     StringBuilder result = new StringBuilder();
     for (int i = 0; i < length; i++) {
