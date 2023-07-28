@@ -15,21 +15,21 @@ import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 
 public abstract class TypeSymbol extends Symbol {
   protected final ModuleSymbol definingModule;
   private final CILOSTAZOLFrame.StackType stackTypeKind;
-  private final SystemTypes staticObjType;
+  private final SystemType systemType;
 
   public TypeSymbol(
       ModuleSymbol definingModule,
       CILOSTAZOLFrame.StackType stackTypeKind,
-      SystemTypes staticObjType) {
+      SystemType staticObjType) {
     super(ContextProviderImpl.getInstance());
     this.definingModule = definingModule;
     this.stackTypeKind = stackTypeKind;
-    this.staticObjType = staticObjType;
+    this.systemType = staticObjType;
   }
 
   // region SOM
@@ -121,8 +121,8 @@ public abstract class TypeSymbol extends Symbol {
     return new NamedTypeSymbol[0];
   }
 
-  public SystemTypes getKind() {
-    return staticObjType;
+  public SystemType getSystemType() {
+    return systemType;
   }
 
   public CILOSTAZOLFrame.StackType getStackTypeKind() {

@@ -1,11 +1,13 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
 
 public final class NullSymbol extends TypeSymbol {
 
   public NullSymbol() {
-    super(null, CILOSTAZOLFrame.StackType.Object, SystemTypes.Object);
+    super(
+        null,
+        CILOSTAZOLFrame.StackType.Object,
+        com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType.Object);
   }
 }

@@ -16,7 +16,7 @@ import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLRootNode;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -32,9 +32,10 @@ public class MethodSymbol extends Symbol {
   protected final TypeParameterSymbol[] typeParameters;
   protected final ParameterSymbol[] parameters;
   protected final LocalSymbol[] locals;
-  protected final ReturnSymbol retType;
+  protected final ReturnSymbol returnSymbol;
   protected final ExceptionHandlerSymbol[] exceptionHandlers;
   protected final byte[] cil;
+  private final SystemType[] cilSystemTypes;
   // body
   protected final int maxStack;
   protected final MethodHeaderFlags methodHeaderFlags;
@@ -51,7 +52,7 @@ public class MethodSymbol extends Symbol {
       TypeParameterSymbol[] typeParameters,
       ParameterSymbol[] parameters,
       LocalSymbol[] locals,
-      ReturnSymbol retType,
+      ReturnSymbol returnSymbol,
       ExceptionHandlerSymbol[] exceptionHandlers,
       byte[] cil,
       int maxStack,
@@ -66,9 +67,11 @@ public class MethodSymbol extends Symbol {
     this.typeParameters = typeParameters;
     this.parameters = parameters;
     this.locals = locals;
-    this.retType = retType;
+    this.returnSymbol = returnSymbol;
     this.exceptionHandlers = exceptionHandlers;
     this.cil = cil;
+    this.cilSystemTypes =
+        SystemType.GetSystemTypes(cil, maxStack, parameters, locals, returnSymbol, module);
     this.maxStack = maxStack;
     this.methodHeaderFlags = methodHeaderFlags;
   }
@@ -91,7 +94,7 @@ public class MethodSymbol extends Symbol {
   }
 
   public ReturnSymbol getReturnType() {
-    return retType;
+    return returnSymbol;
   }
 
   public MethodDefFlags getMethodDefFlags() {
@@ -127,7 +130,7 @@ public class MethodSymbol extends Symbol {
   }
 
   public String toString() {
-    return retType.toString()
+    return returnSymbol.toString()
         + " "
         + getName()
         + "("
@@ -164,7 +167,8 @@ public class MethodSymbol extends Symbol {
   }
 
   public boolean hasReturnValue() {
-    return retType.getType().getKind() != SystemTypes.Void;
+    return returnSymbol.getType().getSystemType()
+        != com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType.Void;
   }
 
   public boolean hasArgs() {
@@ -290,7 +294,7 @@ public class MethodSymbol extends Symbol {
       }
 
       // Return type parsing
-      ReturnSymbol retType =
+      ReturnSymbol returnSymbol =
           ReturnSymbol.ReturnSymbolFactory.create(
               mSignature.getRetType(),
               typeParameters,
@@ -316,7 +320,7 @@ public class MethodSymbol extends Symbol {
           typeParameters,
           parameters,
           locals,
-          retType,
+          returnSymbol,
           handlers,
           cil,
           maxStackSize,

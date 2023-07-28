@@ -17,7 +17,11 @@ import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
+import com.vztekoverflow.cilostazol.runtime.symbols.utils.CLIFileUtils;
+import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolLayout;
+import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolSemantics;
+import com.vztekoverflow.cilostazol.runtime.symbols.utils.NamedTypeSymbolVisibility;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -98,7 +102,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     super(
         definingModule,
         CILOSTAZOLFrame.getStackTypeKind(name, namespace),
-        SystemTypes.getTypeKind(
+        SystemType.getTypeKind(
             name, namespace, definingModule.getDefiningFile().getAssemblyIdentity()));
     assert definingRow.getTableId() == CLITableConstants.CLI_TABLE_TYPE_DEF;
 
