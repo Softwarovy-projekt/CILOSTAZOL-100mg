@@ -70,8 +70,12 @@ public class MethodSymbol extends Symbol {
     this.returnSymbol = returnSymbol;
     this.exceptionHandlers = exceptionHandlers;
     this.cil = cil;
+    // TODO: temporarily disabled, not everything is parsable yet
+    // we have to resolve hwen to stop resoling etc.
     this.cilSystemTypes =
-        SystemType.GetSystemTypes(cil, maxStack, parameters, locals, returnSymbol, module);
+        new SystemType
+            [0]; // SystemType.GetSystemTypes(cil, maxStack, parameters, locals, returnSymbol,
+    // module);
     this.maxStack = maxStack;
     this.methodHeaderFlags = methodHeaderFlags;
   }
