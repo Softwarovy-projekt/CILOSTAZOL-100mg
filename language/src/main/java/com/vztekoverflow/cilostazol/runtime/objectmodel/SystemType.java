@@ -32,41 +32,37 @@ public enum SystemType {
   Object,
   /**
    * <b><i>NOT A REAL TYPE</i></b><br>
-   * This one is purely for stack sanity purposes
-   * Used for clearing the stack after a call
-   * */
+   * This one is purely for stack sanity purposes Used for clearing the stack after a call
+   */
   None;
 
   public static SystemType getTypeKind(String name, String namespace, AssemblyIdentity assembly) {
     if (AssemblyIdentity.SystemPrivateCoreLib700().equalsVersionAgnostic(assembly)
         && Objects.equals(namespace, "System")) {
       return switch (name) {
-        case "Boolean"
-          -> Boolean;
-        case "Byte", "SByte", "Char"
-          -> Char;
-        case "Int16", "UInt16"
-          -> Short;
-        case "Int32", "UInt32"
-          -> Int;
-        case "Double"
-          -> Double;
-        case "Single"
-          -> Float;
-        case "Int64", "UInt64"
-          -> Long;
-        case "Void"
-          -> Void;
-        default
-          -> Object;
+        case "Boolean" -> Boolean;
+        case "Byte", "SByte", "Char" -> Char;
+        case "Int16", "UInt16" -> Short;
+        case "Int32", "UInt32" -> Int;
+        case "Double" -> Double;
+        case "Single" -> Float;
+        case "Int64", "UInt64" -> Long;
+        case "Void" -> Void;
+        default -> Object;
           // Decimal, UIntPtr, IntPtr ??
       };
     }
 
-    return com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType.Object;
+    return Object;
   }
 
-  public static SystemType[] GetSystemTypes(byte[] cil, int maxStack, ParameterSymbol[] parameters, LocalSymbol[] locals, ReturnSymbol retType, ModuleSymbol module){
+  public static SystemType[] GetSystemTypes(
+      byte[] cil,
+      int maxStack,
+      ParameterSymbol[] parameters,
+      LocalSymbol[] locals,
+      ReturnSymbol retType,
+      ModuleSymbol module) {
     var bytecodeBuffer = new BytecodeBuffer(cil);
     SystemType[] types = new SystemType[cil.length];
     var stack = new SystemType[maxStack];
@@ -86,8 +82,8 @@ public enum SystemType {
         case STARG_S:
         case STLOC_S:
           break;
-        //endregion
-        //region Args
+          // endregion
+          // region Args
         case LDARG_0:
         case LDARG_1:
         case LDARG_2:
@@ -99,8 +95,8 @@ public enum SystemType {
           break;
         case LDARGA_S:
           push(stack, topStack, Int);
-        //endregion
-        //region Locals
+          // endregion
+          // region Locals
         case LDLOC_0:
         case LDLOC_1:
         case LDLOC_2:
@@ -113,7 +109,7 @@ public enum SystemType {
         case LDLOCA_S:
           push(stack, topStack, Int);
           break;
-        //endregion
+          // endregion
         case LDNULL:
           push(stack, pc, Object);
           break;
@@ -148,20 +144,21 @@ public enum SystemType {
           setTypeByStack(types, stack, topStack, pc);
           clear(stack, topStack);
           break;
-        case JMP: break;
+        case JMP:
+          break;
         case CALL:
           var methodPtr = bytecodeBuffer.getImmToken(pc);
           topStack = handleMethod(methodPtr, stack, topStack, module, false);
           break;
         case CALLI:
-          //TODO: after implementing functionality of this opcode
+          // TODO: after implementing functionality of this opcode
           break;
         case RET:
-          //From stack to stack == nothing
+          // From stack to stack == nothing
           break;
         case BR:
         case BR_S:
-          //Nothing
+          // Nothing
           break;
         case BRFALSE_S:
         case BRTRUE_S:
@@ -189,18 +186,18 @@ public enum SystemType {
         case BGT_UN:
         case BLE_UN:
         case BLT_UN:
-          //Since only pairs of the same value are comparable,
+          // Since only pairs of the same value are comparable,
           // we can be sure that the top two values are of the same type
-          clear(stack, topStack); //clear 2nd operand
-          setTypeByStack(types, stack, topStack - 1, pc); //use 1st operand
+          clear(stack, topStack); // clear 2nd operand
+          setTypeByStack(types, stack, topStack - 1, pc); // use 1st operand
           break;
-        //Same as BRFALSE
-//        case BRNULL: break;
-//        case BRZERO: break;
-//        case BRINST: break;
-//        case BRTRUE: break;
+          // Same as BRFALSE
+          //        case BRNULL: break;
+          //        case BRZERO: break;
+          //        case BRINST: break;
+          //        case BRTRUE: break;
         case SWITCH:
-          //is UInt32 by default
+          // is UInt32 by default
           break;
         case LDIND_I1:
         case LDIND_U1:
@@ -211,12 +208,12 @@ public enum SystemType {
           replace(stack, topStack, Int);
           break;
         case LDIND_I8:
-          //Why is this one missing?
-//        case LDIND_U8:
+          // Why is this one missing?
+          //        case LDIND_U8:
           replace(stack, topStack, Long);
           break;
         case LDIND_I:
-          //TODO: what is native int? how do we handle it?
+          // TODO: what is native int? how do we handle it?
           break;
         case LDIND_R4:
         case LDIND_R8:
@@ -245,15 +242,15 @@ public enum SystemType {
         case AND:
         case OR:
         case XOR:
-          //Since only pairs of the same value are comparable,
+          // Since only pairs of the same value are comparable,
           // we can be sure that the top two values are of the same type
-          clear(stack, topStack); //clear 2nd operand
-          setTypeByStack(types, stack, topStack - 1, pc); //use 1st operand
+          clear(stack, topStack); // clear 2nd operand
+          setTypeByStack(types, stack, topStack - 1, pc); // use 1st operand
           break;
         case SHL:
         case SHR:
         case SHR_UN:
-          clear(stack, topStack); //clear shift value
+          clear(stack, topStack); // clear shift value
           setTypeByStack(types, stack, topStack - 1, pc);
           break;
         case NEG:
@@ -276,15 +273,16 @@ public enum SystemType {
         case CONV_R8:
           replace(stack, topStack, Float);
           break;
-          //TODO: Native int again
-        case CONV_I: break;
+          // TODO: Native int again
+        case CONV_I:
+          break;
         case CALLVIRT:
           var methodCPtr = bytecodeBuffer.getImmToken(pc);
           topStack = handleMethod(methodCPtr, stack, topStack, module, true);
 
           break;
         case CPOBJ:
-          //copies oboj
+          // copies oboj
           break;
         case LDOBJ:
           var typePtr = bytecodeBuffer.getImmToken(pc);
@@ -299,21 +297,21 @@ public enum SystemType {
           topStack = handleCtor(methodPtr3, stack, topStack, module);
           break;
         case CASTCLASS:
-          //Obj cast to Obj
+          // Obj cast to Obj
           break;
         case ISINST:
-          //Obj to bool
+          // Obj to bool
           replace(stack, topStack, Boolean);
           break;
         case CONV_R_UN:
           replace(stack, topStack, Float);
           break;
         case UNBOX:
-          //TODO: pointers ??
+          // TODO: pointers ??
           var typePtr2 = bytecodeBuffer.getImmToken(pc);
           var type2 = module.getContext().getType(typePtr2, module);
-          setType(types, stack, topStack, pc, type2.getSystemType()); //?? does this help at all?
-          replace(stack, topStack, Int); //TODO: here its supposed to be a pointer
+          setType(types, stack, topStack, pc, type2.getSystemType()); // ?? does this help at all?
+          replace(stack, topStack, Int); // TODO: here its supposed to be a pointer
           break;
         case THROW:
           clear(stack, topStack);
@@ -325,7 +323,7 @@ public enum SystemType {
           break;
         case LDFLDA:
         case LDSFLDA:
-          //TODO: pointers
+          // TODO: pointers
           break;
         case STFLD:
           clear(stack, topStack);
@@ -356,7 +354,7 @@ public enum SystemType {
           break;
         case CONV_OVF_I_UN:
         case CONV_OVF_U_UN:
-          //TODO: native int
+          // TODO: native int
           break;
         case BOX:
           replace(stack, topStack, Object);
@@ -365,11 +363,11 @@ public enum SystemType {
           replace(stack, topStack, Object);
           break;
         case LDLEN:
-          //TODO: native itn (unsigned)
+          // TODO: native itn (unsigned)
           replace(stack, topStack, Int);
           break;
         case LDELEMA:
-          //TODO: address
+          // TODO: address
           break;
         case LDELEM_I1:
         case LDELEM_I2:
@@ -384,10 +382,10 @@ public enum SystemType {
           clear(stack, topStack);
           replace(stack, topStack - 1, Long);
           break;
-        //Same as LDELEM_I8
-//        case LDELEM_U8: break;
+          // Same as LDELEM_I8
+          //        case LDELEM_U8: break;
         case LDELEM_I:
-          //TODO: native int
+          // TODO: native int
           break;
         case LDELEM_R4:
           clear(stack, topStack);
@@ -430,7 +428,7 @@ public enum SystemType {
           var objPtr = bytecodeBuffer.getImmToken(pc);
           var objType = module.getContext().getType(objPtr, module);
           replace(stack, topStack, objType.getSystemType());
-          setType(types, stack, topStack, pc, objType.getSystemType()); //not necessary
+          setType(types, stack, topStack, pc, objType.getSystemType()); // not necessary
           break;
         case CONV_OVF_I1:
         case CONV_OVF_U1:
@@ -451,12 +449,13 @@ public enum SystemType {
           setTypeByStack(types, stack, topStack, pc);
           break;
         case MKREFANY:
-          //TODO: pointer
+          // TODO: pointer
           break;
-        case LDTOKEN: break;
+        case LDTOKEN:
+          break;
         case CONV_OVF_I:
         case CONV_OVF_U:
-          //TODO: native int
+          // TODO: native int
           break;
         case ADD_OVF:
         case ADD_OVF_UN:
@@ -464,42 +463,42 @@ public enum SystemType {
         case MUL_OVF_UN:
         case SUB_OVF:
         case SUB_OVF_UN:
-          //Since only pairs of the same value are comparable,
+          // Since only pairs of the same value are comparable,
           // we can be sure that the top two values are of the same type
-          clear(stack, topStack); //clear 2nd operand
-          setTypeByStack(types, stack, topStack - 1, pc); //use 1st operand
+          clear(stack, topStack); // clear 2nd operand
+          setTypeByStack(types, stack, topStack - 1, pc); // use 1st operand
           break;
         case ENDFAULT:
         case LEAVE:
         case LEAVE_S:
-          //Nothing
+          // Nothing
           break;
-        //Same as ENDFAULT
-//        case ENDFINALLY: break;
+          // Same as ENDFAULT
+          //        case ENDFINALLY: break;
         case STIND_I:
-          //TODO: native int
+          // TODO: native int
           clear(stack, topStack);
           setTypeByStack(types, stack, topStack - 1, pc);
           clear(stack, topStack - 1);
           break;
         case CONV_U:
-          //TODO: native int
+          // TODO: native int
           replace(stack, topStack, Int);
           break;
-        //Same as CONV_U
-//        case MAX: break;
+          // Same as CONV_U
+          //        case MAX: break;
         case PREFIXED:
-          //TODO: what is this?
+          // TODO: what is this?
           break;
         case CEQ:
         case CGT:
         case CGT_UN:
         case CLT:
         case CLT_UN:
-          //Since only pairs of the same value are comparable,
+          // Since only pairs of the same value are comparable,
           // we can be sure that the top two values are of the same type
-          clear(stack, topStack); //clear 2nd operand
-          setTypeByStack(types, stack, topStack - 1, pc); //use 1st operand
+          clear(stack, topStack); // clear 2nd operand
+          setTypeByStack(types, stack, topStack - 1, pc); // use 1st operand
           replace(stack, topStack - 1, Int);
           break;
         case INITOBJ:
@@ -525,33 +524,32 @@ public enum SystemType {
   }
 
   /**
-   * This function should not be necessary and therefore should be deleted.
-   * If we get the type from elsewhere than stack, we can get it during the runtime just as easily.
-   * */
-  private static void setType(SystemType[] types, SystemType[] stack, int topStack, int pc, SystemType systemType) {
+   * This function should not be necessary and therefore should be deleted. If we get the type from
+   * elsewhere than stack, we can get it during the runtime just as easily.
+   */
+  private static void setType(
+      SystemType[] types, SystemType[] stack, int topStack, int pc, SystemType systemType) {
     types[pc] = systemType;
   }
 
-  private static int handleCtor(CLITablePtr token, SystemType[] stack, int topStack, ModuleSymbol module) {
+  private static int handleCtor(
+      CLITablePtr token, SystemType[] stack, int topStack, ModuleSymbol module) {
     var method = getMethod(token, stack, topStack, module);
-    //ctor does not have return value but puts on stack the object
-    topStack =  updateStackByMethod(stack, topStack, method, false);
+    // ctor does not have return value but puts on stack the object
+    topStack = updateStackByMethod(stack, topStack, method, false);
     replace(stack, topStack - method.getParameters().length, Object);
     return topStack;
   }
 
   /**
    * @param topStack Points to the idx + 1 of a value on the stack we care about
-   * */
+   */
   private static void setTypeByStack(SystemType[] types, SystemType[] stack, int topStack, int pc) {
     types[pc] = stack[topStack - 1];
   }
 
   private static MethodSymbol getMethod(
-          CLITablePtr token,
-          SystemType[] stack,
-          int topStack,
-          ModuleSymbol module){
+      CLITablePtr token, SystemType[] stack, int topStack, ModuleSymbol module) {
     switch (token.getTableId()) {
       case CLITableConstants.CLI_TABLE_MEMBER_REF -> {
         /* Can point to method or field ref
@@ -578,7 +576,7 @@ public enum SystemType {
         // TODO: Klepitko
         var row = module.getDefiningFile().getTableHeads().getMethodSpecTableHead().skip(token);
         var instantiation =
-                row.getInstantiationHeapPtr().read(module.getDefiningFile().getBlobHeap());
+            row.getInstantiationHeapPtr().read(module.getDefiningFile().getBlobHeap());
         throw new NotImplementedException();
       }
       default -> {
@@ -587,62 +585,62 @@ public enum SystemType {
       }
     }
   }
+
   private static int handleMethod(
-      CLITablePtr token,
-      SystemType[] stack,
-      int topStack,
-      ModuleSymbol module,
-      boolean isVirtual) {
+      CLITablePtr token, SystemType[] stack, int topStack, ModuleSymbol module, boolean isVirtual) {
     var method = getMethod(token, stack, topStack, module);
     return updateStackByMethod(stack, topStack, method, isVirtual);
   }
 
-  private static int updateStackByMethod(SystemType[] stack, int topStack, MethodSymbol method, boolean isVirtual) {
-    //remove args from stack
+  private static int updateStackByMethod(
+      SystemType[] stack, int topStack, MethodSymbol method, boolean isVirtual) {
+    // remove args from stack
     // put ret type to stack
     for (int i = 0; i < method.getParameters().length; i++) {
       clear(stack, topStack - i);
     }
-    if (isVirtual)
-      clear(stack, topStack - method.getParameters().length);
+    if (isVirtual) clear(stack, topStack - method.getParameters().length);
 
     if (method.hasReturnValue())
-      replace(stack, topStack - method.getParameters().length - (isVirtual ? 1 : 0), method.getReturnType().getType().getSystemType());
+      replace(
+          stack,
+          topStack - method.getParameters().length - (isVirtual ? 1 : 0),
+          method.getReturnType().getType().getSystemType());
 
     return topStack - method.getParameters().length + (method.hasReturnValue() ? 1 : 0);
   }
 
-  //TODO: Klepitko this is duplciate ... ditto mehtod above
+  // TODO: Klepitko this is duplciate ... ditto mehtod above
   private static MethodSymbol findMatchingMethod(
-          String name, MethodDefSig methodSignature, NamedTypeSymbol definingType, ModuleSymbol module) {
+      String name,
+      MethodDefSig methodSignature,
+      NamedTypeSymbol definingType,
+      ModuleSymbol module) {
     var parameterTypes =
-            Arrays.stream(methodSignature.getParams())
-                    .map(
-                            x ->
-                                    TypeSymbol.TypeSymbolFactory.create(
-                                            x.getTypeSig(),
-                                            new TypeSymbol[0],
-                                            new TypeSymbol[0],
-                                            module))
-                    .toArray(TypeSymbol[]::new);
+        Arrays.stream(methodSignature.getParams())
+            .map(
+                x ->
+                    TypeSymbol.TypeSymbolFactory.create(
+                        x.getTypeSig(), new TypeSymbol[0], new TypeSymbol[0], module))
+            .toArray(TypeSymbol[]::new);
     var returnType =
-            TypeSymbol.TypeSymbolFactory.create(
-                    methodSignature.getRetType().getTypeSig(),
-                    new TypeSymbol[0],
-                    new TypeSymbol[0],
-                    module);
+        TypeSymbol.TypeSymbolFactory.create(
+            methodSignature.getRetType().getTypeSig(),
+            new TypeSymbol[0],
+            new TypeSymbol[0],
+            module);
     var matchingMethods =
-            Arrays.stream(definingType.getMethods())
-                    .filter(
-                            type ->
-                                    type.getName().equals(name)
-                                    && type.getReturnType().getType().equals(returnType)
-                                    && Arrays.equals(
-                                            Arrays.stream(type.getParameters())
-                                                    .map(ParameterSymbol::getType)
-                                                    .toArray(),
-                                            parameterTypes))
-                    .toArray(MethodSymbol[]::new);
+        Arrays.stream(definingType.getMethods())
+            .filter(
+                type ->
+                    type.getName().equals(name)
+                        && type.getReturnType().getType().equals(returnType)
+                        && Arrays.equals(
+                            Arrays.stream(type.getParameters())
+                                .map(ParameterSymbol::getType)
+                                .toArray(),
+                            parameterTypes))
+            .toArray(MethodSymbol[]::new);
 
     // There must be a unique method
     assert matchingMethods.length == 1;
@@ -655,10 +653,12 @@ public enum SystemType {
     push(stack, topStack, locType);
   }
 
-  private static void handleArg(ParameterSymbol[] parameters, SystemType[] stack, int topStack, int idx) {
+  private static void handleArg(
+      ParameterSymbol[] parameters, SystemType[] stack, int topStack, int idx) {
     var argType = parameters[idx].getType().getSystemType();
     push(stack, topStack, argType);
   }
+
   private static void clear(SystemType[] stack, int topStack) {
     stack[topStack - 1] = None;
   }
@@ -670,5 +670,4 @@ public enum SystemType {
   private static void push(SystemType[] stack, int topStack, SystemType argSystemType) {
     stack[topStack] = argSystemType;
   }
-
 }

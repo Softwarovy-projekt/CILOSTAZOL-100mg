@@ -462,7 +462,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
       return switch (resolutionScopeTablePtr.getTableId()) {
         case CLITableConstants.CLI_TABLE_TYPE_REF -> throw new UnsupportedOperationException(
-            CILOSTAZOLBundle.message("cilostazol.exception.typeRefResolutionScope"));
+            CILOSTAZOLBundle.message("cilostazol.exception.nested.typeRef.resolutionScope"));
         case CLITableConstants.CLI_TABLE_MODULE_REF -> getTypeFromDifferentModule(
             name, namespace, resolutionScopeTablePtr, module);
         case CLITableConstants.CLI_TABLE_MODULE -> throw new InvalidCLIException();
@@ -470,7 +470,7 @@ public class NamedTypeSymbol extends TypeSymbol {
             name, namespace, resolutionScopeTablePtr, module);
         default -> throw new TypeSystemException(
             CILOSTAZOLBundle.message(
-                "cilostazol.exception.unknownResolutionScope",
+                "cilostazol.exception.unknown.resolutionScope",
                 namespace,
                 name,
                 resolutionScopeTablePtr.getTableId()));
