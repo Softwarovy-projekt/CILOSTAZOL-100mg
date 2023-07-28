@@ -72,11 +72,11 @@ public enum SystemType {
     var stack = new SystemType[maxStack];
     var topStack = 0;
     int pc = 0;
-    while (true) {
+    while (pc < cil.length) {
       int curOpcode = bytecodeBuffer.getOpcode(pc);
       int nextpc = bytecodeBuffer.nextInstruction(pc);
       switch (curOpcode) {
-        //region Does not affect stack
+          // region Does not affect stack
         case NOP:
         case BREAK:
         case STLOC_0:
@@ -512,8 +512,9 @@ public enum SystemType {
 
       topStack += BytecodeInstructions.getStackEffect(curOpcode);
       pc = nextpc;
-
     }
+
+    return types;
   }
 
   private static FieldSymbol getFieldSymbol(ModuleSymbol module, CLITablePtr fldPtr, int pc) {
