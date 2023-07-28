@@ -3,8 +3,6 @@ package com.vztekoverflow.cilostazol.runtime.typesystem;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import java.nio.file.Path;
-import org.graalvm.polyglot.Source;
 
 /**
  * You have to first build C# projects in test resources: {@value _directory}.
@@ -15,7 +13,7 @@ public class TypeParsingTest extends TestBase {
 
   public void testNewStructure() {
     final String projectName = "ComponentParsingGeneral";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
 
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
     NamedTypeSymbol type = ctx.getType("FindLocalType", "Class", assemblyIdentity);
@@ -23,19 +21,9 @@ public class TypeParsingTest extends TestBase {
     // No error thrown
   }
 
-  public void testComponentParsingGeneral() throws Exception {
-    final String projectName = "ComponentParsingGeneral";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
-
-    Source source = getSourceFromProject(projectName);
-
-    var assembly = ctx.loadAssembly(source);
-    // No error thrown
-  }
-
   public void testFindLocalType() {
     final String projectName = "FindLocalType";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", "FindLocalType", assemblyIdentity);
@@ -46,7 +34,7 @@ public class TypeParsingTest extends TestBase {
 
   public void testFindLocalType_Cached() {
     final String projectName = "FindLocalType";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", "FindLocalType", assemblyIdentity);
@@ -58,9 +46,9 @@ public class TypeParsingTest extends TestBase {
     assertEquals(type, typeCached);
   }
 
-  public void testFindLocalType_Extends() throws Exception {
+  public void testFindLocalType_Extends() {
     final String projectName = "ExtendsTest";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", projectName, assemblyIdentity);
@@ -72,9 +60,9 @@ public class TypeParsingTest extends TestBase {
     assertEquals("ExtendsTest", type.getDirectBaseClass().getNamespace());
   }
 
-  public void testFindLocalType_Interfaces() throws Exception {
+  public void testFindLocalType_Interfaces() {
     final String projectName = "InterfacesTest";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", projectName, assemblyIdentity);
@@ -96,9 +84,9 @@ public class TypeParsingTest extends TestBase {
     assertFalse(interface2.isClass());
   }
 
-  public void testFindLocalType_GenericTypeParams() throws Exception {
+  public void testFindLocalType_GenericTypeParams() {
     final String projectName = "GenericTypeParametersTest";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class`1", projectName, assemblyIdentity);
@@ -106,9 +94,9 @@ public class TypeParsingTest extends TestBase {
     assertEquals(1, type.getTypeParameters().length);
   }
 
-  public void testFindNonLocalType_OtherModule() throws Exception {
+  public void testFindNonLocalType_OtherModule() {
     final String projectName = "FindNonLocalType";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var localType = ctx.getType("Class1", projectName, assemblyIdentity);
@@ -119,15 +107,11 @@ public class TypeParsingTest extends TestBase {
         "FindNonLocalType", ((NamedTypeSymbol) localType.getFields()[1].getType()).getNamespace());
   }
 
-  public void testFindNonLocalType_OtherAssembly() throws Exception {
+  public void testFindNonLocalType_OtherAssembly() {
     final String projectName = "FindNonLocalType";
     final String otherProjectName = "FindLocalType";
 
-    CILOSTAZOLContext ctx =
-        init(
-            new Path[] {
-              getDllPath(projectName).getParent(), getDllPath(otherProjectName).getParent()
-            });
+    CILOSTAZOLContext ctx = init(getDllPath(projectName, otherProjectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var localType = ctx.getType("Class1", projectName, assemblyIdentity);

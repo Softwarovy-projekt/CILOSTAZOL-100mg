@@ -3,12 +3,11 @@ package com.vztekoverflow.cilostazol.runtime.typesystem;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
-import java.nio.file.Path;
 
 public class SubstitutionTest extends TestBase {
   public void testSubTypeParameter() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Accessibility
@@ -21,7 +20,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testSubInheritance() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     TypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);
@@ -34,7 +33,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testSubFields() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);
@@ -47,7 +46,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testSubClassMethod() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);
@@ -60,7 +59,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testNestedInheritance() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);
@@ -75,7 +74,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testMethodRetParam() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);
@@ -88,7 +87,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testMethodSubLocals() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);
@@ -101,7 +100,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testMethodSubTryBlock() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);
@@ -114,7 +113,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testMethodSubContraint() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);
@@ -130,7 +129,7 @@ public class SubstitutionTest extends TestBase {
 
   public void testSubInterfaceImpl() {
     final String projectName = "SubstitutionTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol typeA1 = ctx.getType("A1", "SubstitutionTest", assemblyID);

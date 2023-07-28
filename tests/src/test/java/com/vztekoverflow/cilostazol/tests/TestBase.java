@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 
 public abstract class TestBase {
-  private static final String directoryDlls = "src/test/resources/dlls";
+  private static final String directoryDlls = "../runtime";
   private static final String directoryDllTests = "src/test/resources/BasicTests";
   private static final String directoryCustomTest =
       "src/test/resources/InterpreterTests/CustomTest";
