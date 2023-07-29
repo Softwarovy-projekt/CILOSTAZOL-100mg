@@ -18,10 +18,8 @@ import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+
+import java.util.*;
 
 public class NamedTypeSymbol extends TypeSymbol {
   // region constants
@@ -49,6 +47,9 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected MethodSymbol[] lazyMethods;
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  protected MethodSymbol[] lazyMethodImpl;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected MethodSymbol[] lazyVMethodTable;
@@ -160,6 +161,8 @@ public class NamedTypeSymbol extends TypeSymbol {
 
     return lazyMethods;
   }
+
+  public MethodSymbol[] getMethodsImpl() { throw new NotImplementedException(); }
 
   public MethodSymbol[] getVMT() {
     throw new NotImplementedException();
@@ -405,6 +408,14 @@ public class NamedTypeSymbol extends TypeSymbol {
                   namedTypeSymbol.definingModule);
     }
 
+    public static MethodSymbol[] createMethodsImpl(NamedTypeSymbol symbol) {
+      HashMap<MethodSymbol, MethodSymbol> result = new HashMap<MethodSymbol, MethodSymbol>();
+      for (var methodImpl : symbol.getDefiningModule().getDefiningFile().getTableHeads().getMethodImplTableHead()) {
+        //TODO:...
+      }
+      return null;
+    }
+
     public static FieldSymbol[] createFields(
         NamedTypeSymbol namedTypeSymbol, CLITypeDefTableRow row) {
       var fieldRange =
@@ -433,20 +444,21 @@ public class NamedTypeSymbol extends TypeSymbol {
 
       return fields;
     }
-  }
 
-  /** We have to patch type of String to be able to represent it in SOM. */
-  private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
-    if (Objects.equals(type.getNamespace(), "System")
-        && Objects.equals(type.getName(), "String")
-        && symbol.getName().equals("_firstChar")) {
-      return FieldSymbol.FieldSymbolFactory.createWith(
-          symbol,
-          ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
-              type.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char),
-              type.getDefiningModule()));
+
+    /** We have to patch type of String to be able to represent it in SOM. */
+    private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
+      if (Objects.equals(type.getNamespace(), "System")
+              && Objects.equals(type.getName(), "String")
+              && symbol.getName().equals("_firstChar")) {
+        return FieldSymbol.FieldSymbolFactory.createWith(
+                symbol,
+                ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
+                        type.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char),
+                        type.getDefiningModule()));
+      }
+      return symbol;
     }
-    return symbol;
   }
 
   public static class NamedTypeSymbolFactory {

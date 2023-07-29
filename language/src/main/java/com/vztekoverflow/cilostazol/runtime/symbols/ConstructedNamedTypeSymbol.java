@@ -92,6 +92,22 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   }
 
   @Override
+  public MethodSymbol[] getMethodsImpl() {
+    if (lazyMethodImpl == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      lazyMethodImpl =
+              Arrays.stream(constructedFrom.getMethods())
+                      .map(
+                              x ->
+                                      SubstitutedMethodSymbol.SubstitutedMethodSymbolFactory.create(
+                                              x.getDefinition(), x, this))
+                      .toArray(MethodSymbol[]::new);
+    }
+
+    return lazyMethodImpl;
+  }
+
+  @Override
   public FieldSymbol[] getFields() {
     if (lazyFields == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
