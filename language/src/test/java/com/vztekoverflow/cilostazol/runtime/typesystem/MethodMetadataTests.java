@@ -3,8 +3,8 @@ package com.vztekoverflow.cilostazol.runtime.typesystem;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.signature.MethodDefFlags;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
-import java.nio.file.Path;
 import java.util.Arrays;
 
 public class MethodMetadataTests extends TestBase {
@@ -16,7 +16,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Accessibility() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Accessibility
@@ -44,7 +44,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Virtual2() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     NamedTypeSymbol type = ctx.getType("Virtual2", "MethodMetadataTest", assemblyID);
@@ -81,7 +81,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Impl1() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // interface Impl1
@@ -95,7 +95,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Impl() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Impl : Impl1, Impl2
@@ -111,7 +111,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Static() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Static
@@ -125,7 +125,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_ReturnType() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class ReturnType
@@ -135,7 +135,7 @@ public class MethodMetadataTests extends TestBase {
     MethodSymbol[] mFoo = getMethod(type, "Foo");
     assertEquals(1, mFoo.length);
     assertFalse(mFoo[0].getReturnType().isByRef());
-    assertNull(mFoo[0].getReturnType().getType());
+    assertEquals(SystemType.Void, mFoo[0].getReturnType().getType().getSystemType());
 
     // public ReturnT Foo1()
     MethodSymbol[] mFoo1 = getMethod(type, "Foo1");
@@ -156,7 +156,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Parameters() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Parameters
@@ -245,7 +245,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Extensions() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Extensions
@@ -260,7 +260,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_TryBlocks() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // public class TryBlocks
@@ -367,7 +367,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Generics() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Generics
@@ -475,7 +475,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_CTor() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class CTor
@@ -499,7 +499,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Properties() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Properties
@@ -534,7 +534,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Overload() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Overload
@@ -547,7 +547,7 @@ public class MethodMetadataTests extends TestBase {
 
   public void testMethod_Locals() {
     final String projectName = "MethodMetadataTest";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Locals

@@ -17,7 +17,7 @@ import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -98,7 +98,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     super(
         definingModule,
         CILOSTAZOLFrame.getStackTypeKind(name, namespace),
-        SystemTypes.getTypeKind(
+        SystemType.getTypeKind(
             name, namespace, definingModule.getDefiningFile().getAssemblyIdentity()));
     assert definingRow.getTableId() == CLITableConstants.CLI_TABLE_TYPE_DEF;
 
@@ -462,7 +462,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
       return switch (resolutionScopeTablePtr.getTableId()) {
         case CLITableConstants.CLI_TABLE_TYPE_REF -> throw new UnsupportedOperationException(
-            CILOSTAZOLBundle.message("cilostazol.exception.typeRefResolutionScope"));
+            CILOSTAZOLBundle.message("cilostazol.exception.nested.typeRef.resolutionScope"));
         case CLITableConstants.CLI_TABLE_MODULE_REF -> getTypeFromDifferentModule(
             name, namespace, resolutionScopeTablePtr, module);
         case CLITableConstants.CLI_TABLE_MODULE -> throw new InvalidCLIException();
@@ -470,7 +470,7 @@ public class NamedTypeSymbol extends TypeSymbol {
             name, namespace, resolutionScopeTablePtr, module);
         default -> throw new TypeSystemException(
             CILOSTAZOLBundle.message(
-                "cilostazol.exception.unknownResolutionScope",
+                "cilostazol.exception.unknown.resolutionScope",
                 namespace,
                 name,
                 resolutionScopeTablePtr.getTableId()));

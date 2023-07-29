@@ -4,14 +4,13 @@ import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.FieldSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import java.nio.file.Path;
 import java.util.Arrays;
 
 public class FieldParsingTests extends TestBase {
 
   public void testFieldParsing_General() {
     final String projectName = "FieldTest";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", projectName, assemblyIdentity);
@@ -22,7 +21,7 @@ public class FieldParsingTests extends TestBase {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   public void testFieldParsing_Types() {
     final String projectName = "FieldTest";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", projectName, assemblyIdentity);
@@ -42,7 +41,7 @@ public class FieldParsingTests extends TestBase {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   public void testFieldParsing_Staticness() {
     final String projectName = "FieldTest";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", projectName, assemblyIdentity);
@@ -64,7 +63,7 @@ public class FieldParsingTests extends TestBase {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   public void testFieldParsing_Visibility() {
     final String projectName = "FieldTest";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", projectName, assemblyIdentity);
@@ -126,7 +125,7 @@ public class FieldParsingTests extends TestBase {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   public void testFieldParsing_SelfType() throws Exception {
     final String projectName = "FieldTest";
-    CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
     var type = ctx.getType("Class", projectName, assemblyIdentity);

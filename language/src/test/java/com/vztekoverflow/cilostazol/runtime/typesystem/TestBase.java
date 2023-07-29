@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 import junit.framework.TestCase;
-import org.graalvm.polyglot.Source;
 
 /**
  * You have to first build C# projects in test resources: {@value _directory}.
@@ -18,35 +18,36 @@ import org.graalvm.polyglot.Source;
  */
 public abstract class TestBase extends TestCase {
   protected static final String _directory = "src/test/resources/TypeParsingTestTargets";
-  protected static final String _configuration = "Release";
+  protected static final String _runtimeDirectory = "../runtime";
+  protected static final String _configuration = "Debug";
   protected static final String _dotnetVersion = "net7.0";
 
   protected CILOSTAZOLContext ctx;
   protected CILOSTAZOLLanguage lang;
 
-  protected Path getDllPath(String projectName) {
-    return Paths.get(_directory, projectName, "bin", projectName + ".dll");
-  }
+  protected Path[] getDllPath(String projectName) {
+    try {
+      var paths = Files.walk(Paths.get(_runtimeDirectory));
+      return Stream.concat(paths, Stream.of(Paths.get(_directory, projectName, "bin")))
+          .toArray(Path[]::new);
 
-  protected Source getSourceFromProject(String projectName) throws IOException {
-    return Source.newBuilder(
-            CILOSTAZOLLanguage.ID,
-            org.graalvm.polyglot.io.ByteSequence.create(
-                Files.readAllBytes(getDllPath(projectName))),
-            projectName)
-        .build();
-  }
-
-  protected Source[] getSourcesFromProjects(String... projectNames) throws IOException {
-    Source[] sources = new Source[projectNames.length];
-    for (int i = 0; i < projectNames.length; i++) {
-      sources[i] = getSourceFromProject(projectNames[i]);
+    } catch (IOException e) {
+      throw new RuntimeException("Unable to get runtime dlls", e);
     }
-    return sources;
   }
 
-  protected CILOSTAZOLContext init() {
-    return init(new Path[0]);
+  protected Path[] getDllPath(String projectName, String otherProjectName) {
+    try {
+      var paths = Files.walk(Paths.get(_runtimeDirectory));
+      var paths2 =
+          Stream.concat(
+              Stream.of(Paths.get(_directory, projectName, "bin")),
+              Stream.of(Paths.get(_directory, otherProjectName, "bin")));
+      return Stream.concat(paths, paths2).toArray(Path[]::new);
+
+    } catch (IOException e) {
+      throw new RuntimeException("Unable to get runtime dlls", e);
+    }
   }
 
   protected CILOSTAZOLContext init(Path[] dllPaths) {

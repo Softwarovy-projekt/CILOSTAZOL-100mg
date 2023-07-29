@@ -47,7 +47,7 @@ public final class GuestAllocator {
   private static void initLoop(StaticObject obj, NamedTypeSymbol typeSymbol) {
     for (StaticField f : typeSymbol.getInstanceFields()) {
       assert !f.isStatic();
-      if (f.getKind() == SystemTypes.Object) {
+      if (f.getKind() == SystemType.Object) {
         f.setObjectValue(obj, StaticObject.NULL);
       }
     }
@@ -56,7 +56,7 @@ public final class GuestAllocator {
   private static void initLoopNoExplode(StaticObject obj, NamedTypeSymbol typeSymbol) {
     for (StaticField f : typeSymbol.getInstanceFields()) {
       assert !f.isStatic();
-      if (f.getKind() == SystemTypes.Object) {
+      if (f.getKind() == SystemType.Object) {
         f.setObjectValue(obj, StaticObject.NULL);
       }
     }
@@ -116,7 +116,7 @@ public final class GuestAllocator {
   public StaticObject createNewPrimitiveArray(ArrayTypeSymbol arrayType, int length) {
     var elementType = (NamedTypeSymbol) arrayType.getElementType();
     Object arr;
-    switch (elementType.getKind()) {
+    switch (elementType.getSystemType()) {
       case Boolean -> {
         arr = new boolean[length];
       }
@@ -158,7 +158,7 @@ public final class GuestAllocator {
       elemCount += dimensions[i];
     }
 
-    if (arrayType.getElementType().getKind() != SystemTypes.Object)
+    if (arrayType.getElementType().getSystemType() != SystemType.Object)
       return createNewPrimitiveArray(arrayType, elemCount);
     else return createNewReferenceArray(arrayType, elemCount);
   }

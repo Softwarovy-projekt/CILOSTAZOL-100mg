@@ -3,14 +3,13 @@ package com.vztekoverflow.cilostazol.runtime.typesystem;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import java.nio.file.Path;
 import java.util.Arrays;
 import org.junit.Assert;
 
 public class MethodParsingTests extends TestBase {
   public void testMethodParsingGeneral() {
     final String projectName = "MethodParsingGeneral";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // Classes
@@ -47,7 +46,7 @@ public class MethodParsingTests extends TestBase {
 
   public void testMethodParsing_MethodExistence() {
     final String projectName = "MethodParsingGeneral";
-    final CILOSTAZOLContext ctx = init(new Path[] {getDllPath(projectName).getParent()});
+    final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     final NamedTypeSymbol type = ctx.getType("A", "MethodParsingGeneral", assemblyID);

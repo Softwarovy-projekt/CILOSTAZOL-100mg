@@ -12,6 +12,7 @@ import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
+import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.CILOSTAZOLEngineOption;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.GuestAllocator;
@@ -147,11 +148,17 @@ public class CILOSTAZOLContext {
                   .build());
         } catch (Exception e) {
           throw new RuntimeException(
-              "Error loading assembly " + assemblyIdentity.getName() + " from " + path, e);
+              CILOSTAZOLBundle.message(
+                  "cilostazol.exception.error.loading.assembly", assemblyIdentity.getName(), path),
+              e);
         }
       }
     }
-    return null;
+    throw new RuntimeException(
+        CILOSTAZOLBundle.message(
+            "cilostazol.exception.missing.assembly",
+            assemblyIdentity.getName(),
+            Arrays.toString(libraryPaths)));
   }
 
   public AssemblySymbol loadAssembly(Source source) {

@@ -67,7 +67,7 @@ public final class CILOSTAZOLFrame {
       case Double -> CILOSTAZOLFrame.putDouble(frame, topStack, (double) obj);
       case Object -> CILOSTAZOLFrame.putObject(frame, topStack, (StaticObject) obj);
       case Void -> throw new InterpreterException(
-          CILOSTAZOLBundle.message("cilostazol.exception.voidStackType"));
+          CILOSTAZOLBundle.message("cilostazol.exception.void.can.not.be.on.stack"));
     }
   }
 
@@ -111,7 +111,7 @@ public final class CILOSTAZOLFrame {
       case Double -> popDouble(frame, topStack);
       case Object -> popObject(frame, topStack);
       case Void -> throw new InterpreterException(
-          CILOSTAZOLBundle.message("cilostazol.exception.voidStackType"));
+          CILOSTAZOLBundle.message("cilostazol.exception.void.can.not.be.on.stack"));
     };
   }
 
@@ -166,7 +166,7 @@ public final class CILOSTAZOLFrame {
       case Double -> CILOSTAZOLFrame.setLocalDouble(frame, topStack, (double) obj);
       case Object -> CILOSTAZOLFrame.setLocalObject(frame, topStack, (StaticObject) obj);
       case Void -> throw new InterpreterException(
-          CILOSTAZOLBundle.message("cilostazol.exception.voidLocalType"));
+          CILOSTAZOLBundle.message("cilostazol.exception.local.type.can.not.be.void"));
     }
   }
 
@@ -205,7 +205,7 @@ public final class CILOSTAZOLFrame {
       case Double -> CILOSTAZOLFrame.getLocalDouble(frame, topStack);
       case Object -> CILOSTAZOLFrame.getLocalObject(frame, topStack);
       case Void -> throw new InterpreterException(
-          CILOSTAZOLBundle.message("cilostazol.exception.voidLocalType"));
+          CILOSTAZOLBundle.message("cilostazol.exception.local.type.can.not.be.void"));
     };
   }
 
