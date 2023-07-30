@@ -17,13 +17,12 @@ public class MethodSpecSig {
     return genArgCount;
   }
 
-  public static MethodSpecSig read(SignatureReader reader)
-  {
+  public static MethodSpecSig read(SignatureReader reader) {
     final int temp = reader.getUnsigned();
     assert temp == 0x0A;
     final int genArgCount = reader.getUnsigned();
     final TypeSig[] types = new TypeSig[genArgCount];
-    for(int i = 0; i < genArgCount; i++) {
+    for (int i = 0; i < genArgCount; i++) {
       types[i] = TypeSig.read(reader);
     }
 

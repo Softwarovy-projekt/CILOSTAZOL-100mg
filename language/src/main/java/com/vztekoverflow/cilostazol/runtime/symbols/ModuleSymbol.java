@@ -31,7 +31,7 @@ public final class ModuleSymbol extends Symbol {
     return definingFile;
   }
 
-  //region Symbol resolving
+  // region Symbol resolving
   /**
    * @return the type with the given name and namespace, or null if not found in this module.
    * @apiNote If found, the type is cached in the context.
@@ -67,8 +67,7 @@ public final class ModuleSymbol extends Symbol {
     return methodDefToMethodSymbolCache[row.getRowNo()];
   }
 
-  private void initMethodSymbolCache()
-  {
+  private void initMethodSymbolCache() {
     methodDefToMethodSymbolCache =
         new MethodIndex
             [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF)
@@ -92,8 +91,7 @@ public final class ModuleSymbol extends Symbol {
     }
   }
 
-  private void initFieldSymbolCache()
-  {
+  private void initFieldSymbolCache() {
     fieldToFieldSymbolCache =
         new FieldIndex
             [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_FIELD) + 1];
@@ -115,7 +113,7 @@ public final class ModuleSymbol extends Symbol {
       }
     }
   }
-  //endregion
+  // endregion
 
   public static final class ModuleSymbolFactory {
     public static ModuleSymbol create(CLIFile file) {

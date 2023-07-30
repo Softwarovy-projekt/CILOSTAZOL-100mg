@@ -3,9 +3,8 @@ package com.vztekoverflow.cil.parser.cli;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIMethodDefTableRow;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
-import java.util.ArrayList;
-
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeRefTableRow;
+import java.util.ArrayList;
 import org.graalvm.collections.Pair;
 
 public class CLIFileUtils {

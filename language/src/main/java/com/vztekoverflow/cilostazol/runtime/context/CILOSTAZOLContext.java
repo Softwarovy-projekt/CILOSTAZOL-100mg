@@ -38,7 +38,8 @@ public class CILOSTAZOLContext {
 
   private final Map<TypeDefinitionCacheKey, NamedTypeSymbol> typeDefinitionCache = new HashMap<>();
   private final Map<TypeInstantiationCacheKey, TypeSymbol> typeInstantiationCache = new HashMap<>();
-  private final Map<MethodInstantiationCacheKey, MethodSymbol> methodInstantiationCache = new HashMap<>();
+  private final Map<MethodInstantiationCacheKey, MethodSymbol> methodInstantiationCache =
+      new HashMap<>();
 
   private final AppDomain appDomain;
 
@@ -113,10 +114,10 @@ public class CILOSTAZOLContext {
     var cacheKey = new TypeInstantiationCacheKey(type, typeArgs);
 
     return typeInstantiationCache.computeIfAbsent(
-            cacheKey,
-            k -> {
-              return k.genType().construct(k.typeArgs());
-            });
+        cacheKey,
+        k -> {
+          return k.genType().construct(k.typeArgs());
+        });
   }
 
   public MethodSymbol resolveGenericMethodInstantiation(

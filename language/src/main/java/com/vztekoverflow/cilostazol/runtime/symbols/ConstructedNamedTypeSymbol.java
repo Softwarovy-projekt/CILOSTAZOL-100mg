@@ -96,12 +96,12 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
     if (lazyMethodImpl == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyMethodImpl =
-              Arrays.stream(constructedFrom.getMethods())
-                      .map(
-                              x ->
-                                      SubstitutedMethodSymbol.SubstitutedMethodSymbolFactory.create(
-                                              x.getDefinition(), x, this))
-                      .toArray(MethodSymbol[]::new);
+          Arrays.stream(constructedFrom.getMethods())
+              .map(
+                  x ->
+                      SubstitutedMethodSymbol.SubstitutedMethodSymbolFactory.create(
+                          x.getDefinition(), x, this))
+              .toArray(MethodSymbol[]::new);
     }
 
     return lazyMethodImpl;
