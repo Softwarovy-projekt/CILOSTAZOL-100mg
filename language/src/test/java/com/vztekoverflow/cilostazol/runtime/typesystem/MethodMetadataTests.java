@@ -20,7 +20,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Accessibility
-    NamedTypeSymbol type = ctx.getType("Accessibility", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Accessibility", "MethodMetadataTest", assemblyID);
 
     // public void Foo1(){}
     MethodSymbol[] mFoo1 = getMethod(type, "Foo1");
@@ -47,7 +47,7 @@ public class MethodMetadataTests extends TestBase {
     final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
-    NamedTypeSymbol type = ctx.getType("Virtual2", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Virtual2", "MethodMetadataTest", assemblyID);
 
     // public override void Foo1() {}
     MethodSymbol[] mFoo1 = getMethod(type, "Foo1");
@@ -85,7 +85,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // interface Impl1
-    NamedTypeSymbol type = ctx.getType("Impl1", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Impl1", "MethodMetadataTest", assemblyID);
 
     // public void Foo();
     MethodSymbol[] mFoo = getMethod(type, "Foo");
@@ -99,7 +99,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Impl : Impl1, Impl2
-    NamedTypeSymbol type = ctx.getType("Impl", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Impl", "MethodMetadataTest", assemblyID);
 
     // void Impl1.Foo() {}
     MethodSymbol[] mFoo1 = getMethod(type, "MethodMetadataTest.Impl1.Foo");
@@ -115,7 +115,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Static
-    NamedTypeSymbol type = ctx.getType("Static", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Static", "MethodMetadataTest", assemblyID);
 
     // public static void Foo(){}
     MethodSymbol[] mFoo = getMethod(type, "Foo");
@@ -129,7 +129,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class ReturnType
-    NamedTypeSymbol type = ctx.getType("ReturnType", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("ReturnType", "MethodMetadataTest", assemblyID);
 
     // public public void Foo() {}
     MethodSymbol[] mFoo = getMethod(type, "Foo");
@@ -142,7 +142,7 @@ public class MethodMetadataTests extends TestBase {
     assertEquals(1, mFoo1.length);
     assertFalse(mFoo1[0].getReturnType().isByRef());
     assertEquals(
-        ctx.getType("ReturnT", "MethodMetadataTest", assemblyID),
+        ctx.resolveType("ReturnT", "MethodMetadataTest", assemblyID),
         mFoo1[0].getReturnType().getType());
 
     // public ref ReturnT Foo2()
@@ -150,7 +150,7 @@ public class MethodMetadataTests extends TestBase {
     assertEquals(1, mFoo2.length);
     assertTrue(mFoo2[0].getReturnType().isByRef());
     assertEquals(
-        ctx.getType("ReturnT", "MethodMetadataTest", assemblyID),
+        ctx.resolveType("ReturnT", "MethodMetadataTest", assemblyID),
         mFoo1[0].getReturnType().getType());
   }
 
@@ -160,7 +160,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Parameters
-    NamedTypeSymbol type = ctx.getType("Parameters", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Parameters", "MethodMetadataTest", assemblyID);
 
     // public void Foo() {}
     MethodSymbol[] mFoo = getMethod(type, "Foo");
@@ -182,7 +182,7 @@ public class MethodMetadataTests extends TestBase {
     assertFalse(
         mFoo[1].getParameters()[0].getFlags().hasFlag(ParameterSymbol.ParamFlags.Flag.OPTIONAL));
     assertEquals(
-        ctx.getType("Param1", "MethodMetadataTest", assemblyID),
+        ctx.resolveType("Param1", "MethodMetadataTest", assemblyID),
         mFoo[1].getParameters()[0].getType());
 
     // public static void Foo1(Param1 p1) {}
@@ -217,13 +217,13 @@ public class MethodMetadataTests extends TestBase {
     assertTrue(mFoo4[0].getParameters()[1].getFlags().hasFlag(ParameterSymbol.ParamFlags.Flag.OUT));
     assertTrue(mFoo4[0].getParameters()[2].getFlags().hasFlag(ParameterSymbol.ParamFlags.Flag.IN));
     assertEquals(
-        ctx.getType("Param1", "MethodMetadataTest", assemblyID),
+        ctx.resolveType("Param1", "MethodMetadataTest", assemblyID),
         mFoo4[0].getParameters()[0].getType());
     assertEquals(
-        ctx.getType("Param1", "MethodMetadataTest", assemblyID),
+        ctx.resolveType("Param1", "MethodMetadataTest", assemblyID),
         mFoo4[0].getParameters()[1].getType());
     assertEquals(
-        ctx.getType("Param1", "MethodMetadataTest", assemblyID),
+        ctx.resolveType("Param1", "MethodMetadataTest", assemblyID),
         mFoo4[0].getParameters()[2].getType());
 
     // public void Foo5(Param1 p1 = null) {}
@@ -239,7 +239,7 @@ public class MethodMetadataTests extends TestBase {
             .getFlags()
             .hasFlag(ParameterSymbol.ParamFlags.Flag.HAS_DEFAULT));
     assertEquals(
-        ctx.getType("Param1", "MethodMetadataTest", assemblyID),
+        ctx.resolveType("Param1", "MethodMetadataTest", assemblyID),
         mFoo5[0].getParameters()[0].getType());
   }
 
@@ -249,7 +249,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Extensions
-    NamedTypeSymbol type = ctx.getType("Extensions", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Extensions", "MethodMetadataTest", assemblyID);
 
     // public static void Foo2(this Parameters p1) {}
     MethodSymbol[] mFoo2 = getMethod(type, "Foo2");
@@ -264,7 +264,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // public class TryBlocks
-    NamedTypeSymbol type = ctx.getType("TryBlocks", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("TryBlocks", "MethodMetadataTest", assemblyID);
 
     // public void Foo1()
     MethodSymbol[] mFoo1 = getMethod(type, "Foo1");
@@ -371,7 +371,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Generics
-    NamedTypeSymbol type = ctx.getType("Generics`1", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Generics`1", "MethodMetadataTest", assemblyID);
 
     // public void Foo1<T1>() {}
     MethodSymbol[] mFoo1 = getMethod(type, "Foo1");
@@ -479,7 +479,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class CTor
-    NamedTypeSymbol type = ctx.getType("CTor", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("CTor", "MethodMetadataTest", assemblyID);
 
     // public CTor()
     MethodSymbol[] ctor = getMethod(type, ".ctor");
@@ -503,7 +503,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Properties
-    NamedTypeSymbol type = ctx.getType("Properties", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Properties", "MethodMetadataTest", assemblyID);
 
     // public Prop1 prop1 {get;set;}
     MethodSymbol[] get_prop1 = getMethod(type, "get_prop1");
@@ -538,7 +538,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Overload
-    NamedTypeSymbol type = ctx.getType("Overload", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Overload", "MethodMetadataTest", assemblyID);
 
     // public void Foo(Temp1 t) {},  public void Foo() {}
     MethodSymbol[] mFoo = getMethod(type, "Foo");
@@ -551,7 +551,7 @@ public class MethodMetadataTests extends TestBase {
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
     // class Locals
-    NamedTypeSymbol type = ctx.getType("Locals", "MethodMetadataTest", assemblyID);
+    NamedTypeSymbol type = ctx.resolveType("Locals", "MethodMetadataTest", assemblyID);
 
     // public void Foo()
     MethodSymbol[] mFoo = getMethod(type, "Foo");

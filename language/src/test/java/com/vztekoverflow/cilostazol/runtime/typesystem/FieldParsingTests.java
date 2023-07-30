@@ -13,7 +13,7 @@ public class FieldParsingTests extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", projectName, assemblyIdentity);
+    var type = ctx.resolveType("Class", projectName, assemblyIdentity);
 
     assertEquals(9, type.getFields().length);
   }
@@ -24,7 +24,7 @@ public class FieldParsingTests extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", projectName, assemblyIdentity);
+    var type = ctx.resolveType("Class", projectName, assemblyIdentity);
 
     assertTrue(Arrays.stream(type.getFields()).anyMatch(f -> f.getName().equals("fieldClass2")));
     var fieldClass2Type =
@@ -44,7 +44,7 @@ public class FieldParsingTests extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", projectName, assemblyIdentity);
+    var type = ctx.resolveType("Class", projectName, assemblyIdentity);
 
     assertFalse(
         Arrays.stream(type.getFields())
@@ -66,7 +66,7 @@ public class FieldParsingTests extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", projectName, assemblyIdentity);
+    var type = ctx.resolveType("Class", projectName, assemblyIdentity);
 
     assertTrue(Arrays.stream(type.getFields()).anyMatch(f -> f.getName().equals("fieldPrivate")));
     var fieldPrivate =
@@ -128,7 +128,7 @@ public class FieldParsingTests extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", projectName, assemblyIdentity);
+    var type = ctx.resolveType("Class", projectName, assemblyIdentity);
 
     assertTrue(Arrays.stream(type.getFields()).anyMatch(f -> f.getName().equals("fieldSelf")));
     var fieldSelf =
