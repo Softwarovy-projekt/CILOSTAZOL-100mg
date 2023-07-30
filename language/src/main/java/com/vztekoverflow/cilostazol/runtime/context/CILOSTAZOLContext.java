@@ -85,7 +85,7 @@ public class CILOSTAZOLContext {
 
   // region Symbols
 
-  /** This should be use on any path that queries a type. @ApiNote uses cache. */
+  /** This should be used on any path that queries a type. @ApiNote uses cache. */
   public NamedTypeSymbol resolveType(String name, String namespace, AssemblyIdentity assembly) {
     assembly = AssemblyForwarder.forwardedAssembly(assembly);
     // Note: Assembly in cacheKey is different from what is came in as an argument due to lack of
@@ -107,7 +107,7 @@ public class CILOSTAZOLContext {
         });
   }
 
-  /** This should be use on any path that queries a type. @ApiNote uses cache. */
+  /** This should be used on any path that queries a type. @ApiNote uses cache. */
   public TypeSymbol resolveGenericTypeInstantiation(NamedTypeSymbol type, TypeSymbol[] typeArgs) {
 
     var cacheKey = new TypeInstantiationCacheKey(type, typeArgs);
@@ -119,14 +119,15 @@ public class CILOSTAZOLContext {
             });
   }
 
-  public MethodSymbol resolveGenericMethodInstantation(MethodSymbol method, TypeSymbol[] typeArgs) {
+  public MethodSymbol resolveGenericMethodInstantiation(
+      MethodSymbol method, TypeSymbol[] typeArgs) {
     var cacheKey = new MethodInstantiationCacheKey(method, typeArgs);
 
     return methodInstantiationCache.computeIfAbsent(
-            cacheKey,
-            k -> {
-              return k.genMethod().construct(k.typeArgs());
-            });
+        cacheKey,
+        k -> {
+          return k.genMethod().construct(k.typeArgs());
+        });
   }
 
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {

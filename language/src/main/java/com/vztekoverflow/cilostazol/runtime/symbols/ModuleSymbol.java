@@ -8,13 +8,17 @@ import com.vztekoverflow.cil.parser.cli.table.generated.CLIMethodDefTableRow;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.other.FieldIndex;
+import com.vztekoverflow.cilostazol.runtime.other.MethodIndex;
 
 public final class ModuleSymbol extends Symbol {
   private final CLIFile definingFile;
+
   @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private ClassIndex[] methodDefToMethodSymbolCache;
+  private MethodIndex[] methodDefToMethodSymbolCache;
+
   @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private ClassIndex[] fieldToFieldSymbolCache;
+  private FieldIndex[] fieldToFieldSymbolCache;
 
   public ModuleSymbol(CLIFile definingFile) {
     super(ContextProviderImpl.getInstance());
@@ -45,10 +49,8 @@ public final class ModuleSymbol extends Symbol {
     return null;
   }
 
-  public ClassIndex getLocalField(CLIFieldTableRow row)
-  {
-    if (fieldToFieldSymbolCache == null)
-    {
+  public FieldIndex getLocalField(CLIFieldTableRow row) {
+    if (fieldToFieldSymbolCache == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       initFieldSymbolCache();
     }
@@ -56,10 +58,8 @@ public final class ModuleSymbol extends Symbol {
     return fieldToFieldSymbolCache[row.getRowNo()];
   }
 
-  public ClassIndex getLocalMethod(CLIMethodDefTableRow row)
-  {
-    if (methodDefToMethodSymbolCache == null)
-    {
+  public MethodIndex getLocalMethod(CLIMethodDefTableRow row) {
+    if (methodDefToMethodSymbolCache == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       initMethodSymbolCache();
     }
@@ -69,8 +69,10 @@ public final class ModuleSymbol extends Symbol {
 
   private void initMethodSymbolCache()
   {
-    methodDefToMethodSymbolCache = new ClassIndex
-            [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF)+1];
+    methodDefToMethodSymbolCache =
+        new MethodIndex
+            [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF)
+                + 1];
     for (CLITypeDefTableRow klass : getDefiningFile().getTableHeads().getTypeDefTableHead()) {
       var nameAndNamespace = CLIFileUtils.getNameAndNamespace(getDefiningFile(), klass);
       var methodRange = CLIFileUtils.getMethodRange(getDefiningFile(), klass);
@@ -78,13 +80,13 @@ public final class ModuleSymbol extends Symbol {
       int endIdx = methodRange.getRight();
       while (startIdx < endIdx) {
         methodDefToMethodSymbolCache[startIdx] =
-                new ClassIndex(
-                        getContext()
-                                .getType(
-                                        nameAndNamespace.getLeft(),
-                                        nameAndNamespace.getRight(),
-                                        getDefiningFile().getAssemblyIdentity()),
-                        startIdx - methodRange.getLeft());
+            new MethodIndex(
+                getContext()
+                    .resolveType(
+                        nameAndNamespace.getLeft(),
+                        nameAndNamespace.getRight(),
+                        getDefiningFile().getAssemblyIdentity()),
+                startIdx - methodRange.getLeft());
         startIdx++;
       }
     }
@@ -92,7 +94,9 @@ public final class ModuleSymbol extends Symbol {
 
   private void initFieldSymbolCache()
   {
-    fieldToFieldSymbolCache = new ClassIndex[definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_FIELD)+1];
+    fieldToFieldSymbolCache =
+        new FieldIndex
+            [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_FIELD) + 1];
     for (CLITypeDefTableRow klass : getDefiningFile().getTableHeads().getTypeDefTableHead()) {
       var nameAndNamespace = CLIFileUtils.getNameAndNamespace(getDefiningFile(), klass);
       var fieldRange = CLIFileUtils.getFieldRange(getDefiningFile(), klass);
@@ -100,13 +104,13 @@ public final class ModuleSymbol extends Symbol {
       int endIdx = fieldRange.getRight();
       while (startIdx < endIdx) {
         fieldToFieldSymbolCache[startIdx] =
-                new ClassIndex(
-                        getContext()
-                                .getType(
-                                        nameAndNamespace.getLeft(),
-                                        nameAndNamespace.getRight(),
-                                        getDefiningFile().getAssemblyIdentity()),
-                        startIdx - fieldRange.getLeft());
+            new FieldIndex(
+                getContext()
+                    .resolveType(
+                        nameAndNamespace.getLeft(),
+                        nameAndNamespace.getRight(),
+                        getDefiningFile().getAssemblyIdentity()),
+                startIdx - fieldRange.getLeft());
         startIdx++;
       }
     }
@@ -116,24 +120,6 @@ public final class ModuleSymbol extends Symbol {
   public static final class ModuleSymbolFactory {
     public static ModuleSymbol create(CLIFile file) {
       return new ModuleSymbol(file);
-    }
-  }
-
-  public static final class ClassIndex {
-    NamedTypeSymbol symbol;
-    int index;
-
-    public ClassIndex(NamedTypeSymbol symbol, int index) {
-      this.symbol = symbol;
-      this.index = index;
-    }
-
-    public NamedTypeSymbol getSymbol() {
-      return symbol;
-    }
-
-    public int getIndex() {
-      return index;
     }
   }
 }
