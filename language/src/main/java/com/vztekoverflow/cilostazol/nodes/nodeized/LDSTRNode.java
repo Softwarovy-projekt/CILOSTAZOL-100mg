@@ -4,6 +4,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.symbols.ArrayTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
@@ -16,7 +17,7 @@ public final class LDSTRNode extends NodeizedNodeBase {
   public LDSTRNode(String value, int top, NamedTypeSymbol stringType) {
     var stringChar = value.toCharArray();
 
-    final var charType = stringType.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char);
+    final var charType = SymbolResolver.getChar(stringType.getDefiningModule().getContext());
     final var charArrayType =
         ArrayTypeSymbol.ArrayTypeSymbolFactory.create(charType, charType.getDefiningModule());
     final var charArray =

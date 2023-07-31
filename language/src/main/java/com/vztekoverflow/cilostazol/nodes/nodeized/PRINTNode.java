@@ -31,7 +31,7 @@ public class PRINTNode extends NodeizedNodeBase {
   @Override
   public int execute(VirtualFrame frame, TypeSymbol[] taggedFrame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(this).getEnv();
-    assert taggedFrame[argumentTop].getType()
+    assert taggedFrame[argumentTop]
                 instanceof com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol namedType
             && namedType.getName().equals("String")
             && namedType.getNamespace().equals("System")
