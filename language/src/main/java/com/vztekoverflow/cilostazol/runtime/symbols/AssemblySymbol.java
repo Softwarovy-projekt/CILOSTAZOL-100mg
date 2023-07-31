@@ -7,6 +7,7 @@ import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
 import org.graalvm.polyglot.Source;
 
 public final class AssemblySymbol extends Symbol {
@@ -47,7 +48,9 @@ public final class AssemblySymbol extends Symbol {
     }
 
     CLITablePtr entryPtr = CLITablePtr.fromToken(definingFile.getCliHeader().getEntryPointToken());
-    return modules[0].getLocalMethod(entryPtr);
+    return modules[0]
+        .getLocalMethod(TableRowUtils.getMethodDefRow(definingFile, entryPtr))
+        .getItem();
   }
 
   public static final class AssemblySymbolFactory {

@@ -5,6 +5,7 @@ import static com.vztekoverflow.cilostazol.runtime.symbols.ArrayTypeSymbol.*;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.signature.SignatureReader;
 import com.vztekoverflow.cil.parser.cli.signature.TypeSig;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
@@ -13,9 +14,9 @@ import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeSpecTableRow;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
-import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
 public abstract class TypeSymbol extends Symbol {
   protected final ModuleSymbol definingModule;
@@ -32,6 +33,10 @@ public abstract class TypeSymbol extends Symbol {
     this.systemType = staticObjType;
   }
 
+  public AssemblyIdentity getAssemblyIdentity() {
+    return definingModule.getDefiningFile().getAssemblyIdentity();
+  }
+
   // region SOM
   protected static int fastLookup(TypeSymbol target, TypeSymbol[] types) {
     if (!CompilerDirectives.isPartialEvaluationConstant(types)) {
@@ -45,7 +50,7 @@ public abstract class TypeSymbol extends Symbol {
   @ExplodeLoop(kind = ExplodeLoop.LoopExplosionKind.FULL_EXPLODE_UNTIL_RETURN)
   protected static int fastLookupImpl(TypeSymbol target, TypeSymbol[] types) {
     for (int i = 0; i < types.length; i++) {
-      if (types[i].getType() == target) {
+      if (types[i] == target) {
         return i;
       }
     }
@@ -145,51 +150,21 @@ public abstract class TypeSymbol extends Symbol {
           }
           yield genType.construct(typeArgs);
         }
-        case TypeSig.ELEMENT_TYPE_I4 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Int32);
-        case TypeSig.ELEMENT_TYPE_I8 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Int64);
-        case TypeSig.ELEMENT_TYPE_I2 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Int16);
-        case TypeSig.ELEMENT_TYPE_I1 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.SByte);
-        case TypeSig.ELEMENT_TYPE_U4 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.UInt32);
-        case TypeSig.ELEMENT_TYPE_U8 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.UInt64);
-        case TypeSig.ELEMENT_TYPE_U2 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.UInt16);
-        case TypeSig.ELEMENT_TYPE_U1 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Byte);
-        case TypeSig.ELEMENT_TYPE_R4 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Single);
-        case TypeSig.ELEMENT_TYPE_R8 -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Double);
-        case TypeSig.ELEMENT_TYPE_BOOLEAN -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Boolean);
-        case TypeSig.ELEMENT_TYPE_CHAR -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Char);
-        case TypeSig.ELEMENT_TYPE_STRING -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.String);
-        case TypeSig.ELEMENT_TYPE_OBJECT -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Object);
-        case TypeSig.ELEMENT_TYPE_VOID -> module
-            .getContext()
-            .getType(CILOSTAZOLContext.CILBuiltInType.Void);
+        case TypeSig.ELEMENT_TYPE_I4 -> SymbolResolver.getInt32(module.getContext());
+        case TypeSig.ELEMENT_TYPE_I8 -> SymbolResolver.getInt64(module.getContext());
+        case TypeSig.ELEMENT_TYPE_I2 -> SymbolResolver.getInt16(module.getContext());
+        case TypeSig.ELEMENT_TYPE_I1 -> SymbolResolver.getSByte(module.getContext());
+        case TypeSig.ELEMENT_TYPE_U4 -> SymbolResolver.getUInt32(module.getContext());
+        case TypeSig.ELEMENT_TYPE_U8 -> SymbolResolver.getUInt64(module.getContext());
+        case TypeSig.ELEMENT_TYPE_U2 -> SymbolResolver.getUInt16(module.getContext());
+        case TypeSig.ELEMENT_TYPE_U1 -> SymbolResolver.getByte(module.getContext());
+        case TypeSig.ELEMENT_TYPE_R4 -> SymbolResolver.getSingle(module.getContext());
+        case TypeSig.ELEMENT_TYPE_R8 -> SymbolResolver.getDouble(module.getContext());
+        case TypeSig.ELEMENT_TYPE_BOOLEAN -> SymbolResolver.getBoolean(module.getContext());
+        case TypeSig.ELEMENT_TYPE_CHAR -> SymbolResolver.getChar(module.getContext());
+        case TypeSig.ELEMENT_TYPE_OBJECT, TypeSig.ELEMENT_TYPE_STRING -> SymbolResolver.getObject(
+            module.getContext());
+        case TypeSig.ELEMENT_TYPE_VOID -> SymbolResolver.getVoid(module.getContext());
         case TypeSig.ELEMENT_TYPE_ARRAY -> ArrayTypeSymbolFactory.create(
             create(typeSig.getInnerType(), mvars, vars, module),
             typeSig.getArrayShapeSig(),

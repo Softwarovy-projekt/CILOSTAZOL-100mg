@@ -3,7 +3,8 @@ package com.vztekoverflow.cilostazol.runtime.other;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import java.util.Objects;
 
-public record TypeDefinitionCacheKey(String name, String namespace, AssemblyIdentity assemblyIdentity) {
+public record TypeDefinitionCacheKey(
+    String name, String namespace, AssemblyIdentity assemblyIdentity) {
   @Override
   public String toString() {
     return namespace + "." + name + " in " + assemblyIdentity;

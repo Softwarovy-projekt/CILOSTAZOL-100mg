@@ -5,12 +5,10 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.vztekoverflow.cil.parser.ByteSequenceBuffer;
 import com.vztekoverflow.cil.parser.CILParserException;
 import com.vztekoverflow.cil.parser.ParserBundle;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.CLITables;
 import com.vztekoverflow.cil.parser.cli.table.CLITablesHeader;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableHeads;
-import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
 import com.vztekoverflow.cil.parser.pe.PEFile;
 import org.graalvm.polyglot.io.ByteSequence;
 

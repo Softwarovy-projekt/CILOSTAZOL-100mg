@@ -16,7 +16,7 @@ public class TypeParsingTest extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
 
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
-    NamedTypeSymbol type = ctx.getType("FindLocalType", "Class", assemblyIdentity);
+    NamedTypeSymbol type = ctx.resolveType("FindLocalType", "Class", assemblyIdentity);
 
     // No error thrown
   }
@@ -26,7 +26,7 @@ public class TypeParsingTest extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", "FindLocalType", assemblyIdentity);
+    var type = ctx.resolveType("Class", "FindLocalType", assemblyIdentity);
 
     assertEquals("FindLocalType", type.getNamespace());
     assertEquals("Class", type.getName());
@@ -37,12 +37,12 @@ public class TypeParsingTest extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", "FindLocalType", assemblyIdentity);
+    var type = ctx.resolveType("Class", "FindLocalType", assemblyIdentity);
 
     assertEquals("FindLocalType", type.getNamespace());
     assertEquals("Class", type.getName());
 
-    var typeCached = ctx.getType("Class", "FindLocalType", assemblyIdentity);
+    var typeCached = ctx.resolveType("Class", "FindLocalType", assemblyIdentity);
     assertEquals(type, typeCached);
   }
 
@@ -51,7 +51,7 @@ public class TypeParsingTest extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", projectName, assemblyIdentity);
+    var type = ctx.resolveType("Class", projectName, assemblyIdentity);
 
     assertEquals("ExtendsTest", type.getNamespace());
     assertEquals("Class", type.getName());
@@ -65,7 +65,7 @@ public class TypeParsingTest extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class", projectName, assemblyIdentity);
+    var type = ctx.resolveType("Class", projectName, assemblyIdentity);
 
     assertEquals("InterfacesTest", type.getNamespace());
     assertEquals("Class", type.getName());
@@ -89,7 +89,7 @@ public class TypeParsingTest extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("Class`1", projectName, assemblyIdentity);
+    var type = ctx.resolveType("Class`1", projectName, assemblyIdentity);
 
     assertEquals(1, type.getTypeParameters().length);
   }
@@ -99,7 +99,7 @@ public class TypeParsingTest extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var localType = ctx.getType("Class1", projectName, assemblyIdentity);
+    var localType = ctx.resolveType("Class1", projectName, assemblyIdentity);
 
     assertEquals(2, localType.getFields().length);
     assertEquals("Class2", ((NamedTypeSymbol) localType.getFields()[1].getType()).getName());
@@ -114,7 +114,7 @@ public class TypeParsingTest extends TestBase {
     CILOSTAZOLContext ctx = init(getDllPath(projectName, otherProjectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var localType = ctx.getType("Class1", projectName, assemblyIdentity);
+    var localType = ctx.resolveType("Class1", projectName, assemblyIdentity);
 
     assertEquals(2, localType.getFields().length);
     assertEquals("Class", ((NamedTypeSymbol) localType.getFields()[0].getType()).getName());

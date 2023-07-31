@@ -18,7 +18,7 @@ import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
-
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import java.util.*;
 
 public class NamedTypeSymbol extends TypeSymbol {
@@ -162,7 +162,9 @@ public class NamedTypeSymbol extends TypeSymbol {
     return lazyMethods;
   }
 
-  public MethodSymbol[] getMethodsImpl() { throw new NotImplementedException(); }
+  public MethodSymbol[] getMethodsImpl() {
+    throw new NotImplementedException();
+  }
 
   public MethodSymbol[] getVMT() {
     throw new NotImplementedException();
@@ -265,11 +267,6 @@ public class NamedTypeSymbol extends TypeSymbol {
         && Arrays.equals(other.getTypeArguments(), getTypeArguments());
   }
 
-  @Override
-  public Symbol getType() {
-    return NamedTypeSymbol.this;
-  }
-
   // endregion
 
   // region SOM shapes
@@ -318,11 +315,13 @@ public class NamedTypeSymbol extends TypeSymbol {
   }
 
   private static class LazyFactory {
-    private static MethodSymbol[] createMethods(NamedTypeSymbol symbol, CLITypeDefTableRow row) {
-      var methodRange = CLIFileUtils.getMethodRange(symbol.definingModule.getDefiningFile(), row);
+    private static MethodSymbol[] createMethods(
+        NamedTypeSymbol containingType, CLITypeDefTableRow row) {
+      var methodRange =
+          CLIFileUtils.getMethodRange(containingType.definingModule.getDefiningFile(), row);
 
       var methodRow =
-          symbol
+          containingType
               .definingModule
               .getDefiningFile()
               .getTableHeads()
@@ -332,7 +331,7 @@ public class NamedTypeSymbol extends TypeSymbol {
       var methods = new MethodSymbol[methodRange.getRight() - methodRange.getLeft()];
       while (methodRow.getRowNo() < methodRange.getRight()) {
         methods[methodRow.getRowNo() - methodRange.getLeft()] =
-            symbol.getDefiningModule().getLocalMethod(methodRow.getPtr());
+            MethodSymbol.MethodSymbolFactory.create(methodRow, containingType);
         methodRow = methodRow.skip(1);
       }
 
@@ -410,8 +409,9 @@ public class NamedTypeSymbol extends TypeSymbol {
 
     public static MethodSymbol[] createMethodsImpl(NamedTypeSymbol symbol) {
       HashMap<MethodSymbol, MethodSymbol> result = new HashMap<MethodSymbol, MethodSymbol>();
-      for (var methodImpl : symbol.getDefiningModule().getDefiningFile().getTableHeads().getMethodImplTableHead()) {
-        //TODO:...
+      for (var methodImpl :
+          symbol.getDefiningModule().getDefiningFile().getTableHeads().getMethodImplTableHead()) {
+        // TODO:...
       }
       return null;
     }
@@ -445,17 +445,15 @@ public class NamedTypeSymbol extends TypeSymbol {
       return fields;
     }
 
-
     /** We have to patch type of String to be able to represent it in SOM. */
     private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
       if (Objects.equals(type.getNamespace(), "System")
-              && Objects.equals(type.getName(), "String")
-              && symbol.getName().equals("_firstChar")) {
+          && Objects.equals(type.getName(), "String")
+          && symbol.getName().equals("_firstChar")) {
         return FieldSymbol.FieldSymbolFactory.createWith(
-                symbol,
-                ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
-                        type.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char),
-                        type.getDefiningModule()));
+            symbol,
+            ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
+                SymbolResolver.getChar(type.getContext()), type.getDefiningModule()));
       }
       return symbol;
     }
@@ -503,9 +501,8 @@ public class NamedTypeSymbol extends TypeSymbol {
       // We can omit looking for file since we know that it is in the same assembly as this module
       // TODO: can be improved by calling getLocalTypeFromModule that would filter modules right
       // away by name
-      return module
-          .getContext()
-          .getType(name, namespace, module.getDefiningFile().getAssemblyIdentity());
+      return CILOSTAZOLContext.get(null)
+          .resolveType(name, namespace, module.getDefiningFile().getAssemblyIdentity());
     }
 
     private static NamedTypeSymbol getTypeFromDifferentAssembly(

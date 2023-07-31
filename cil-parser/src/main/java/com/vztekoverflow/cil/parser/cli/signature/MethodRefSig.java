@@ -7,7 +7,7 @@ public class MethodRefSig {
   private final ParamSig[] _params;
 
   public MethodRefSig(
-          MethodDefFlags flags, int _genParamCount, RetTypeSig _retType, ParamSig[] _params) {
+      MethodDefFlags flags, int _genParamCount, RetTypeSig _retType, ParamSig[] _params) {
     _flags = flags;
     this._genParamCount = _genParamCount;
     this._retType = _retType;

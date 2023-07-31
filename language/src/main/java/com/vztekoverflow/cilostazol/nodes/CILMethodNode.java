@@ -25,6 +25,7 @@ import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
 import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
@@ -385,32 +386,28 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     // We want to tag the stack by types in it
     CILOSTAZOLFrame.putInt(frame, top, value);
     CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, getMethod().getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int32));
+        taggedFrame, top, SymbolResolver.getInt32(CILOSTAZOLContext.get(this)));
   }
 
   private void loadValueOnTop(VirtualFrame frame, int top, long value) {
     // We want to tag the stack by types in it
     CILOSTAZOLFrame.putLong(frame, top, value);
     CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, getMethod().getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int64));
+        taggedFrame, top, SymbolResolver.getInt64(CILOSTAZOLContext.get(this)));
   }
 
   private void loadValueOnTop(VirtualFrame frame, int top, double value) {
     // We want to tag the stack by types in it
     CILOSTAZOLFrame.putDouble(frame, top, value);
     CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame,
-        top,
-        getMethod().getContext().getType(CILOSTAZOLContext.CILBuiltInType.Double));
+        taggedFrame, top, SymbolResolver.getDouble(CILOSTAZOLContext.get(this)));
   }
 
   private void loadValueOnTop(VirtualFrame frame, int top, float value) {
     // We want to tag the stack by types in it
     CILOSTAZOLFrame.putDouble(frame, top, value);
     CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame,
-        top,
-        getMethod().getContext().getType(CILOSTAZOLContext.CILBuiltInType.Single));
+        taggedFrame, top, SymbolResolver.getSingle(CILOSTAZOLContext.get(this)));
   }
 
   private void loadLocalToTop(VirtualFrame frame, int localIdx, int top) {
@@ -505,7 +502,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             new LDSTRNode(
                 ptr.readString(method.getModule().getDefiningFile().getUSHeap()),
                 top,
-                CILOSTAZOLContext.get(this).getType(CILOSTAZOLContext.CILBuiltInType.String));
+                SymbolResolver.getString(CILOSTAZOLContext.get(this)));
       }
       case CALL -> {
         // if method is local
@@ -522,9 +519,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
             var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
             if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
-              var containingType =
-                  CILOSTAZOLContext.get(this).getType(klass, getMethod().getModule());
-              var method = findMatchingMethod(name, methodSignature, containingType);
+              var containingType = SymbolResolver.resolveType(klass, getMethod().getModule());
+              var method =
+                  findMatchingMethod(name, methodSignature, (NamedTypeSymbol) containingType);
 
               node = getCheckedCALLNode(method, top);
             } else {
@@ -533,7 +530,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             }
           }
           case CLITableConstants.CLI_TABLE_METHOD_DEF -> {
-            var methodDef = method.getModule().getLocalMethod(token);
+            var row = TableRowUtils.getMethodDefRow(method.getModule(), token);
+            var methodDef = method.getModule().getLocalMethod(row).getItem();
             node = new CALLNode(methodDef, top);
           }
           case CLI_TABLE_METHOD_SPEC -> {
