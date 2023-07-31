@@ -2,7 +2,7 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 
 import com.vztekoverflow.cil.parser.cli.signature.ArrayShapeSig;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 
 public final class ArrayTypeSymbol extends TypeSymbol {
   private final TypeSymbol elementType;
@@ -16,10 +16,7 @@ public final class ArrayTypeSymbol extends TypeSymbol {
       int[] lengths,
       int[] lowerBounds,
       ModuleSymbol definingModule) {
-    super(
-        definingModule,
-        CILOSTAZOLFrame.StackType.Object,
-        SystemTypes.Array); // TODO: Klepitko -> arrays will be objects
+    super(definingModule, CILOSTAZOLFrame.StackType.Object, SystemType.Object);
     this.elementType = elementType;
     this.rank = rank;
     this.lengths = lengths;
@@ -40,6 +37,16 @@ public final class ArrayTypeSymbol extends TypeSymbol {
 
   public int[] getLowerBounds() {
     return lowerBounds;
+  }
+
+  @Override
+  public boolean isInterface() {
+    return false;
+  }
+
+  @Override
+  public boolean isArray() {
+    return true;
   }
 
   public static class ArrayTypeSymbolFactory {

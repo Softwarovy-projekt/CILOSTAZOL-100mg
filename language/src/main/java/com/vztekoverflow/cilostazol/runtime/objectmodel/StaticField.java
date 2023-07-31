@@ -14,19 +14,19 @@ public class StaticField extends StaticProperty {
     return symbol.isStatic();
   }
 
-  public SystemTypes getKind() {
-    return symbol.getKind();
+  public SystemType getKind() {
+    return symbol.getSystemType();
   }
 
   public Class<?> getPropertyType() {
-    return switch (symbol.getKind()) {
+    return switch (symbol.getSystemType()) {
       case Boolean -> boolean.class;
       case Char -> char.class;
       case Float -> float.class;
       case Double -> double.class;
       case Int -> int.class;
       case Long -> long.class;
-      case Array -> Object.class; // TODO: Klepitko -> arrrays will be objects
+      case Short -> short.class;
       default -> StaticObject.class;
     };
   }

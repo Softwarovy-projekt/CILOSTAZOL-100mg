@@ -4,7 +4,7 @@ import com.vztekoverflow.cil.parser.cli.signature.FieldSig;
 import com.vztekoverflow.cil.parser.cli.signature.SignatureReader;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIFieldTableRow;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 
 public final class FieldSymbol extends Symbol {
 
@@ -59,8 +59,8 @@ public final class FieldSymbol extends Symbol {
     return FieldSymbolVisibility.fromFlags(visibilityFlags);
   }
 
-  public SystemTypes getKind() {
-    return type.getKind();
+  public SystemType getSystemType() {
+    return type.getSystemType();
   }
 
   public TypeSymbol getDeclaringType() {

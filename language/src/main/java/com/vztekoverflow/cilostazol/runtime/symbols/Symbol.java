@@ -13,8 +13,4 @@ public abstract class Symbol {
   public CILOSTAZOLContext getContext() {
     return ctxProvider.getContext();
   }
-
-  public Symbol getType() {
-    return Symbol.this;
-  }
 }

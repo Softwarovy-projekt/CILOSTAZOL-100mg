@@ -3,6 +3,7 @@ package com.vztekoverflow.cil.parser.cli;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIMethodDefTableRow;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
+import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeRefTableRow;
 import java.util.ArrayList;
 import org.graalvm.collections.Pair;
 
@@ -42,6 +43,12 @@ public class CLIFileUtils {
   }
 
   public static Pair<String, String> getNameAndNamespace(CLIFile file, CLITypeDefTableRow row) {
+    final var name = row.getTypeNameHeapPtr().read(file.getStringHeap());
+    final var namespace = row.getTypeNamespaceHeapPtr().read(file.getStringHeap());
+    return Pair.create(name, namespace);
+  }
+
+  public static Pair<String, String> getNameAndNamespace(CLIFile file, CLITypeRefTableRow row) {
     final var name = row.getTypeNameHeapPtr().read(file.getStringHeap());
     final var namespace = row.getTypeNamespaceHeapPtr().read(file.getStringHeap());
     return Pair.create(name, namespace);

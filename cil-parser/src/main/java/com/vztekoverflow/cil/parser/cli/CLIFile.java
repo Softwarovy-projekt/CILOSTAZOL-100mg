@@ -5,12 +5,10 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.vztekoverflow.cil.parser.ByteSequenceBuffer;
 import com.vztekoverflow.cil.parser.CILParserException;
 import com.vztekoverflow.cil.parser.ParserBundle;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.CLITables;
 import com.vztekoverflow.cil.parser.cli.table.CLITablesHeader;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableHeads;
-import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
 import com.vztekoverflow.cil.parser.pe.PEFile;
 import org.graalvm.polyglot.io.ByteSequence;
 
@@ -36,8 +34,6 @@ public class CLIFile {
 
   @CompilationFinal(dimensions = 1)
   private final byte[] USHeap;
-
-  private final IndiciesHelper indicies;
 
   public CLIFile(
       String name,
@@ -73,8 +69,6 @@ public class CLIFile {
     } else {
       assemblyIdentity = null;
     }
-
-    indicies = new IndiciesHelper();
   }
 
   /**
@@ -138,10 +132,6 @@ public class CLIFile {
     return buf;
   }
 
-  public IndiciesHelper getIndicies() {
-    return indicies;
-  }
-
   public CLITableHeads getTableHeads() {
     return tables.getTableHeads();
   }
@@ -189,56 +179,5 @@ public class CLIFile {
   @Override
   public String toString() {
     return assemblyIdentity.getName();
-  }
-
-  public class IndiciesHelper {
-    @CompilationFinal(dimensions = 1)
-    private final int[] methodToClassIndex;
-
-    @CompilationFinal(dimensions = 1)
-    private final int[] fieldToClassIndex;
-
-    public IndiciesHelper() {
-      methodToClassIndex =
-          new int[getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF) + 1];
-      fieldToClassIndex =
-          new int[getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_FIELD) + 1];
-      initMethodIndicies();
-      initFieldIndicies();
-    }
-
-    private void initMethodIndicies() {
-      for (CLITypeDefTableRow klass : getTableHeads().getTypeDefTableHead()) {
-        var methodRange = CLIFileUtils.getMethodRange(CLIFile.this, klass);
-        int startIdx = methodRange.getLeft();
-        int endIdx = methodRange.getRight();
-        while (startIdx < endIdx) {
-          methodToClassIndex[startIdx] = klass.getPtr().getRowNo();
-          startIdx++;
-        }
-      }
-    }
-
-    private void initFieldIndicies() {
-      for (CLITypeDefTableRow klass : getTableHeads().getTypeDefTableHead()) {
-        var fieldRange = CLIFileUtils.getFieldRange(CLIFile.this, klass);
-        int startIdx = fieldRange.getLeft();
-        int endIdx = fieldRange.getRight();
-        while (startIdx < endIdx) {
-          fieldToClassIndex[startIdx] = klass.getPtr().getRowNo();
-          startIdx++;
-        }
-      }
-    }
-
-    public CLITablePtr getMethodToClassIndex(CLITablePtr method) {
-      return new CLITablePtr(
-          CLITableConstants.CLI_TABLE_TYPE_DEF, methodToClassIndex[method.getRowNo()]);
-    }
-
-    public CLITablePtr getFieldToClassIndex(CLITablePtr field) {
-      return new CLITablePtr(
-          CLITableConstants.CLI_TABLE_TYPE_DEF, methodToClassIndex[field.getRowNo()]);
-    }
   }
 }

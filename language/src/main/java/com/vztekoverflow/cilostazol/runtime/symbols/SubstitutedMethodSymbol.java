@@ -22,7 +22,7 @@ public class SubstitutedMethodSymbol extends MethodSymbol {
         createTypeParameters(constructedFrom.typeParameters, map),
         createParams(constructedFrom.parameters, map),
         createLocals(constructedFrom.locals, map),
-        createReturn(constructedFrom.retType, map),
+        createReturn(constructedFrom.returnSymbol, map),
         createHandlers(constructedFrom.exceptionHandlers, map),
         constructedFrom.cil,
         constructedFrom.maxStack,

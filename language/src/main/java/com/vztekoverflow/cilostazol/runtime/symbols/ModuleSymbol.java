@@ -1,27 +1,37 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.vztekoverflow.cil.parser.cli.CLIFile;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
+import com.vztekoverflow.cil.parser.cli.table.generated.CLIFieldTableRow;
+import com.vztekoverflow.cil.parser.cli.table.generated.CLIMethodDefTableRow;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
+import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.other.FieldIndex;
+import com.vztekoverflow.cilostazol.runtime.other.MethodIndex;
 
 public final class ModuleSymbol extends Symbol {
   private final CLIFile definingFile;
-  private final MethodSymbol[] methodCache;
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private MethodIndex[] methodDefToMethodSymbolCache;
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private FieldIndex[] fieldToFieldSymbolCache;
 
   public ModuleSymbol(CLIFile definingFile) {
     super(ContextProviderImpl.getInstance());
     this.definingFile = definingFile;
-    this.methodCache =
-        new MethodSymbol
-            [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF)];
+    this.methodDefToMethodSymbolCache = null;
+    this.fieldToFieldSymbolCache = null;
   }
 
   public CLIFile getDefiningFile() {
     return definingFile;
   }
 
+  // region Symbol resolving
   /**
    * @return the type with the given name and namespace, or null if not found in this module.
    * @apiNote If found, the type is cached in the context.
@@ -39,36 +49,71 @@ public final class ModuleSymbol extends Symbol {
     return null;
   }
 
-  /**
-   * @return the method with the given ptr, or null if not found in this module.
-   * @apiNote If found, the method is cached in the ModuleSymbol.
-   */
-  public MethodSymbol getLocalMethod(CLITablePtr ptr) {
-    if (methodCache[ptr.getRowNo()] == null) {
-      var classRow =
-          definingFile
-              .getTableHeads()
-              .getTypeDefTableHead()
-              .skip(
-                  new CLITablePtr(
-                      CLITableConstants.CLI_TABLE_TYPE_DEF,
-                      getDefiningFile().getIndicies().getMethodToClassIndex(ptr).getRowNo()));
-      var nameAndNamespace = CLIFileUtils.getNameAndNamespace(definingFile, classRow);
-      methodCache[ptr.getRowNo()] =
-          MethodSymbol.MethodSymbolFactory.create(
-              definingFile
-                  .getTableHeads()
-                  .getMethodDefTableHead()
-                  .skip(new CLITablePtr(CLITableConstants.CLI_TABLE_METHOD_DEF, ptr.getRowNo())),
-              getContext()
-                  .getType(
-                      nameAndNamespace.getLeft(),
-                      nameAndNamespace.getRight(),
-                      definingFile.getAssemblyIdentity()));
+  public FieldIndex getLocalField(CLIFieldTableRow row) {
+    if (fieldToFieldSymbolCache == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      initFieldSymbolCache();
     }
 
-    return methodCache[ptr.getRowNo()];
+    return fieldToFieldSymbolCache[row.getRowNo()];
   }
+
+  public MethodIndex getLocalMethod(CLIMethodDefTableRow row) {
+    if (methodDefToMethodSymbolCache == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      initMethodSymbolCache();
+    }
+
+    return methodDefToMethodSymbolCache[row.getRowNo()];
+  }
+
+  private void initMethodSymbolCache() {
+    methodDefToMethodSymbolCache =
+        new MethodIndex
+            [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF)
+                + 1];
+    for (CLITypeDefTableRow klass : getDefiningFile().getTableHeads().getTypeDefTableHead()) {
+      var nameAndNamespace = CLIFileUtils.getNameAndNamespace(getDefiningFile(), klass);
+      var methodRange = CLIFileUtils.getMethodRange(getDefiningFile(), klass);
+      int startIdx = methodRange.getLeft();
+      int endIdx = methodRange.getRight();
+      while (startIdx < endIdx) {
+        methodDefToMethodSymbolCache[startIdx] =
+            new MethodIndex(
+                getContext()
+                    .resolveType(
+                        nameAndNamespace.getLeft(),
+                        nameAndNamespace.getRight(),
+                        getDefiningFile().getAssemblyIdentity()),
+                startIdx - methodRange.getLeft());
+        startIdx++;
+      }
+    }
+  }
+
+  private void initFieldSymbolCache() {
+    fieldToFieldSymbolCache =
+        new FieldIndex
+            [definingFile.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_FIELD) + 1];
+    for (CLITypeDefTableRow klass : getDefiningFile().getTableHeads().getTypeDefTableHead()) {
+      var nameAndNamespace = CLIFileUtils.getNameAndNamespace(getDefiningFile(), klass);
+      var fieldRange = CLIFileUtils.getFieldRange(getDefiningFile(), klass);
+      int startIdx = fieldRange.getLeft();
+      int endIdx = fieldRange.getRight();
+      while (startIdx < endIdx) {
+        fieldToFieldSymbolCache[startIdx] =
+            new FieldIndex(
+                getContext()
+                    .resolveType(
+                        nameAndNamespace.getLeft(),
+                        nameAndNamespace.getRight(),
+                        getDefiningFile().getAssemblyIdentity()),
+                startIdx - fieldRange.getLeft());
+        startIdx++;
+      }
+    }
+  }
+  // endregion
 
   public static final class ModuleSymbolFactory {
     public static ModuleSymbol create(CLIFile file) {

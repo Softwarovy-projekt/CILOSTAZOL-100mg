@@ -1,18 +1,23 @@
 package com.vztekoverflow.cilostazol.runtime.context;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.TruffleFile;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.staticobject.DefaultStaticProperty;
+import com.oracle.truffle.api.staticobject.StaticProperty;
+import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
-import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
+import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.CILOSTAZOLEngineOption;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.GuestAllocator;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.AppDomain;
-import com.vztekoverflow.cilostazol.runtime.other.TypeSymbolCacheKey;
+import com.vztekoverflow.cilostazol.runtime.other.MethodInstantiationCacheKey;
+import com.vztekoverflow.cilostazol.runtime.other.TypeDefinitionCacheKey;
+import com.vztekoverflow.cilostazol.runtime.other.TypeInstantiationCacheKey;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import java.io.File;
 import java.nio.file.Files;
@@ -31,7 +36,11 @@ public class CILOSTAZOLContext {
   private final CILOSTAZOLLanguage language;
   private final TruffleLanguage.Env env;
 
-  private final Map<TypeSymbolCacheKey, NamedTypeSymbol> typeSymbolCache = new HashMap<>();
+  private final Map<TypeDefinitionCacheKey, NamedTypeSymbol> typeDefinitionCache = new HashMap<>();
+  private final Map<TypeInstantiationCacheKey, TypeSymbol> typeInstantiationCache = new HashMap<>();
+  private final Map<MethodInstantiationCacheKey, MethodSymbol> methodInstantiationCache =
+      new HashMap<>();
+
   private final AppDomain appDomain;
 
   public CILOSTAZOLContext(CILOSTAZOLLanguage lang, TruffleLanguage.Env env) {
@@ -76,39 +85,15 @@ public class CILOSTAZOLContext {
   }
 
   // region Symbols
-  public NamedTypeSymbol getType(CLITablePtr ptr, ModuleSymbol module) {
-    return switch (ptr.getTableId()) {
-        // TODO: support edgecases such as if it can not be found
-      case CLITableConstants.CLI_TABLE_TYPE_DEF -> {
-        var row = module.getDefiningFile().getTableHeads().getTypeDefTableHead().skip(ptr);
-        var nameAndNamespace = CLIFileUtils.getNameAndNamespace(module.getDefiningFile(), row);
 
-        yield getType(
-            nameAndNamespace.getLeft(),
-            nameAndNamespace.getRight(),
-            module.getDefiningFile().getAssemblyIdentity());
-      }
-      case CLITableConstants.CLI_TABLE_TYPE_REF -> {
-        var row = module.getDefiningFile().getTableHeads().getTypeRefTableHead().skip(ptr);
-        yield NamedTypeSymbol.NamedTypeSymbolFactory.create(row, module);
-      }
-      case CLITableConstants.CLI_TABLE_TYPE_SPEC -> {
-        var row = module.getDefiningFile().getTableHeads().getTypeSpecTableHead().skip(ptr);
-        yield (NamedTypeSymbol)
-            TypeSymbol.TypeSymbolFactory.create(row, new TypeSymbol[0], new TypeSymbol[0], module);
-      }
-      default -> throw new RuntimeException("Not implemented yet");
-    };
-  }
-
-  /** This should be use on any path that queries a type. @ApiNote uses cache. */
-  public NamedTypeSymbol getType(String name, String namespace, AssemblyIdentity assembly) {
+  /** This should be used on any path that queries a type. @ApiNote uses cache. */
+  public NamedTypeSymbol resolveType(String name, String namespace, AssemblyIdentity assembly) {
     assembly = AssemblyForwarder.forwardedAssembly(assembly);
     // Note: Assembly in cacheKey is different from what is came in as an argument due to lack of
     // forwarding implementation
-    var cacheKey = new TypeSymbolCacheKey(name, namespace, assembly);
+    var cacheKey = new TypeDefinitionCacheKey(name, namespace, assembly);
 
-    return typeSymbolCache.computeIfAbsent(
+    return typeDefinitionCache.computeIfAbsent(
         cacheKey,
         k -> {
           AssemblySymbol assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
@@ -120,6 +105,29 @@ public class CILOSTAZOLContext {
             return assemblySymbol.getLocalType(cacheKey.name(), cacheKey.namespace());
 
           return null;
+        });
+  }
+
+  /** This should be used on any path that queries a type. @ApiNote uses cache. */
+  public TypeSymbol resolveGenericTypeInstantiation(NamedTypeSymbol type, TypeSymbol[] typeArgs) {
+
+    var cacheKey = new TypeInstantiationCacheKey(type, typeArgs);
+
+    return typeInstantiationCache.computeIfAbsent(
+        cacheKey,
+        k -> {
+          return k.genType().construct(k.typeArgs());
+        });
+  }
+
+  public MethodSymbol resolveGenericMethodInstantiation(
+      MethodSymbol method, TypeSymbol[] typeArgs) {
+    var cacheKey = new MethodInstantiationCacheKey(method, typeArgs);
+
+    return methodInstantiationCache.computeIfAbsent(
+        cacheKey,
+        k -> {
+          return k.genMethod().construct(k.typeArgs());
         });
   }
 
@@ -142,11 +150,17 @@ public class CILOSTAZOLContext {
                   .build());
         } catch (Exception e) {
           throw new RuntimeException(
-              "Error loading assembly " + assemblyIdentity.getName() + " from " + path, e);
+              CILOSTAZOLBundle.message(
+                  "cilostazol.exception.error.loading.assembly", assemblyIdentity.getName(), path),
+              e);
         }
       }
     }
-    return null;
+    throw new RuntimeException(
+        CILOSTAZOLBundle.message(
+            "cilostazol.exception.missing.assembly",
+            assemblyIdentity.getName(),
+            Arrays.toString(libraryPaths)));
   }
 
   public AssemblySymbol loadAssembly(Source source) {
@@ -154,42 +168,31 @@ public class CILOSTAZOLContext {
     appDomain.loadAssembly(result);
     return result;
   }
+  // endregion
 
-  // region Built-in type symbols
-  public enum CILBuiltInType {
-    Boolean("Boolean"),
-    Byte("Byte"),
-    SByte("SByte"),
-    Char("Char"),
-    Decimal("Decimal"),
-    Double("Double"),
-    Single("Single"),
-    Int32("Int32"),
-    UInt32("UInt32"),
-    IntPtr("IntPtr"),
-    UIntPtr("UIntPtr"),
-    Int64("Int64"),
-    UInt64("UInt64"),
-    Int16("Int16"),
-    UInt16("UInt16"),
-    Object("Object"),
-    String("String"),
-    Void("Void");
+  // region SOM
+  @CompilerDirectives.CompilationFinal private StaticProperty arrayProperty;
 
-    public final String Name;
+  @CompilerDirectives.CompilationFinal
+  private StaticShape<StaticObject.StaticObjectFactory> arrayShape;
 
-    CILBuiltInType(String name) {
-      Name = name;
+  public StaticProperty getArrayProperty() {
+    if (arrayProperty == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      arrayProperty = new DefaultStaticProperty("array");
     }
+    return arrayProperty;
   }
 
-  /**
-   * Method to get a built-in type assembly
-   *
-   * @return Assembly of a built-in type.
-   */
-  public NamedTypeSymbol getType(CILBuiltInType type) {
-    return getType(type.Name, "System", AssemblyIdentity.SystemPrivateCoreLib700());
+  public StaticShape<StaticObject.StaticObjectFactory> getArrayShape() {
+    if (arrayShape == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      arrayShape =
+          StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
+              .property(getArrayProperty(), Object.class, true)
+              .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
+    }
+    return arrayShape;
   }
   // endregion
 }

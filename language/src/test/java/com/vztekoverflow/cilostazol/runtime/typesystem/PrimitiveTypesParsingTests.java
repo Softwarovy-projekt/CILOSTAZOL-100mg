@@ -4,7 +4,6 @@ import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.ArrayTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,17 +34,16 @@ public class PrimitiveTypesParsingTests extends TestBase {
     return Stream.of(
         Arguments.of("CharClass", "Char", "System"),
         Arguments.of("BoolClass", "Boolean", "System"),
-        Arguments.of("StringClass", "String", "System"),
+        Arguments.of("StringClass", "Object", "System"),
         Arguments.of("ObjectClass", "Object", "System"));
   }
 
   public void testStructInheritance() {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("IntClass", projectName, assemblyIdentity);
+    var type = ctx.resolveType("IntClass", projectName, assemblyIdentity);
 
     assertEquals(1, type.getFields().length);
     assertEquals("fieldInt", type.getFields()[0].getName());
@@ -63,11 +61,10 @@ public class PrimitiveTypesParsingTests extends TestBase {
 
   public void testInt() {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("IntClass", projectName, assemblyIdentity);
+    var type = ctx.resolveType("IntClass", projectName, assemblyIdentity);
 
     assertEquals(1, type.getFields().length);
     assertEquals("fieldInt", type.getFields()[0].getName());
@@ -103,11 +100,10 @@ public class PrimitiveTypesParsingTests extends TestBase {
 
   public void testUInt() {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("UIntClass", projectName, assemblyIdentity);
+    var type = ctx.resolveType("UIntClass", projectName, assemblyIdentity);
 
     assertEquals(1, type.getFields().length);
     assertEquals("fieldUInt", type.getFields()[0].getName());
@@ -135,11 +131,10 @@ public class PrimitiveTypesParsingTests extends TestBase {
 
   public void testVoid() {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("VoidClass", projectName, assemblyIdentity);
+    var type = ctx.resolveType("VoidClass", projectName, assemblyIdentity);
 
     assertEquals(2, type.getMethods().length);
     var method = type.getMethods()[0];
@@ -153,11 +148,10 @@ public class PrimitiveTypesParsingTests extends TestBase {
 
   public void testArray() {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("ArrayClass", projectName, assemblyIdentity);
+    var type = ctx.resolveType("ArrayClass", projectName, assemblyIdentity);
 
     assertEquals(1, type.getFields().length);
     assertEquals("fieldArray", type.getFields()[0].getName());
@@ -177,11 +171,10 @@ public class PrimitiveTypesParsingTests extends TestBase {
 
   public void testDoubleArray() {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("DoubleArrayClass", projectName, assemblyIdentity);
+    var type = ctx.resolveType("DoubleArrayClass", projectName, assemblyIdentity);
 
     assertEquals(1, type.getFields().length);
     assertEquals("fieldDoubleArray", type.getFields()[0].getName());
@@ -204,11 +197,10 @@ public class PrimitiveTypesParsingTests extends TestBase {
 
   public void testNestedArray() {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType("NestedArrayClass", projectName, assemblyIdentity);
+    var type = ctx.resolveType("NestedArrayClass", projectName, assemblyIdentity);
 
     assertEquals(1, type.getFields().length);
     assertEquals("fieldNestedArray", type.getFields()[0].getName());
@@ -220,7 +212,7 @@ public class PrimitiveTypesParsingTests extends TestBase {
     assertEquals(0, arrayType.getLowerBounds().length);
 
     assertTrue(type.getFields()[0].getType() instanceof ArrayTypeSymbol);
-    var arrayNestedType = (ArrayTypeSymbol) arrayType.getElementType().getType();
+    var arrayNestedType = (ArrayTypeSymbol) arrayType.getElementType();
 
     assertEquals(1, arrayNestedType.getRank());
     assertEquals(0, arrayNestedType.getLengths().length);
@@ -238,11 +230,10 @@ public class PrimitiveTypesParsingTests extends TestBase {
   public void testNumericPrimitiveTypes(
       String classname, String expectedTypeName, String expectedTypeNamespace) {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType(classname, projectName, assemblyIdentity);
+    var type = ctx.resolveType(classname, projectName, assemblyIdentity);
 
     assertEquals(1, type.getFields().length);
     assertTrue(type.getFields()[0].getType() instanceof NamedTypeSymbol);
@@ -271,11 +262,10 @@ public class PrimitiveTypesParsingTests extends TestBase {
   public void testOtherPrimitiveTypes(
       String classname, String expectedTypeName, String expectedTypeNamespace) {
     final String projectName = "PrimitiveTypesTest";
-    CILOSTAZOLContext ctx =
-        init(new Path[] {getDllPath(projectName).getParent(), Path.of(coreLibPath)});
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
     AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
 
-    var type = ctx.getType(classname, projectName, assemblyIdentity);
+    var type = ctx.resolveType(classname, projectName, assemblyIdentity);
 
     assertEquals(1, type.getFields().length);
     assertTrue(type.getFields()[0].getType() instanceof NamedTypeSymbol);

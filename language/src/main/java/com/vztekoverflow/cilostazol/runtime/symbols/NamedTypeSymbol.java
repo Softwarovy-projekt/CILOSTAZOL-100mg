@@ -17,11 +17,9 @@ import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemTypes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
+import java.util.*;
 
 public class NamedTypeSymbol extends TypeSymbol {
   // region constants
@@ -51,6 +49,9 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected MethodSymbol[] lazyMethods;
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  protected MethodSymbol[] lazyMethodImpl;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected MethodSymbol[] lazyVMethodTable;
@@ -100,7 +101,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     super(
         definingModule,
         CILOSTAZOLFrame.getStackTypeKind(name, namespace),
-        SystemTypes.getTypeKind(
+        SystemType.getTypeKind(
             name, namespace, definingModule.getDefiningFile().getAssemblyIdentity()));
     assert definingRow.getTableId() == CLITableConstants.CLI_TABLE_TYPE_DEF;
 
@@ -174,6 +175,10 @@ public class NamedTypeSymbol extends TypeSymbol {
     }
 
     return lazyMethods;
+  }
+
+  public MethodSymbol[] getMethodsImpl() {
+    throw new NotImplementedException();
   }
 
   public MethodSymbol[] getVMT() {
@@ -304,11 +309,6 @@ public class NamedTypeSymbol extends TypeSymbol {
         && Arrays.equals(other.getTypeArguments(), getTypeArguments());
   }
 
-  @Override
-  public Symbol getType() {
-    return NamedTypeSymbol.this;
-  }
-
   // endregion
 
   // region SOM shapes
@@ -357,11 +357,13 @@ public class NamedTypeSymbol extends TypeSymbol {
   }
 
   private static class LazyFactory {
-    private static MethodSymbol[] createMethods(NamedTypeSymbol symbol, CLITypeDefTableRow row) {
-      var methodRange = CLIFileUtils.getMethodRange(symbol.definingModule.getDefiningFile(), row);
+    private static MethodSymbol[] createMethods(
+        NamedTypeSymbol containingType, CLITypeDefTableRow row) {
+      var methodRange =
+          CLIFileUtils.getMethodRange(containingType.definingModule.getDefiningFile(), row);
 
       var methodRow =
-          symbol
+          containingType
               .definingModule
               .getDefiningFile()
               .getTableHeads()
@@ -371,7 +373,7 @@ public class NamedTypeSymbol extends TypeSymbol {
       var methods = new MethodSymbol[methodRange.getRight() - methodRange.getLeft()];
       while (methodRow.getRowNo() < methodRange.getRight()) {
         methods[methodRow.getRowNo() - methodRange.getLeft()] =
-            symbol.getDefiningModule().getLocalMethod(methodRow.getPtr());
+            MethodSymbol.MethodSymbolFactory.create(methodRow, containingType);
         methodRow = methodRow.skip(1);
       }
 
@@ -447,6 +449,15 @@ public class NamedTypeSymbol extends TypeSymbol {
                   namedTypeSymbol.definingModule);
     }
 
+    public static MethodSymbol[] createMethodsImpl(NamedTypeSymbol symbol) {
+      HashMap<MethodSymbol, MethodSymbol> result = new HashMap<MethodSymbol, MethodSymbol>();
+      for (var methodImpl :
+          symbol.getDefiningModule().getDefiningFile().getTableHeads().getMethodImplTableHead()) {
+        // TODO:...
+      }
+      return null;
+    }
+
     public static FieldSymbol[] createFields(
         NamedTypeSymbol namedTypeSymbol, CLITypeDefTableRow row) {
       var fieldRange =
@@ -475,20 +486,19 @@ public class NamedTypeSymbol extends TypeSymbol {
 
       return fields;
     }
-  }
 
-  /** We have to patch type of String to be able to represent it in SOM. */
-  private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
-    if (Objects.equals(type.getNamespace(), "System")
-        && Objects.equals(type.getName(), "String")
-        && symbol.getName().equals("_firstChar")) {
-      return FieldSymbol.FieldSymbolFactory.createWith(
-          symbol,
-          ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
-              type.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char),
-              type.getDefiningModule()));
+    /** We have to patch type of String to be able to represent it in SOM. */
+    private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
+      if (Objects.equals(type.getNamespace(), "System")
+          && Objects.equals(type.getName(), "String")
+          && symbol.getName().equals("_firstChar")) {
+        return FieldSymbol.FieldSymbolFactory.createWith(
+            symbol,
+            ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
+                SymbolResolver.getChar(type.getContext()), type.getDefiningModule()));
+      }
+      return symbol;
     }
-    return symbol;
   }
 
   public static class NamedTypeSymbolFactory {
@@ -504,7 +514,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
       return switch (resolutionScopeTablePtr.getTableId()) {
         case CLITableConstants.CLI_TABLE_TYPE_REF -> throw new UnsupportedOperationException(
-            CILOSTAZOLBundle.message("cilostazol.exception.typeRefResolutionScope"));
+            CILOSTAZOLBundle.message("cilostazol.exception.nested.typeRef.resolutionScope"));
         case CLITableConstants.CLI_TABLE_MODULE_REF -> getTypeFromDifferentModule(
             name, namespace, resolutionScopeTablePtr, module);
         case CLITableConstants.CLI_TABLE_MODULE -> throw new InvalidCLIException();
@@ -512,7 +522,7 @@ public class NamedTypeSymbol extends TypeSymbol {
             name, namespace, resolutionScopeTablePtr, module);
         default -> throw new TypeSystemException(
             CILOSTAZOLBundle.message(
-                "cilostazol.exception.unknownResolutionScope",
+                "cilostazol.exception.unknown.resolutionScope",
                 namespace,
                 name,
                 resolutionScopeTablePtr.getTableId()));
@@ -533,9 +543,8 @@ public class NamedTypeSymbol extends TypeSymbol {
       // We can omit looking for file since we know that it is in the same assembly as this module
       // TODO: can be improved by calling getLocalTypeFromModule that would filter modules right
       // away by name
-      return module
-          .getContext()
-          .getType(name, namespace, module.getDefiningFile().getAssemblyIdentity());
+      return CILOSTAZOLContext.get(null)
+          .resolveType(name, namespace, module.getDefiningFile().getAssemblyIdentity());
     }
 
     private static NamedTypeSymbol getTypeFromDifferentAssembly(
