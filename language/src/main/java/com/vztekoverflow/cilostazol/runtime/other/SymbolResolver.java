@@ -329,6 +329,16 @@ public final class SymbolResolver {
     }
   }
 
+  public static ClassMember<FieldSymbol> resolveField(CLITablePtr ptr, ModuleSymbol module) {
+    return switch (ptr.getTableId()) {
+      case CLITableConstants.CLI_TABLE_FIELD -> resolveField(
+          module.getDefiningFile().getTableHeads().getFieldTableHead().skip(ptr), module);
+      case CLITableConstants.CLI_TABLE_MEMBER_REF -> resolveField(
+          module.getDefiningFile().getTableHeads().getMemberRefTableHead().skip(ptr), module);
+      default -> throw new CILParserException();
+    };
+  }
+
   public static ClassMember<FieldSymbol> resolveField(CLIFieldTableRow row, ModuleSymbol module) {
     var idx = module.getLocalField(row);
     return new ClassMember<FieldSymbol>(

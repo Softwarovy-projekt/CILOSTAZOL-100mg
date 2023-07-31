@@ -5,6 +5,7 @@ import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.FieldSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
+import java.util.Map;
 
 public final class LinkedFieldLayout {
   public final StaticShape<StaticObject.StaticObjectFactory> instanceShape;
@@ -20,7 +21,11 @@ public final class LinkedFieldLayout {
   final int fieldTableLength;
 
   public LinkedFieldLayout(
-      CILOSTAZOLContext description, NamedTypeSymbol parserTypeSymbol, NamedTypeSymbol superClass) {
+      CILOSTAZOLContext description,
+      NamedTypeSymbol parserTypeSymbol,
+      NamedTypeSymbol superClass,
+      Map<FieldSymbol, Integer> instanceFieldMapping,
+      Map<FieldSymbol, Integer> staticFieldMapping) {
     StaticShape.Builder instanceBuilder = StaticShape.newBuilder(description.getLanguage());
     StaticShape.Builder staticBuilder = StaticShape.newBuilder(description.getLanguage());
 
@@ -65,7 +70,7 @@ public final class LinkedFieldLayout {
 
   private static void createAndRegisterLinkedField(
       FieldSymbol parserField,
-      Map<Integer, Integer> fieldMapping,
+      Map<FieldSymbol, Integer> fieldMapping,
       int slot,
       int index,
       StaticShape.Builder builder,
@@ -73,7 +78,7 @@ public final class LinkedFieldLayout {
     StaticField field = new StaticField(parserField);
     builder.property(field, field.getPropertyType(), storeAsFinal(parserField));
     linkedFields[index] = field;
-    fieldMapping.put(parserField.tableRow.getRowNo(), index);
+    fieldMapping.put(parserField, index);
   }
 
   private static boolean storeAsFinal(FieldSymbol field) {

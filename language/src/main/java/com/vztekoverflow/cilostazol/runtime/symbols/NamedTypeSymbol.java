@@ -40,8 +40,8 @@ public class NamedTypeSymbol extends TypeSymbol {
   protected final TypeParameterSymbol[] typeParameters;
   protected final TypeMap map;
   protected final CLITablePtr definingRow;
-  protected final Map<Integer, Integer> instanceFieldIndexMapping = new HashMap<>();
-  protected final Map<Integer, Integer> staticFieldIndexMapping = new HashMap<>();
+  protected final Map<FieldSymbol, Integer> instanceFieldIndexMapping = new HashMap<>();
+  protected final Map<FieldSymbol, Integer> staticFieldIndexMapping = new HashMap<>();
   @CompilerDirectives.CompilationFinal protected NamedTypeSymbol lazyDirectBaseClass;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
@@ -111,19 +111,6 @@ public class NamedTypeSymbol extends TypeSymbol {
     this.typeParameters = typeParameters;
     this.definingRow = definingRow;
     this.map = map;
-  }
-
-  private static FieldSymbol patch(FieldSymbol symbol, NamedTypeSymbol type) {
-    if (Objects.equals(type.getNamespace(), "System")
-        && Objects.equals(type.getName(), "String")
-        && symbol.getName().equals("_firstChar")) {
-      return FieldSymbol.FieldSymbolFactory.createWith(
-          symbol,
-          ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
-              type.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char),
-              type.getDefiningModule()));
-    }
-    return symbol;
   }
 
   // region Getters
@@ -201,31 +188,16 @@ public class NamedTypeSymbol extends TypeSymbol {
     return lazyFields;
   }
 
-  public StaticField getAssignableField(CLITablePtr ptr) {
+  public StaticField getStaticField(FieldSymbol field) {
     if (instanceShape == null) {
       createShapes();
     }
 
-    var index = instanceFieldIndexMapping.get(ptr.getRowNo());
-    if (index != null) {
-      return instanceFields[index];
+    if (field.isStatic()) {
+      return staticFields[staticFieldIndexMapping.get(field)];
     }
 
-    index = staticFieldIndexMapping.get(ptr.getRowNo());
-    return staticFields[index];
-  }
-
-  public int getFieldIndex(CLITablePtr ptr) {
-    if (instanceShape == null) {
-      createShapes();
-    }
-
-    var index = instanceFieldIndexMapping.get(ptr.getRowNo());
-    if (index == null) {
-      index = staticFieldIndexMapping.get(ptr.getRowNo());
-    }
-
-    return index;
+    return instanceFields[instanceFieldIndexMapping.get(field)];
   }
 
   public ConstructedNamedTypeSymbol construct(TypeSymbol[] typeArguments) {
@@ -339,7 +311,13 @@ public class NamedTypeSymbol extends TypeSymbol {
   private void createShapes() {
     CompilerDirectives.transferToInterpreterAndInvalidate();
 
-    LinkedFieldLayout layout = new LinkedFieldLayout(getContext(), this, getDirectBaseClass());
+    LinkedFieldLayout layout =
+        new LinkedFieldLayout(
+            getContext(),
+            this,
+            getDirectBaseClass(),
+            instanceFieldIndexMapping,
+            staticFieldIndexMapping);
     instanceShape = layout.instanceShape;
     staticShape = layout.staticShape;
     instanceFields = layout.instanceFields;

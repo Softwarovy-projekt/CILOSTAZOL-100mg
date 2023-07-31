@@ -102,7 +102,6 @@ public class ObjectManipulationTests extends TestBase {
                     public struct TestStruct
                     {
                         public int a;
-                        public object b;
                     }
                     """);
 

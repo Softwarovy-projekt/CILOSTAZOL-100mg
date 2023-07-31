@@ -19,7 +19,6 @@ import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
-import com.vztekoverflow.cilostazol.nodes.nodeized.*;
 import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
 import com.vztekoverflow.cilostazol.nodes.nodeized.LDSTRNode;
 import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
@@ -528,7 +527,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void copyObject(VirtualFrame frame, int sourceIdx, int descIdx) {
-    int localsOffset = CILOSTAZOLFrame.getStartLocalsOffset(getMethod());
+    int localsOffset = CILOSTAZOLFrame.isInstantiable(getMethod());
     int sourceSlot = localsOffset + CILOSTAZOLFrame.popInt(frame, sourceIdx);
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, sourceIdx);
     int descSlot = localsOffset + CILOSTAZOLFrame.popInt(frame, descIdx);
@@ -539,17 +538,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void initializeObject(VirtualFrame frame, int top, CLITablePtr typePtr) {
-    // TODO: Get type from cache
-    var type =
-        NamedTypeSymbol.NamedTypeSymbolFactory.create(
-            method
-                .getModule()
-                .getDefiningFile()
-                .getTableHeads()
-                .getTypeDefTableHead()
-                .skip(typePtr),
-            method.getModule());
-
+    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
     int dest = CILOSTAZOLFrame.popInt(frame, top - 1);
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
 
@@ -569,130 +558,102 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void loadField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
-    NamedTypeSymbol type = getTypeFromObjectOrReference(top - 1, frame);
-    // TODO: Use variable `field` in the switch/case
-    StaticField field = type.getAssignableField(fieldPtr);
+    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
+    StaticField field = classMember.symbol.getStaticField(classMember.member);
     StaticObject object = getObjectFromFrame(frame, taggedFrame, top - 1);
     switch (field.getKind()) {
       case Boolean -> {
-        boolean value = object.getTypeSymbol().getAssignableField(fieldPtr).getBoolean(object);
+        boolean value = field.getBoolean(object);
         CILOSTAZOLFrame.putInt(frame, top - 1, value ? 1 : 0);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame,
-            top - 1,
-            method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Boolean));
+            taggedFrame, top - 1, SymbolResolver.getBoolean(CILOSTAZOLContext.get(this)));
       }
       case Char -> {
-        char value = object.getTypeSymbol().getAssignableField(fieldPtr).getChar(object);
+        char value = field.getChar(object);
         CILOSTAZOLFrame.putInt(frame, top - 1, value);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame,
-            top - 1,
-            method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Char));
+            taggedFrame, top - 1, SymbolResolver.getChar(CILOSTAZOLContext.get(this)));
       }
       case Float -> {
-        float value = object.getTypeSymbol().getAssignableField(fieldPtr).getFloat(object);
+        float value = field.getFloat(object);
         CILOSTAZOLFrame.putDouble(frame, top - 1, value);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame,
-            top - 1,
-            method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Single));
+            taggedFrame, top - 1, SymbolResolver.getSingle(CILOSTAZOLContext.get(this)));
       }
       case Double -> {
-        double value = object.getTypeSymbol().getAssignableField(fieldPtr).getDouble(object);
+        double value = field.getDouble(object);
         CILOSTAZOLFrame.putDouble(frame, top - 1, value);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame,
-            top - 1,
-            method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Double));
+            taggedFrame, top - 1, SymbolResolver.getDouble(CILOSTAZOLContext.get(this)));
       }
       case Int -> {
-        int value = object.getTypeSymbol().getAssignableField(fieldPtr).getInt(object);
+        int value = field.getInt(object);
         CILOSTAZOLFrame.putInt(frame, top - 1, value);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame,
-            top - 1,
-            method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int32));
+            taggedFrame, top - 1, SymbolResolver.getInt32(CILOSTAZOLContext.get(this)));
       }
       case Long -> {
-        long value = object.getTypeSymbol().getAssignableField(fieldPtr).getLong(object);
+        long value = field.getLong(object);
         CILOSTAZOLFrame.putLong(frame, top - 1, value);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame,
-            top - 1,
-            method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int64));
+            taggedFrame, top - 1, SymbolResolver.getInt64(CILOSTAZOLContext.get(this)));
       }
       default -> {
-        StaticObject value =
-            (StaticObject) object.getTypeSymbol().getAssignableField(fieldPtr).getObject(object);
+        StaticObject value = (StaticObject) field.getObject(object);
         CILOSTAZOLFrame.putObject(frame, top - 1, value);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame,
-            top - 1,
-            method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Object));
+            taggedFrame, top - 1, SymbolResolver.getObject(CILOSTAZOLContext.get(this)));
       }
     }
   }
 
   void storeField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
-    NamedTypeSymbol type = getTypeFromObjectOrReference(top - 2, frame);
-    // TODO: Use variable `field` in the switch/case
-    StaticField field = type.getAssignableField(fieldPtr);
+    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
+    StaticField field = classMember.symbol.getStaticField(classMember.member);
     StaticObject object = getObjectFromFrame(frame, taggedFrame, top - 2);
     switch (field.getKind()) {
       case Boolean -> {
         int value = CILOSTAZOLFrame.popInt(frame, top - 1);
         CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
-        object.getTypeSymbol().getAssignableField(fieldPtr).setBoolean(object, value != 0);
+        field.setBoolean(object, value != 0);
       }
       case Char -> {
         int value = CILOSTAZOLFrame.popInt(frame, top - 1);
         CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
-        object.getTypeSymbol().getAssignableField(fieldPtr).setChar(object, (char) value);
+        field.setChar(object, (char) value);
       }
       case Float -> {
         double value = CILOSTAZOLFrame.popDouble(frame, top - 1);
         CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
-        object.getTypeSymbol().getAssignableField(fieldPtr).setFloat(object, (float) value);
+        field.setFloat(object, (float) value);
       }
       case Double -> {
         double value = CILOSTAZOLFrame.popDouble(frame, top - 1);
         CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
-        object.getTypeSymbol().getAssignableField(fieldPtr).setDouble(object, value);
+        field.setDouble(object, value);
       }
       case Int -> {
         int value = CILOSTAZOLFrame.popInt(frame, top - 1);
         CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
-        object.getTypeSymbol().getAssignableField(fieldPtr).setInt(object, value);
+        field.setInt(object, value);
       }
       case Long -> {
         long value = CILOSTAZOLFrame.popLong(frame, top - 1);
         CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
-        object.getTypeSymbol().getAssignableField(fieldPtr).setLong(object, value);
+        field.setLong(object, value);
       }
       default -> {
         StaticObject value = CILOSTAZOLFrame.popObject(frame, top - 1);
         CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
-        object.getTypeSymbol().getAssignableField(fieldPtr).setObject(object, value);
+        field.setObject(object, value);
       }
     }
-  }
-
-  private NamedTypeSymbol getTypeFromObjectOrReference(int slot, VirtualFrame frame) {
-    TypeSymbol type;
-    if (CILOSTAZOLFrame.getTaggedStack(taggedFrame, slot) instanceof ReferenceSymbol) {
-      type = CILOSTAZOLFrame.getTaggedStack(taggedFrame, frame.getIntStatic(slot));
-    } else {
-      type = CILOSTAZOLFrame.getTaggedStack(taggedFrame, slot);
-    }
-    assert type instanceof NamedTypeSymbol;
-    return (NamedTypeSymbol) type;
   }
 
   private StaticObject getObjectFromFrame(VirtualFrame frame, TypeSymbol[] taggedFrame, int slot) {
     TypeSymbol type = CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot);
     if (type instanceof ReferenceSymbol) {
-      slot = CILOSTAZOLFrame.popInt(frame, slot) + CILOSTAZOLFrame.getStartLocalsOffset(method);
+      slot = CILOSTAZOLFrame.popInt(frame, slot) + CILOSTAZOLFrame.isInstantiable(method);
       return CILOSTAZOLFrame.getLocalObject(frame, slot);
     }
 
@@ -896,42 +857,42 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case CONV_I1:
         CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.signExtend8(value));
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.SByte));
+            taggedFrame, top, SymbolResolver.getSByte(CILOSTAZOLContext.get(this)));
         break;
       case CONV_I2:
         CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.signExtend16(value));
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int16));
+            taggedFrame, top, SymbolResolver.getInt16(CILOSTAZOLContext.get(this)));
         break;
       case CONV_I4:
         CILOSTAZOLFrame.putInt(frame, top, (int) TypeHelpers.truncate32(value));
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int32));
+            taggedFrame, top, SymbolResolver.getInt32(CILOSTAZOLContext.get(this)));
         break;
       case CONV_I8:
         CILOSTAZOLFrame.putLong(frame, top, value);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Int64));
+            taggedFrame, top, SymbolResolver.getInt64(CILOSTAZOLContext.get(this)));
         break;
       case CONV_U1:
         CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.zeroExtend8(value));
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.Byte));
+            taggedFrame, top, SymbolResolver.getByte(CILOSTAZOLContext.get(this)));
         break;
       case CONV_U2:
         CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.zeroExtend16(value));
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.UInt16));
+            taggedFrame, top, SymbolResolver.getUInt16(CILOSTAZOLContext.get(this)));
         break;
       case CONV_U4:
         CILOSTAZOLFrame.putLong(frame, top, TypeHelpers.zeroExtend32(value));
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.UInt32));
+            taggedFrame, top, SymbolResolver.getUInt32(CILOSTAZOLContext.get(this)));
         break;
       case CONV_U8:
         CILOSTAZOLFrame.putLong(frame, top, value);
         CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, method.getContext().getType(CILOSTAZOLContext.CILBuiltInType.UInt64));
+            taggedFrame, top, SymbolResolver.getUInt64(CILOSTAZOLContext.get(this)));
         break;
       case CONV_U:
       case CONV_I:
