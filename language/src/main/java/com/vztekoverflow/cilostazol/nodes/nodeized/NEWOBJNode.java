@@ -32,7 +32,7 @@ public class NEWOBJNode extends NodeizedNodeBase {
   public int execute(VirtualFrame frame, TypeSymbol[] taggedFrame) {
     // NEWOBJ handles the constructor call differently
     // First, clear all args arg1, ..., argN
-    Object[] args = getMethodArgsFromStack(frame);
+    Object[] args = getMethodArgsFromStack(frame, taggedFrame);
 
     // Then, create the object as arg0
     StaticObject object = CILOSTAZOLContext.get(this).getAllocator().createNew(type);
@@ -46,11 +46,12 @@ public class NEWOBJNode extends NodeizedNodeBase {
 
   @NotNull
   @ExplodeLoop
-  private Object[] getMethodArgsFromStack(VirtualFrame frame) {
+  private Object[] getMethodArgsFromStack(VirtualFrame frame, TypeSymbol[] taggedFrame) {
     final var argTypes = constructor.getParameters();
     final Object[] args = new Object[argTypes.length + 1];
     for (int i = 1; i < args.length; i++) {
       final var idx = topStack - args.length + i;
+      CILOSTAZOLFrame.popTaggedStack(taggedFrame, idx);
       args[i] = CILOSTAZOLFrame.pop(frame, idx, argTypes[i - 1].getType());
     }
     return args;

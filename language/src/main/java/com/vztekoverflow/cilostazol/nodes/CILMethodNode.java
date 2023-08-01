@@ -43,7 +43,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     cil = method.getCIL();
     frameDescriptor =
         CILOSTAZOLFrame.create(
-            method.getParameters().length, method.getLocals().length, method.getMaxStack());
+            method.getParameterCountIncludingInstance(),
+            method.getLocals().length,
+            method.getMaxStack());
     this.bytecodeBuffer = new BytecodeBuffer(cil);
     taggedFrame = createTaggedFrame(method.getLocals());
   }
@@ -86,7 +88,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     TypeSymbol[] argTypes;
 
     if (hasReceiver) {
-      argTypes = new TypeSymbol[method.getParameters().length + 1];
+      argTypes = new TypeSymbol[method.getParameterCountIncludingInstance()];
       argTypes[0] = getMethod().getDefiningType();
       for (int i = 0; i < method.getParameters().length; i++) {
         argTypes[i + 1] = method.getParameters()[i].getType();
@@ -230,10 +232,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           // Storing fields
         case STFLD:
-          storeField(frame, topStack, bytecodeBuffer.getImmToken(pc));
-          break;
         case STSFLD:
-          // TODO
+          storeField(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
 
           // Object manipulation
@@ -429,8 +429,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private int updateByStackType(ReferenceSymbol referenceType, int index) {
     if (referenceType instanceof ArgReferenceSymbol)
       index += CILOSTAZOLFrame.getStartArgsOffset(getMethod());
-    else if (referenceType instanceof LocalReferenceSymbol)
-      index += CILOSTAZOLFrame.isInstantiable(getMethod());
     return index;
   }
 
@@ -474,11 +472,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void loadLocalToTop(VirtualFrame frame, int localIdx, int top) {
-    int localSlot = CILOSTAZOLFrame.isInstantiable(getMethod()) + localIdx;
-    CILOSTAZOLFrame.copyStatic(frame, localSlot, top);
+    CILOSTAZOLFrame.copyStatic(frame, localIdx, top);
     // Tag the top of the stack
     CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, CILOSTAZOLFrame.getTaggedStack(taggedFrame, localSlot));
+        taggedFrame, top, CILOSTAZOLFrame.getTaggedStack(taggedFrame, localIdx));
   }
 
   private void loadArgToTop(VirtualFrame frame, int argIdx, int top) {
@@ -490,12 +487,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void loadLocalRefToTop(VirtualFrame frame, int localIdx, int top) {
-    int localSlot = CILOSTAZOLFrame.isInstantiable(getMethod()) + localIdx;
-    CILOSTAZOLFrame.putInt(frame, top, localSlot);
+    CILOSTAZOLFrame.putInt(frame, top, localIdx);
     CILOSTAZOLFrame.putTaggedStack(
         taggedFrame,
         top,
-        new LocalReferenceSymbol(CILOSTAZOLFrame.getTaggedStack(taggedFrame, localSlot)));
+        new LocalReferenceSymbol(CILOSTAZOLFrame.getTaggedStack(taggedFrame, localIdx)));
   }
 
   private void loadArgRefToTop(VirtualFrame frame, int argIdx, int top) {
@@ -528,10 +524,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void copyObject(VirtualFrame frame, int sourceIdx, int descIdx) {
-    int localsOffset = CILOSTAZOLFrame.isInstantiable(getMethod());
-    int sourceSlot = localsOffset + CILOSTAZOLFrame.popInt(frame, sourceIdx);
+    int sourceSlot = CILOSTAZOLFrame.popInt(frame, sourceIdx);
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, sourceIdx);
-    int descSlot = localsOffset + CILOSTAZOLFrame.popInt(frame, descIdx);
+    int descSlot = CILOSTAZOLFrame.popInt(frame, descIdx);
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, descIdx);
     CILOSTAZOLFrame.copyStatic(frame, sourceSlot, descSlot);
     CILOSTAZOLFrame.putTaggedStack(
@@ -565,7 +560,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private void loadField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
     StaticField field = classMember.symbol.getStaticField(classMember.member);
-    StaticObject object = getObjectFromFrame(frame, taggedFrame, top - 1);
+    StaticObject object =
+        CILOSTAZOLFrame.popObjectFromPossibleReference(frame, taggedFrame, method, top - 1);
     switch (field.getKind()) {
       case Boolean -> {
         boolean value = field.getBoolean(object);
@@ -615,7 +611,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   void storeField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
     StaticField field = classMember.symbol.getStaticField(classMember.member);
-    StaticObject object = getObjectFromFrame(frame, taggedFrame, top - 2);
+    StaticObject object =
+        CILOSTAZOLFrame.popObjectFromPossibleReference(frame, taggedFrame, method, top - 2);
     switch (field.getKind()) {
       case Boolean -> {
         int value = CILOSTAZOLFrame.popInt(frame, top - 1);
@@ -653,16 +650,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         field.setObject(object, value);
       }
     }
-  }
-
-  private StaticObject getObjectFromFrame(VirtualFrame frame, TypeSymbol[] taggedFrame, int slot) {
-    TypeSymbol type = CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot);
-    if (type instanceof ReferenceSymbol) {
-      slot = CILOSTAZOLFrame.popInt(frame, slot) + CILOSTAZOLFrame.isInstantiable(method);
-      return CILOSTAZOLFrame.getLocalObject(frame, slot);
-    }
-
-    return CILOSTAZOLFrame.popObject(frame, slot);
   }
 
   private void popStack(int top) {

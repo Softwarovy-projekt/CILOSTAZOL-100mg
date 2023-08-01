@@ -9,6 +9,7 @@ import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
+import com.vztekoverflow.cilostazol.runtime.symbols.ReferenceSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import java.util.Objects;
 
@@ -31,7 +32,7 @@ public final class CILOSTAZOLFrame {
 
   // region stack offsets
   public static int getStartStackOffset(MethodSymbol method) {
-    return getStartArgsOffset(method) + method.getParameters().length + isInstantiable(method);
+    return getStartArgsOffset(method) + method.getParameterCountIncludingInstance();
   }
 
   public static int getStartArgsOffset(MethodSymbol methodSymbol) {
@@ -145,6 +146,17 @@ public final class CILOSTAZOLFrame {
     // Avoid keeping track of popped slots in FrameStates.
     clearObject(frame, slot);
     return (StaticObject) result;
+  }
+
+  public static StaticObject popObjectFromPossibleReference(
+      VirtualFrame frame, TypeSymbol[] taggedFrame, MethodSymbol method, int slot) {
+    TypeSymbol type = popTaggedStack(taggedFrame, slot);
+    if (type instanceof ReferenceSymbol) {
+      slot = popInt(frame, slot);
+      return getLocalObject(frame, slot);
+    }
+
+    return popObject(frame, slot);
   }
 
   private static void clearPrimitive(Frame frame, int slot) {

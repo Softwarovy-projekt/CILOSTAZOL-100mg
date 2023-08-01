@@ -93,6 +93,10 @@ public class MethodSymbol extends Symbol {
     return parameters;
   }
 
+  public int getParameterCountIncludingInstance() {
+    return parameters.length + (getMethodFlags().hasFlag(MethodFlags.Flag.STATIC) ? 0 : 1);
+  }
+
   public LocalSymbol[] getLocals() {
     return locals;
   }
