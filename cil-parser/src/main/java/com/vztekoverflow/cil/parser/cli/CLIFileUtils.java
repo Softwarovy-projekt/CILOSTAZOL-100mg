@@ -24,7 +24,7 @@ public class CLIFileUtils {
         row.getRowNo() == file.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_TYPE_DEF);
     final int lastIdx =
         isLastType
-            ? file.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF)
+            ? file.getTablesHeader().getRowCount(CLITableConstants.CLI_TABLE_METHOD_DEF) + 1
             : row.skip(1).getMethodListTablePtr().getRowNo();
 
     return Pair.create(methodTablePtr.getRowNo(), lastIdx);

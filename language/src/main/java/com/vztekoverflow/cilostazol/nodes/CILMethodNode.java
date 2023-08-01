@@ -19,10 +19,7 @@ import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
-import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
-import com.vztekoverflow.cilostazol.nodes.nodeized.LDSTRNode;
-import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
-import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
+import com.vztekoverflow.cilostazol.nodes.nodeized.*;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
@@ -53,12 +50,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private TypeSymbol[] createTaggedFrame(LocalSymbol[] localSymbols) {
     var taggedFrame = new TypeSymbol[frameDescriptor.getNumberOfSlots()];
-    if (!getMethod().getMethodFlags().hasFlag(MethodSymbol.MethodFlags.Flag.STATIC))
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, 0, getMethod().getDefiningType());
 
-    final int localOffset = CILOSTAZOLFrame.isInstantiable(getMethod());
     for (int i = 0; i < localSymbols.length; i++) {
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, localOffset + i, localSymbols[i].getType());
+      CILOSTAZOLFrame.putTaggedStack(taggedFrame, i, localSymbols[i].getType());
     }
 
     return taggedFrame;
@@ -87,22 +81,29 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     // Init arguments
     Object[] args = frame.getArguments();
 
+    //    int receiverSlot = CILOSTAZOLFrame.isInstantiable(getMethod());
     boolean hasReceiver = !getMethod().getMethodFlags().hasFlag(Flag.STATIC);
-    int receiverSlot = CILOSTAZOLFrame.isInstantiable(getMethod());
+    TypeSymbol[] argTypes;
+
     if (hasReceiver) {
-      throw new NotImplementedException();
+      argTypes = new TypeSymbol[method.getParameters().length + 1];
+      argTypes[0] = getMethod().getDefiningType();
+      for (int i = 0; i < method.getParameters().length; i++) {
+        argTypes[i + 1] = method.getParameters()[i].getType();
+      }
+
+    } else {
+      argTypes =
+          Arrays.stream(method.getParameters())
+              .map(ParameterSymbol::getType)
+              .toArray(TypeSymbol[]::new);
     }
 
-    TypeSymbol[] argTypes =
-        Arrays.stream(method.getParameters())
-            .map(ParameterSymbol::getType)
-            .toArray(TypeSymbol[]::new);
-    int topStack = CILOSTAZOLFrame.getStartArgsOffset(getMethod());
+    int argsOffset = CILOSTAZOLFrame.getStartArgsOffset(getMethod());
 
-    for (int i = 0; i < method.getParameters().length; i++) {
-      CILOSTAZOLFrame.put(frame, args[i + receiverSlot], topStack, argTypes[i]);
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, topStack, argTypes[i + receiverSlot]);
-      topStack--;
+    for (int i = 0; i < args.length; i++) {
+      CILOSTAZOLFrame.put(frame, args[i], argsOffset + i, argTypes[i]);
+      CILOSTAZOLFrame.putTaggedStack(taggedFrame, argsOffset + i, argTypes[i]);
     }
   }
   // endregion
@@ -546,14 +547,18 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     assert baseClass != null;
     if (baseClass.getNamespace().equals("System") && baseClass.getName().equals("ValueType")) {
       // Initialize value type
-      StaticObject object = type.getContext().getAllocator().createNew(type);
-      CILOSTAZOLFrame.setLocalObject(frame, dest, object);
-      CILOSTAZOLFrame.setTaggedStack(taggedFrame, dest, type);
+      createNewObjectOnStack(frame, type, dest);
       return;
     }
 
     // Initialize reference
     CILOSTAZOLFrame.setLocalObject(frame, dest, StaticObject.NULL);
+    CILOSTAZOLFrame.setTaggedStack(taggedFrame, dest, type);
+  }
+
+  private void createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {
+    StaticObject object = type.getContext().getAllocator().createNew(type);
+    CILOSTAZOLFrame.setLocalObject(frame, dest, object);
     CILOSTAZOLFrame.setTaggedStack(taggedFrame, dest, type);
   }
 
@@ -711,35 +716,33 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 top,
                 SymbolResolver.getString(CILOSTAZOLContext.get(this)));
       }
+      case NEWOBJ -> {
+        MethodSymbol methodSymbol;
+        switch (token.getTableId()) {
+          case CLITableConstants.CLI_TABLE_MEMBER_REF -> {
+            methodSymbol = getMethodSymbolFromMemberRef(top, token);
+          }
+          case CLITableConstants.CLI_TABLE_METHOD_DEF -> {
+            methodSymbol = getMethodSymbolFromMethodDef(top, token);
+          }
+          default -> {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            throw new InterpreterException();
+          }
+        }
+        node = new NEWOBJNode(methodSymbol, top);
+      }
       case CALL -> {
         // if method is local
         //        CILOSTAZOLContext.get(this).get(token);
         switch (token.getTableId()) {
           case CLITableConstants.CLI_TABLE_MEMBER_REF -> {
-            /* Can point to method or field ref
-            We can be sure that here we only have method refs */
-            var row = TableRowUtils.getMemberRefRow(method.getModule(), token);
-            var name =
-                row.getNameHeapPtr().read(method.getModule().getDefiningFile().getStringHeap());
-            var klass = row.getKlassTablePtr();
-            var signature =
-                row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
-            var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
-            if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
-              var containingType = SymbolResolver.resolveType(klass, getMethod().getModule());
-              var method =
-                  findMatchingMethod(name, methodSignature, (NamedTypeSymbol) containingType);
-
-              node = getCheckedCALLNode(method, top);
-            } else {
-              CompilerDirectives.transferToInterpreter();
-              throw new InterpreterException();
-            }
+            var method = getMethodSymbolFromMemberRef(top, token);
+            node = getCheckedCALLNode(method, top);
           }
           case CLITableConstants.CLI_TABLE_METHOD_DEF -> {
-            var row = TableRowUtils.getMethodDefRow(method.getModule(), token);
-            var methodDef = method.getModule().getLocalMethod(row).getItem();
-            node = new CALLNode(methodDef, top);
+            var method = getMethodSymbolFromMethodDef(top, token);
+            node = new CALLNode(method, top);
           }
           case CLI_TABLE_METHOD_SPEC -> {
             var row =
@@ -777,6 +780,30 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
     // execute the new node
     return nodes[index].execute(frame, taggedFrame);
+  }
+
+  private MethodSymbol getMethodSymbolFromMethodDef(int top, CLITablePtr token) {
+    var row = TableRowUtils.getMethodDefRow(method.getModule(), token);
+    return method.getModule().getLocalMethod(row).getItem();
+  }
+
+  private MethodSymbol getMethodSymbolFromMemberRef(int top, CLITablePtr token) {
+    final NodeizedNodeBase node;
+    /* Can point to method or field ref
+    We can be sure that here we only have method refs */
+    var row = TableRowUtils.getMemberRefRow(method.getModule(), token);
+    var name = row.getNameHeapPtr().read(method.getModule().getDefiningFile().getStringHeap());
+    var klass = row.getKlassTablePtr();
+    var signature =
+        row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
+    var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
+    if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
+      var containingType = SymbolResolver.resolveType(klass, getMethod().getModule());
+      return findMatchingMethod(name, methodSignature, (NamedTypeSymbol) containingType);
+    } else {
+      CompilerDirectives.transferToInterpreter();
+      throw new InterpreterException();
+    }
   }
 
   private NodeizedNodeBase getCheckedCALLNode(MethodSymbol method, int top) {
@@ -995,6 +1022,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
       case BNE_UN:
       case BNE_UN_S:
+        /*
+        cgt.un is allowed and verifiable on ObjectRefs (O). This is commonly used when comparing an
+        ObjectRef with null (there is no "compare-not-equal" instruction, which would otherwise be a more
+        obvious solution)
+         */
+      case CGT_UN:
         return op1 != op2;
     }
 

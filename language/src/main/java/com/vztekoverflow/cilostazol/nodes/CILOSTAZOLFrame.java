@@ -31,11 +31,11 @@ public final class CILOSTAZOLFrame {
 
   // region stack offsets
   public static int getStartStackOffset(MethodSymbol method) {
-    return getStartArgsOffset(method) + method.getParameters().length;
+    return getStartArgsOffset(method) + method.getParameters().length + isInstantiable(method);
   }
 
   public static int getStartArgsOffset(MethodSymbol methodSymbol) {
-    return isInstantiable(methodSymbol) + methodSymbol.getLocals().length;
+    return methodSymbol.getLocals().length;
   }
 
   /** Instantiable methods have `this` as the first argument. */

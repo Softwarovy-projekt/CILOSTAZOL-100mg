@@ -220,7 +220,12 @@ public class MethodSymbol extends Symbol {
 
       // Method header parsing
       if (!flags.hasFlag(MethodFlags.Flag.ABSTRACT)) {
-        final ByteSequenceBuffer buf = file.getBuffer(mDef.getRVA());
+        int rva = mDef.getRVA();
+        if (rva == 0) {
+          // TODO: Remove this workaround, see if this only happens with System.Object::GetType
+          rva = mDef.getRVA(8);
+        }
+        final ByteSequenceBuffer buf = file.getBuffer(rva);
 
         final byte firstByte = buf.getByte();
         final MethodHeaderFlags pom = new MethodHeaderFlags(firstByte);
