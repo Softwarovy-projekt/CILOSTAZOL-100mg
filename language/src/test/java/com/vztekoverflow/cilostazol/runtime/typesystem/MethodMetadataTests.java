@@ -539,6 +539,10 @@ public class MethodMetadataTests extends TypeSystemTestBase {
     assertEquals(2, mFoo.length);
   }
 
+  /**
+   * This test is affected on Release build.
+   * number of locals in Foo is 2 in release.
+   * */
   public void testMethod_Locals() {
     final String projectName = "MethodMetadataTest";
     final CILOSTAZOLContext ctx = init(getDllPath(projectName));
@@ -550,7 +554,7 @@ public class MethodMetadataTests extends TypeSystemTestBase {
     // public void Foo()
     MethodSymbol[] mFoo = getMethod(type, "Foo");
     assertEquals(1, mFoo.length);
-    assertEquals(2, mFoo[0].getLocals().length);
+    assertEquals(3, mFoo[0].getLocals().length); //is 2 on Release build
     assertFalse(mFoo[0].getLocals()[0].isByRef());
     assertFalse(mFoo[0].getLocals()[0].isPinned());
     // TODO: assert local type
