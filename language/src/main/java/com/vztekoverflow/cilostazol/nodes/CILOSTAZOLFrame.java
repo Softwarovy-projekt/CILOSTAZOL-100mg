@@ -248,8 +248,6 @@ public final class CILOSTAZOLFrame {
     NativeFloat,
     NativeInt,
     ManagedPointer,
-    /** Not a real TYPE! It is used to represent the absence of a type */
-    None,
   }
 
   // TODO: It should rely on Assembly as well...

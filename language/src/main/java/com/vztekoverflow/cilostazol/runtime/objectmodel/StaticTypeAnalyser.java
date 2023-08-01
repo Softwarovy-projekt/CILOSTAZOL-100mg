@@ -984,7 +984,7 @@ public class StaticTypeAnalyser {
   }
 
   private static void clear(StackType[] stack, int topStack) {
-    stack[topStack - 1] = None;
+    stack[topStack - 1] = null;
   }
 
   private static void replace(StackType[] stack, int topStack, StackType stackType) {
