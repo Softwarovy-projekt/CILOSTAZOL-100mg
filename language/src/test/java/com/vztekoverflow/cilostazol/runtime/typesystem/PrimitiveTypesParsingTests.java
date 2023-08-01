@@ -10,9 +10,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class PrimitiveTypesParsingTests extends TestBase {
+public class PrimitiveTypesParsingTests extends TypeSystemTestBase {
 
-  private final String coreLibPath = _directory + "/dlls";
+  private final String coreLibPath = getDirectory() + "/dlls";
 
   public static Stream<Arguments> provideNumericPrimitiveTypesData() {
     return Stream.of(

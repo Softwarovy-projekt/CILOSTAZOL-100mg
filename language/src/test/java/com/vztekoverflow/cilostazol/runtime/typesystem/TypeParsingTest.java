@@ -9,7 +9,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
  *
  * <p>Build it with configuration: {@value _directory} and .NET version: {@value _dotnetVersion}
  */
-public class TypeParsingTest extends TestBase {
+public class TypeParsingTest extends TypeSystemTestBase {
 
   public void testNewStructure() {
     final String projectName = "ComponentParsingGeneral";

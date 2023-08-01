@@ -5,14 +5,8 @@ import com.vztekoverflow.cil.parser.cli.signature.MethodDefFlags;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
-import java.util.Arrays;
 
-public class MethodMetadataTests extends TestBase {
-  private MethodSymbol[] getMethod(NamedTypeSymbol type, String name) {
-    return Arrays.stream(type.getMethods())
-        .filter(m -> m.getName().equals(name))
-        .toArray(MethodSymbol[]::new);
-  }
+public class MethodMetadataTests extends TypeSystemTestBase {
 
   public void testMethod_Accessibility() {
     final String projectName = "MethodMetadataTest";
