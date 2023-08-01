@@ -353,10 +353,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private void loadIndirect(VirtualFrame frame, int top) {
     // TODO: Check types, do we need to distinguish types ?
     var referenceType = (ReferenceSymbol) CILOSTAZOLFrame.getTaggedStack(taggedFrame, top);
-    assert referenceType.getStackTypeKind() == CILOSTAZOLFrame.StackType.Int;
+    assert referenceType.getStackTypeKind() == CILOSTAZOLFrame.StackType.Int32;
 
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
-    int index = CILOSTAZOLFrame.popInt(frame, top);
+    int index = CILOSTAZOLFrame.popInt32(frame, top);
 
     index = updateByStackType(referenceType, index);
     CILOSTAZOLFrame.copyStatic(frame, index, top);
@@ -384,28 +384,28 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void loadValueOnTop(VirtualFrame frame, int top, int value) {
     // We want to tag the stack by types in it
-    CILOSTAZOLFrame.putInt(frame, top, value);
+    CILOSTAZOLFrame.putInt32(frame, top, value);
     CILOSTAZOLFrame.putTaggedStack(
         taggedFrame, top, SymbolResolver.getInt32(CILOSTAZOLContext.get(this)));
   }
 
   private void loadValueOnTop(VirtualFrame frame, int top, long value) {
     // We want to tag the stack by types in it
-    CILOSTAZOLFrame.putLong(frame, top, value);
+    CILOSTAZOLFrame.putInt64(frame, top, value);
     CILOSTAZOLFrame.putTaggedStack(
         taggedFrame, top, SymbolResolver.getInt64(CILOSTAZOLContext.get(this)));
   }
 
   private void loadValueOnTop(VirtualFrame frame, int top, double value) {
     // We want to tag the stack by types in it
-    CILOSTAZOLFrame.putDouble(frame, top, value);
+    CILOSTAZOLFrame.putNativeFloat(frame, top, value);
     CILOSTAZOLFrame.putTaggedStack(
         taggedFrame, top, SymbolResolver.getDouble(CILOSTAZOLContext.get(this)));
   }
 
   private void loadValueOnTop(VirtualFrame frame, int top, float value) {
     // We want to tag the stack by types in it
-    CILOSTAZOLFrame.putDouble(frame, top, value);
+    CILOSTAZOLFrame.putNativeFloat(frame, top, value);
     CILOSTAZOLFrame.putTaggedStack(
         taggedFrame, top, SymbolResolver.getSingle(CILOSTAZOLContext.get(this)));
   }
@@ -428,7 +428,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void loadLocalRefToTop(VirtualFrame frame, int localIdx, int top) {
     int localSlot = CILOSTAZOLFrame.isInstantiable(getMethod()) + localIdx;
-    CILOSTAZOLFrame.putInt(frame, top, localSlot);
+    CILOSTAZOLFrame.putInt32(frame, top, localSlot);
     CILOSTAZOLFrame.putTaggedStack(
         taggedFrame,
         top,
@@ -437,7 +437,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void loadArgRefToTop(VirtualFrame frame, int argIdx, int top) {
     int argSlot = CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + argIdx;
-    CILOSTAZOLFrame.putInt(frame, top, argSlot);
+    CILOSTAZOLFrame.putInt32(frame, top, argSlot);
     CILOSTAZOLFrame.putTaggedStack(
         taggedFrame,
         top,
@@ -644,7 +644,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     if (frame.isObject(slot)) {
       value = CILOSTAZOLFrame.popObject(frame, slot) != null;
     } else {
-      value = CILOSTAZOLFrame.popInt(frame, slot) != 0;
+      value = CILOSTAZOLFrame.popInt32(frame, slot) != 0;
     }
     CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot);
 
@@ -681,23 +681,24 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     var slot1Type = CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot1).getStackTypeKind();
     var slot2Type = CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot2).getStackTypeKind();
 
-    if (slot1Type == CILOSTAZOLFrame.StackType.Int && slot2Type == CILOSTAZOLFrame.StackType.Int) {
-      long op1 = CILOSTAZOLFrame.popInt(frame, slot1);
-      long op2 = CILOSTAZOLFrame.popInt(frame, slot2);
+    if (slot1Type == CILOSTAZOLFrame.StackType.Int32
+        && slot2Type == CILOSTAZOLFrame.StackType.Int32) {
+      long op1 = CILOSTAZOLFrame.popInt32(frame, slot1);
+      long op2 = CILOSTAZOLFrame.popInt32(frame, slot2);
       return binaryCompareInt32(opcode, op1, op2);
     }
 
-    if (slot1Type == CILOSTAZOLFrame.StackType.Long
-        && slot2Type == CILOSTAZOLFrame.StackType.Long) {
-      long op1 = CILOSTAZOLFrame.popLong(frame, slot1);
-      long op2 = CILOSTAZOLFrame.popLong(frame, slot2);
+    if (slot1Type == CILOSTAZOLFrame.StackType.Int64
+        && slot2Type == CILOSTAZOLFrame.StackType.Int64) {
+      long op1 = CILOSTAZOLFrame.popInt64(frame, slot1);
+      long op2 = CILOSTAZOLFrame.popInt64(frame, slot2);
       return binaryCompareInt64(opcode, op1, op2);
     }
 
-    if (slot1Type == CILOSTAZOLFrame.StackType.Double
-        && slot2Type == CILOSTAZOLFrame.StackType.Double) {
-      double op1 = CILOSTAZOLFrame.popDouble(frame, slot1);
-      double op2 = CILOSTAZOLFrame.popDouble(frame, slot2);
+    if (slot1Type == CILOSTAZOLFrame.StackType.NativeFloat
+        && slot2Type == CILOSTAZOLFrame.StackType.NativeFloat) {
+      double op1 = CILOSTAZOLFrame.popNativeFloat(frame, slot1);
+      double op2 = CILOSTAZOLFrame.popNativeFloat(frame, slot2);
       return binaryCompareDouble(opcode, op1, op2);
     }
 

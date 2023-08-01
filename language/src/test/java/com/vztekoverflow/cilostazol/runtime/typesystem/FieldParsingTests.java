@@ -6,7 +6,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.FieldSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import java.util.Arrays;
 
-public class FieldParsingTests extends TestBase {
+public class FieldParsingTests extends TypeSystemTestBase {
 
   public void testFieldParsing_General() {
     final String projectName = "FieldTest";

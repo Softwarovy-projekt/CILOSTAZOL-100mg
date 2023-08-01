@@ -7,7 +7,8 @@ public abstract class ReferenceSymbol extends TypeSymbol {
   private final TypeSymbol underlyingTypeSymbol;
 
   public ReferenceSymbol(TypeSymbol underlyingTypeSymbol) {
-    super(underlyingTypeSymbol.getDefiningModule(), CILOSTAZOLFrame.StackType.Int, SystemType.Int);
+    super(
+        underlyingTypeSymbol.getDefiningModule(), CILOSTAZOLFrame.StackType.Int32, SystemType.Int);
     this.underlyingTypeSymbol = underlyingTypeSymbol;
   }
 

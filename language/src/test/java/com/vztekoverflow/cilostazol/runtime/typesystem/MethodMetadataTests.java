@@ -5,14 +5,8 @@ import com.vztekoverflow.cil.parser.cli.signature.MethodDefFlags;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
-import java.util.Arrays;
 
-public class MethodMetadataTests extends TestBase {
-  private MethodSymbol[] getMethod(NamedTypeSymbol type, String name) {
-    return Arrays.stream(type.getMethods())
-        .filter(m -> m.getName().equals(name))
-        .toArray(MethodSymbol[]::new);
-  }
+public class MethodMetadataTests extends TypeSystemTestBase {
 
   public void testMethod_Accessibility() {
     final String projectName = "MethodMetadataTest";
@@ -545,6 +539,7 @@ public class MethodMetadataTests extends TestBase {
     assertEquals(2, mFoo.length);
   }
 
+  /** This test is affected on Release build. number of locals in Foo is 2 in release. */
   public void testMethod_Locals() {
     final String projectName = "MethodMetadataTest";
     final CILOSTAZOLContext ctx = init(getDllPath(projectName));
@@ -556,7 +551,7 @@ public class MethodMetadataTests extends TestBase {
     // public void Foo()
     MethodSymbol[] mFoo = getMethod(type, "Foo");
     assertEquals(1, mFoo.length);
-    assertEquals(2, mFoo[0].getLocals().length);
+    assertEquals(3, mFoo[0].getLocals().length); // is 2 on Release build
     assertFalse(mFoo[0].getLocals()[0].isByRef());
     assertFalse(mFoo[0].getLocals()[0].isPinned());
     // TODO: assert local type

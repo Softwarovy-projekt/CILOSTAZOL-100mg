@@ -365,6 +365,10 @@ public final class SymbolResolver {
   // endregion
 
   // region method resolution - CLI file
+  public static ClassMember<MethodSymbol> resolveMethod(CLITablePtr row, ModuleSymbol module) {
+    return resolveMethod(row, new TypeSymbol[0], new TypeSymbol[0], module);
+  }
+
   public static ClassMember<MethodSymbol> resolveMethod(
       CLITablePtr row,
       TypeSymbol[] methodTypeArgs,
@@ -389,8 +393,7 @@ public final class SymbolResolver {
   public static ClassMember<MethodSymbol> resolveMethod(
       CLIMethodDefTableRow row, ModuleSymbol module) {
     var idx = module.getLocalMethod(row);
-    return new ClassMember<MethodSymbol>(
-        idx.getSymbol(), idx.getSymbol().getMethods()[idx.getIndex()]);
+    return new ClassMember<MethodSymbol>(idx.getSymbol(), idx.getItem());
   }
 
   public static ClassMember<MethodSymbol> resolveMethod(

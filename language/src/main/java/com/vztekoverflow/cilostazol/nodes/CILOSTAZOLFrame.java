@@ -62,12 +62,14 @@ public final class CILOSTAZOLFrame {
   public static void put(
       VirtualFrame frame, Object obj, int topStack, CILOSTAZOLFrame.StackType stackType) {
     switch (stackType) {
-      case Int -> CILOSTAZOLFrame.putInt(frame, topStack, (int) obj);
-      case Long -> CILOSTAZOLFrame.putLong(frame, topStack, (long) obj);
-      case Double -> CILOSTAZOLFrame.putDouble(frame, topStack, (double) obj);
+      case Int32 -> CILOSTAZOLFrame.putInt32(frame, topStack, (int) obj);
+      case Int64 -> CILOSTAZOLFrame.putInt64(frame, topStack, (long) obj);
+      case NativeFloat -> CILOSTAZOLFrame.putNativeFloat(frame, topStack, (double) obj);
+      case NativeInt -> CILOSTAZOLFrame.putInt32(frame, topStack, (int) obj);
+      case ManagedPointer -> CILOSTAZOLFrame.putInt32(frame, topStack, (int) obj);
       case Object -> CILOSTAZOLFrame.putObject(frame, topStack, (StaticObject) obj);
-      case Void -> throw new InterpreterException(
-          CILOSTAZOLBundle.message("cilostazol.exception.void.can.not.be.on.stack"));
+      default -> throw new InterpreterException(
+          CILOSTAZOLBundle.message("cilostazol.exception.unknown.type.on.stack", stackType));
     }
   }
 
@@ -77,17 +79,17 @@ public final class CILOSTAZOLFrame {
     frame.setObjectStatic(slot, value);
   }
 
-  public static void putInt(Frame frame, int slot, int value) {
+  public static void putInt32(Frame frame, int slot, int value) {
     assert slot >= 0;
     frame.setIntStatic(slot, value);
   }
 
-  public static void putLong(Frame frame, int slot, long value) {
+  public static void putInt64(Frame frame, int slot, long value) {
     assert slot >= 0;
     frame.setLongStatic(slot, value);
   }
 
-  public static void putDouble(Frame frame, int slot, double value) {
+  public static void putNativeFloat(Frame frame, int slot, double value) {
     assert slot >= 0;
     frame.setDoubleStatic(slot, value);
   }
@@ -106,16 +108,18 @@ public final class CILOSTAZOLFrame {
 
   public static Object pop(VirtualFrame frame, int topStack, CILOSTAZOLFrame.StackType stackType) {
     return switch (stackType) {
-      case Int -> popInt(frame, topStack);
-      case Long -> popLong(frame, topStack);
-      case Double -> popDouble(frame, topStack);
+      case Int32 -> popInt32(frame, topStack);
+      case Int64 -> popInt64(frame, topStack);
+      case NativeFloat -> popNativeFloat(frame, topStack);
+      case NativeInt -> popInt32(frame, topStack);
+      case ManagedPointer -> popInt32(frame, topStack);
       case Object -> popObject(frame, topStack);
-      case Void -> throw new InterpreterException(
-          CILOSTAZOLBundle.message("cilostazol.exception.void.can.not.be.on.stack"));
+      default -> throw new InterpreterException(
+          CILOSTAZOLBundle.message("cilostazol.exception.unknown.type.on.stack", stackType));
     };
   }
 
-  public static int popInt(Frame frame, int slot) {
+  public static int popInt32(Frame frame, int slot) {
     assert slot >= 0;
     int result = frame.getIntStatic(slot);
     // Avoid keeping track of popped slots in FrameStates.
@@ -123,7 +127,7 @@ public final class CILOSTAZOLFrame {
     return result;
   }
 
-  public static long popLong(Frame frame, int slot) {
+  public static long popInt64(Frame frame, int slot) {
     assert slot >= 0;
     long result = frame.getLongStatic(slot);
     // Avoid keeping track of popped slots in FrameStates.
@@ -131,7 +135,7 @@ public final class CILOSTAZOLFrame {
     return result;
   }
 
-  public static double popDouble(Frame frame, int slot) {
+  public static double popNativeFloat(Frame frame, int slot) {
     assert slot >= 0;
     double result = frame.getDoubleStatic(slot);
     // Avoid keeping track of popped slots in FrameStates.
@@ -161,12 +165,14 @@ public final class CILOSTAZOLFrame {
   public static void setLocal(
       VirtualFrame frame, Object obj, int topStack, CILOSTAZOLFrame.StackType stackType) {
     switch (stackType) {
-      case Int -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
-      case Long -> CILOSTAZOLFrame.setLocalLong(frame, topStack, (long) obj);
-      case Double -> CILOSTAZOLFrame.setLocalDouble(frame, topStack, (double) obj);
+      case Int32 -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
+      case Int64 -> CILOSTAZOLFrame.setLocalLong(frame, topStack, (long) obj);
+      case NativeFloat -> CILOSTAZOLFrame.setLocalDouble(frame, topStack, (double) obj);
+      case NativeInt -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
+      case ManagedPointer -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
       case Object -> CILOSTAZOLFrame.setLocalObject(frame, topStack, (StaticObject) obj);
-      case Void -> throw new InterpreterException(
-          CILOSTAZOLBundle.message("cilostazol.exception.local.type.can.not.be.void"));
+      default -> throw new InterpreterException(
+          CILOSTAZOLBundle.message("cilostazol.exception.unknown.type.on.stack", stackType));
     }
   }
 
@@ -200,12 +206,14 @@ public final class CILOSTAZOLFrame {
   public static Object getLocal(
       VirtualFrame frame, int topStack, CILOSTAZOLFrame.StackType stackType) {
     return switch (stackType) {
-      case Int -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
-      case Long -> CILOSTAZOLFrame.getLocalLong(frame, topStack);
-      case Double -> CILOSTAZOLFrame.getLocalDouble(frame, topStack);
+      case Int32 -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
+      case Int64 -> CILOSTAZOLFrame.getLocalLong(frame, topStack);
+      case NativeFloat -> CILOSTAZOLFrame.getLocalDouble(frame, topStack);
+      case NativeInt -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
+      case ManagedPointer -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
       case Object -> CILOSTAZOLFrame.getLocalObject(frame, topStack);
-      case Void -> throw new InterpreterException(
-          CILOSTAZOLBundle.message("cilostazol.exception.local.type.can.not.be.void"));
+      default -> throw new InterpreterException(
+          CILOSTAZOLBundle.message("cilostazol.exception.unknown.type.on.stack", stackType));
     };
   }
 
@@ -235,10 +243,11 @@ public final class CILOSTAZOLFrame {
   // region stack types
   public enum StackType {
     Object,
-    Int,
-    Long,
-    Double,
-    Void,
+    Int32,
+    Int64,
+    NativeFloat,
+    NativeInt,
+    ManagedPointer,
   }
 
   // TODO: It should rely on Assembly as well...
@@ -253,13 +262,13 @@ public final class CILOSTAZOLFrame {
         case "UInt16":
         case "Int32":
         case "UInt32":
-          return StackType.Int;
+          return StackType.Int32;
         case "Single":
         case "Double":
-          return StackType.Double;
+          return StackType.NativeFloat;
         case "Int64":
         case "UInt64":
-          return StackType.Long;
+          return StackType.Int64;
           // Decimal, UIntPtr, IntPtr ??
       }
     }
