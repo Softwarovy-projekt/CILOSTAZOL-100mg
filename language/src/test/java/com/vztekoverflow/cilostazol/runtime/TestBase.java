@@ -32,7 +32,10 @@ public abstract class TestBase extends TestCase {
   protected Path[] getDllPath(String projectName) {
     try {
       var paths = Files.walk(Paths.get(_runtimeDirectory));
-      return Stream.concat(paths, Stream.of(Paths.get(getDirectory(), projectName, "bin", _configuration, _dotnetVersion)))
+      return Stream.concat(
+              paths,
+              Stream.of(
+                  Paths.get(getDirectory(), projectName, "bin", _configuration, _dotnetVersion)))
           .toArray(Path[]::new);
 
     } catch (IOException e) {
@@ -45,8 +48,11 @@ public abstract class TestBase extends TestCase {
       var paths = Files.walk(Paths.get(_runtimeDirectory));
       var paths2 =
           Stream.concat(
-              Stream.of(Paths.get(getDirectory(), projectName, "bin", _configuration, _dotnetVersion)),
-              Stream.of(Paths.get(getDirectory(), otherProjectName, "bin", _configuration, _dotnetVersion)));
+              Stream.of(
+                  Paths.get(getDirectory(), projectName, "bin", _configuration, _dotnetVersion)),
+              Stream.of(
+                  Paths.get(
+                      getDirectory(), otherProjectName, "bin", _configuration, _dotnetVersion)));
       return Stream.concat(paths, paths2).toArray(Path[]::new);
 
     } catch (IOException e) {
