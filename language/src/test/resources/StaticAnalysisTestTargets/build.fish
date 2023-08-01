@@ -7,5 +7,5 @@ set projects (find $SCRIPT_DIR -name '*.csproj')
 for project in $projects;
 	echo $project
 	set projectdir (dirname "$project")
-	dotnet build -c=Debug --output "$projectdir\bin" $project
+	dotnet build -c=Debug $project
 end

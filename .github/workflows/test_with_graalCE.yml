@@ -36,17 +36,9 @@ jobs:
           components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build parser test targets
-        working-directory: ./language/src/test/resources/TypeParsingTestTargets
-        run: ./build.sh
-
-      - name: Build SOM test targets
-        working-directory: ./language/src/test/resources/StaticObjectModelTestTargets
-        run: ./build.sh
-
-      - name: Build Interpreter test targets
-        working-directory: ./tests/src/test/resources/BasicTests
-        run: ./build.sh
+      - name: Build test targets
+        working-directory: ./language/src/test/resources
+        run: ./build_solution.sh
 
       - name: test
         run: mvn test

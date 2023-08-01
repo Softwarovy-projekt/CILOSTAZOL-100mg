@@ -11,9 +11,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class PrimitiveTypesParsingTests extends TypeSystemTestBase {
-
-  private final String coreLibPath = getDirectory() + "/dlls";
-
   public static Stream<Arguments> provideNumericPrimitiveTypesData() {
     return Stream.of(
         Arguments.of("ByteClass", "Byte", "System"),
