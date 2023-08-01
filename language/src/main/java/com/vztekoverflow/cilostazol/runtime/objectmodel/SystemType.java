@@ -12,12 +12,7 @@ public enum SystemType {
   Long,
   Double,
   Void,
-  Object,
-  /**
-   * <b><i>NOT A REAL TYPE</i></b><br>
-   * This one is purely for stack sanity purposes Used for clearing the stack after a call
-   */
-  None;
+  Object;
 
   public static SystemType getTypeKind(String name, String namespace, AssemblyIdentity assembly) {
     if (AssemblyIdentity.SystemPrivateCoreLib700().equalsVersionAgnostic(assembly)

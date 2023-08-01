@@ -23,7 +23,7 @@ public final class TypeParameterSymbol extends TypeSymbol {
       GenericParameterFlags flags,
       int ordinal,
       String name) {
-    super(definingModule, CILOSTAZOLFrame.StackType.Void, SystemType.Void);
+    super(definingModule, CILOSTAZOLFrame.StackType.None, SystemType.Void);
     this.constraints = constraints;
     this.flags = flags;
     this.ordinal = ordinal;

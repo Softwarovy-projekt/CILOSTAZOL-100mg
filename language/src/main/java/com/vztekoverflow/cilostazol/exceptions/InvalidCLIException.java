@@ -6,4 +6,8 @@ public class InvalidCLIException extends CILOSTAZOLException {
   public InvalidCLIException() {
     super(CILOSTAZOLBundle.message("cilostazol.exception.invalid.CIL"));
   }
+
+  public InvalidCLIException(String message) {
+    super(message);
+  }
 }

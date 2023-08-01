@@ -16,7 +16,7 @@ import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLRootNode;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticTypeAnalyser;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -35,7 +35,9 @@ public class MethodSymbol extends Symbol {
   protected final ReturnSymbol returnSymbol;
   protected final ExceptionHandlerSymbol[] exceptionHandlers;
   protected final byte[] cil;
-  private final SystemType[] cilSystemTypes;
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private StaticTypeAnalyser.OpCodeTypes[] opCodeTypes = null;
   // body
   protected final int maxStack;
   protected final MethodHeaderFlags methodHeaderFlags;
@@ -70,12 +72,6 @@ public class MethodSymbol extends Symbol {
     this.returnSymbol = returnSymbol;
     this.exceptionHandlers = exceptionHandlers;
     this.cil = cil;
-    // TODO: temporarily disabled, not everything is parsable yet
-    // we have to resolve hwen to stop resoling etc.
-    this.cilSystemTypes =
-        new SystemType
-            [0]; // SystemType.GetSystemTypes(cil, maxStack, parameters, locals, returnSymbol,
-    // module);
     this.maxStack = maxStack;
     this.methodHeaderFlags = methodHeaderFlags;
   }
@@ -131,6 +127,14 @@ public class MethodSymbol extends Symbol {
 
   public byte[] getCIL() {
     return cil;
+  }
+
+  public StaticTypeAnalyser.OpCodeTypes[] getOpCodeTypes() {
+    if (opCodeTypes == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      opCodeTypes = StaticTypeAnalyser.analyseOpCodes(this);
+    }
+    return opCodeTypes;
   }
 
   public String toString() {
