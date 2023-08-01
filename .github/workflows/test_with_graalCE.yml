@@ -36,9 +36,13 @@ jobs:
           components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build test targets
+      - name: Build language test targets
         working-directory: ./language/src/test/resources
         run: ./build_solution.sh
+
+      - name: Build Interpreter test targets
+        working-directory: ./tests/src/test/resources/BasicTests
+        run: ./build.sh
 
       - name: test
         run: mvn test
