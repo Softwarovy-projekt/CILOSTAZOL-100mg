@@ -2,9 +2,9 @@ package com.vztekoverflow.cilostazol.runtime.staticanalysis;
 
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticTypeAnalyser;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
+import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
@@ -39,12 +39,12 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
     assertEquals(10, opCodeTypes.length);
     assertEquals(
         4,
-        Arrays.stream(opCodeTypes).filter(x -> x == StaticTypeAnalyser.OpCodeTypes.Int32).count());
+        Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
 
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[2]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[4]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[7]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[8]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[2]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[4]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[7]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[8]);
   }
 
   @Test
@@ -74,12 +74,12 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
     assertEquals(10, opCodeTypes.length);
     assertEquals(
         4,
-        Arrays.stream(opCodeTypes).filter(x -> x == StaticTypeAnalyser.OpCodeTypes.Int32).count());
+        Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
 
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[2]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[4]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[7]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[8]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[2]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[4]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[7]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[8]);
   }
 
   @Test
@@ -111,17 +111,17 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
     assertEquals(12, opCodeTypes.length);
     assertEquals(
         3,
-        Arrays.stream(opCodeTypes).filter(x -> x == StaticTypeAnalyser.OpCodeTypes.Int32).count());
+        Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
     assertEquals(
         3,
-        Arrays.stream(opCodeTypes).filter(x -> x == StaticTypeAnalyser.OpCodeTypes.Int64).count());
+        Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int64).count());
 
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[2]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[4]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int32, opCodeTypes[7]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int64, opCodeTypes[5]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int64, opCodeTypes[9]);
-    assertEquals(StaticTypeAnalyser.OpCodeTypes.Int64, opCodeTypes[10]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[2]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[4]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[7]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int64, opCodeTypes[5]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int64, opCodeTypes[9]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int64, opCodeTypes[10]);
   }
 
   private MethodSymbol getMethodSymbol(String methodName) {

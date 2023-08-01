@@ -1,4 +1,4 @@
-package com.vztekoverflow.cilostazol.runtime.objectmodel;
+package com.vztekoverflow.cilostazol.staticanalysis;
 
 import static com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions.*;
 import static com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame.*;
@@ -15,9 +15,9 @@ import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 
-public class StaticTypeAnalyser {
+public class StaticOpCodeAnalyser {
 
-  public enum OpCodeTypes {
+  public enum OpCodeType {
     Int32,
     Int64,
     Object,
@@ -35,7 +35,7 @@ public class StaticTypeAnalyser {
   }
 
   // region Stack manipulation
-  public static OpCodeTypes[] analyseOpCodes(MethodSymbol method) {
+  public static OpCodeType[] analyseOpCodes(MethodSymbol method) {
     return getOpcodeTypes(
         method.getCIL(),
         method.getMaxStack(),
@@ -44,14 +44,14 @@ public class StaticTypeAnalyser {
         method.getModule());
   }
 
-  private static OpCodeTypes[] getOpcodeTypes(
+  private static OpCodeType[] getOpcodeTypes(
       byte[] cil,
       int maxStack,
       ParameterSymbol[] parameters,
       LocalSymbol[] locals,
       ModuleSymbol module) {
     var bytecodeBuffer = new BytecodeBuffer(cil);
-    OpCodeTypes[] types = new OpCodeTypes[cil.length];
+    OpCodeType[] types = new OpCodeType[cil.length];
     var stack = new StackType[maxStack];
     var topStack = 0;
     int pc = 0;
@@ -568,7 +568,7 @@ public class StaticTypeAnalyser {
    * @param topStack Points to the idx + 1 of a value on the stack we care about
    */
   private static void setTypeByStack(
-      OpCodeTypes[] types, StackType[] stack, int topStack, int pc, int opCode) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc, int opCode) {
     types[pc] = getUnaryOpCodeType(stack[topStack - 1], opCode);
   }
 
@@ -576,7 +576,7 @@ public class StaticTypeAnalyser {
    * @ApiNote: Partition III, Table 2: Binary Numeric Operations
    */
   private static void handleBinaryNumericOperations(
-      OpCodeTypes[] types, StackType[] stack, int topStack, int pc, int opCode) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc, int opCode) {
     var right = stack[topStack - 1];
     var left = stack[topStack - 2];
 
@@ -611,7 +611,7 @@ public class StaticTypeAnalyser {
    * @ApiNote: Partition III, 4.4 cpobj
    */
   private static void handleCopyObject(
-      OpCodeTypes[] types, StackType[] stack, int topStack, int pc) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc) {
     var src = stack[topStack - 1];
     var dest = stack[topStack - 2];
     var opCodeType = getBinaryOpCodeType(src, dest, CPOBJ);
@@ -622,11 +622,11 @@ public class StaticTypeAnalyser {
     clear(stack, topStack - 1);
 
     switch (opCodeType) {
-      case ManagedPointer -> types[pc] = OpCodeTypes.ManagedPointer;
-      case NativeInt -> types[pc] = OpCodeTypes.NativeInt;
+      case ManagedPointer -> types[pc] = OpCodeType.ManagedPointer;
+      case NativeInt -> types[pc] = OpCodeType.NativeInt;
         // specification does not explicitly say if mixed is allowed
-      case ManagedPointer_NativeInt -> types[pc] = OpCodeTypes.ManagedPointer_NativeInt;
-      case NativeInt_ManagedPointer -> types[pc] = OpCodeTypes.NativeInt_ManagedPointer;
+      case ManagedPointer_NativeInt -> types[pc] = OpCodeType.ManagedPointer_NativeInt;
+      case NativeInt_ManagedPointer -> types[pc] = OpCodeType.NativeInt_ManagedPointer;
       default -> ThrowInvalidCLI(
           CILOSTAZOLBundle.message(
               "cilostazol.exception.invalid.type.on.stack", opCodeType.name(), CPOBJ));
@@ -637,24 +637,24 @@ public class StaticTypeAnalyser {
    * @ApiNote: Partition III, Table 3: Unary Numeric Operations
    */
   private static void handleUnaryNumericOperations(
-      OpCodeTypes[] types, StackType[] stack, int topStack, int pc, int opCode) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc, int opCode) {
     var right = stack[topStack - 1];
     // replace right operand with resulting type
     switch (right) {
       case Int32 -> {
-        types[pc] = OpCodeTypes.Int32;
+        types[pc] = OpCodeType.Int32;
         replace(stack, topStack, Int32);
       }
       case Int64 -> {
-        types[pc] = OpCodeTypes.Int64;
+        types[pc] = OpCodeType.Int64;
         replace(stack, topStack, Int64);
       }
       case NativeInt -> {
-        types[pc] = OpCodeTypes.NativeInt;
+        types[pc] = OpCodeType.NativeInt;
         replace(stack, topStack, StackType.NativeInt);
       }
       case NativeFloat -> {
-        types[pc] = OpCodeTypes.NativeFloat;
+        types[pc] = OpCodeType.NativeFloat;
         replace(stack, topStack, StackType.NativeInt);
       }
       default -> ThrowInvalidCLI(
@@ -667,7 +667,7 @@ public class StaticTypeAnalyser {
    * @ApiNote: Partition III, Table 4: Binary Comparison or Branch Operations
    */
   private static void handleBinaryComparison(
-      OpCodeTypes[] types, StackType[] stack, int topStack, int pc, int opCode) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc, int opCode) {
     var right = stack[topStack - 1];
     var left = stack[topStack - 2];
 
@@ -678,9 +678,9 @@ public class StaticTypeAnalyser {
 
     // Check restriction on some operands
     boolean isRestrictedOpCodeType =
-        opCodeType == OpCodeTypes.NativeInt_ManagedPointer
-            || opCodeType == OpCodeTypes.ManagedPointer_NativeInt
-            || opCodeType == OpCodeTypes.Object;
+        opCodeType == OpCodeType.NativeInt_ManagedPointer
+            || opCodeType == OpCodeType.ManagedPointer_NativeInt
+            || opCodeType == OpCodeType.Object;
     boolean isAllowedOpCode =
         opCode == BEQ || opCode == BEQ_S || opCode == BNE_UN || opCode == BNE_UN_S || opCode == CEQ;
     if (isRestrictedOpCodeType && !isAllowedOpCode)
@@ -717,7 +717,7 @@ public class StaticTypeAnalyser {
    * @ApiNote: Partition III, Table 5: Integer Operations
    */
   private static void handleIntegerOperations(
-      OpCodeTypes[] types, StackType[] stack, int topStack, int pc, int opCode) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc, int opCode) {
     var right = stack[topStack - 1];
     var left = stack[topStack - 2];
 
@@ -745,7 +745,7 @@ public class StaticTypeAnalyser {
    * @ApiNote: Partition III, Table 6: Shift Operations
    */
   private static void handleShiftOperations(
-      OpCodeTypes[] types, StackType[] stack, int topStack, int pc, int opCode) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc, int opCode) {
     var toBeShifted = stack[topStack - 1];
     var shiftBy = stack[topStack - 2];
 
@@ -774,7 +774,7 @@ public class StaticTypeAnalyser {
    * @ApiNote: Partition III, Table 7: Overflow Arithmetic Operations
    */
   private static void handleOverflowArithmeticOperations(
-      OpCodeTypes[] types, StackType[] stack, int topStack, int pc, int opCode) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc, int opCode) {
     var right = stack[topStack - 1];
     var left = stack[topStack - 2];
 
@@ -785,12 +785,12 @@ public class StaticTypeAnalyser {
 
     // Check restriction on some operands
     boolean isAddRestricted =
-        opCodeType == OpCodeTypes.Int32_ManagedPointer
-            || opCodeType == OpCodeTypes.NativeInt_ManagedPointer;
-    boolean isSubRestricted = opCodeType == OpCodeTypes.ManagedPointer;
+        opCodeType == OpCodeType.Int32_ManagedPointer
+            || opCodeType == OpCodeType.NativeInt_ManagedPointer;
+    boolean isSubRestricted = opCodeType == OpCodeType.ManagedPointer;
     boolean isAddSubRestricted =
-        opCodeType == OpCodeTypes.ManagedPointer_Int32
-            || opCodeType == OpCodeTypes.ManagedPointer_NativeInt;
+        opCodeType == OpCodeType.ManagedPointer_Int32
+            || opCodeType == OpCodeType.ManagedPointer_NativeInt;
     if (isAddRestricted && opCode != ADD_OVF_UN)
       ThrowInvalidCLI(
           CILOSTAZOLBundle.message(
@@ -838,7 +838,7 @@ public class StaticTypeAnalyser {
   }
 
   @CompilerDirectives.TruffleBoundary
-  private static OpCodeTypes ThrowInvalidCLI(String message) {
+  private static OpCodeType ThrowInvalidCLI(String message) {
     throw new InvalidCLIException(message);
   }
 
@@ -847,63 +847,63 @@ public class StaticTypeAnalyser {
     throw new NotImplementedException();
   }
   // region type comparison helpers
-  private static OpCodeTypes getUnaryOpCodeType(StackType operand, int opCode) {
+  private static OpCodeType getUnaryOpCodeType(StackType operand, int opCode) {
     return switch (operand) {
-      case Int32 -> OpCodeTypes.Int32;
-      case Int64 -> OpCodeTypes.Int64;
-      case NativeInt -> OpCodeTypes.NativeInt;
-      case NativeFloat -> OpCodeTypes.NativeFloat;
-      case Object -> OpCodeTypes.Object;
-      case ManagedPointer -> OpCodeTypes.ManagedPointer;
+      case Int32 -> OpCodeType.Int32;
+      case Int64 -> OpCodeType.Int64;
+      case NativeInt -> OpCodeType.NativeInt;
+      case NativeFloat -> OpCodeType.NativeFloat;
+      case Object -> OpCodeType.Object;
+      case ManagedPointer -> OpCodeType.ManagedPointer;
       default -> ThrowInvalidCLI(
           CILOSTAZOLBundle.message(
               "cilostazol.exception.invalid.type.on.stack", operand.name(), opCode));
     };
   }
 
-  private static OpCodeTypes getBinaryOpCodeType(StackType left, StackType right, int opCode) {
+  private static OpCodeType getBinaryOpCodeType(StackType left, StackType right, int opCode) {
     if (int32_int32(left, right)) {
-      return OpCodeTypes.Int32;
+      return OpCodeType.Int32;
     }
     if (int32_nativeInt(left, right)) {
-      return OpCodeTypes.Int32_NativeInt;
+      return OpCodeType.Int32_NativeInt;
     }
     if (int32_managedPointer(left, right)) {
-      return OpCodeTypes.Int32_ManagedPointer;
+      return OpCodeType.Int32_ManagedPointer;
     }
     if (int64_int64(left, right)) {
-      return OpCodeTypes.Int64;
+      return OpCodeType.Int64;
     }
     if (nativeInt_int32(left, right)) {
-      return OpCodeTypes.NativeInt_Int32;
+      return OpCodeType.NativeInt_Int32;
     }
     if (nativeInt_nativeInt(left, right)) {
-      return OpCodeTypes.NativeInt;
+      return OpCodeType.NativeInt;
     }
     if (nativeInt_managedPointer(left, right)) {
-      return OpCodeTypes.NativeInt_ManagedPointer;
+      return OpCodeType.NativeInt_ManagedPointer;
     }
     if (nativeFloat_nativeFloat(left, right)) {
-      return OpCodeTypes.NativeFloat;
+      return OpCodeType.NativeFloat;
     }
     if (managedPointer_int32(left, right)) {
-      return OpCodeTypes.ManagedPointer_Int32;
+      return OpCodeType.ManagedPointer_Int32;
     }
     if (managedPointer_nativeInt(left, right)) {
-      return OpCodeTypes.ManagedPointer_NativeInt;
+      return OpCodeType.ManagedPointer_NativeInt;
     }
     if (managedPointer_managedPointer(left, right)) {
-      return OpCodeTypes.ManagedPointer;
+      return OpCodeType.ManagedPointer;
     }
     if (object_object(left, right)) {
-      return OpCodeTypes.Object;
+      return OpCodeType.Object;
     }
     // shift operations
     if (int64_int32(left, right)) {
-      return OpCodeTypes.Int64_Int32;
+      return OpCodeType.Int64_Int32;
     }
     if (int64_nativeInt(left, right)) {
-      return OpCodeTypes.Int64_NativeInt;
+      return OpCodeType.Int64_NativeInt;
     }
 
     return ThrowInvalidCLI(

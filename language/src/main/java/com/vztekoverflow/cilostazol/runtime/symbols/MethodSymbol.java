@@ -16,7 +16,7 @@ import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLRootNode;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticTypeAnalyser;
+import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -37,7 +37,7 @@ public class MethodSymbol extends Symbol {
   protected final byte[] cil;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private StaticTypeAnalyser.OpCodeTypes[] opCodeTypes = null;
+  private StaticOpCodeAnalyser.OpCodeType[] opCodeTypes = null;
   // body
   protected final int maxStack;
   protected final MethodHeaderFlags methodHeaderFlags;
@@ -129,10 +129,10 @@ public class MethodSymbol extends Symbol {
     return cil;
   }
 
-  public StaticTypeAnalyser.OpCodeTypes[] getOpCodeTypes() {
+  public StaticOpCodeAnalyser.OpCodeType[] getOpCodeTypes() {
     if (opCodeTypes == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      opCodeTypes = StaticTypeAnalyser.analyseOpCodes(this);
+      opCodeTypes = StaticOpCodeAnalyser.analyseOpCodes(this);
     }
     return opCodeTypes;
   }
