@@ -15,9 +15,6 @@ import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.GuestAllocator;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.AppDomain;
-import com.vztekoverflow.cilostazol.runtime.other.MethodInstantiationCacheKey;
-import com.vztekoverflow.cilostazol.runtime.other.TypeDefinitionCacheKey;
-import com.vztekoverflow.cilostazol.runtime.other.TypeInstantiationCacheKey;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import java.io.File;
 import java.nio.file.Files;
@@ -41,6 +38,11 @@ public class CILOSTAZOLContext {
   private final Map<MethodInstantiationCacheKey, MethodSymbol> methodInstantiationCache =
       new HashMap<>();
 
+  private final ReferenceSymbol localReference;
+  private final ReferenceSymbol argumentReference;
+  private final ReferenceSymbol fieldReference;
+  private final ReferenceSymbol arrayElementReference;
+
   private final AppDomain appDomain;
 
   public CILOSTAZOLContext(CILOSTAZOLLanguage lang, TruffleLanguage.Env env) {
@@ -57,6 +59,12 @@ public class CILOSTAZOLContext {
             .distinct()
             .toArray(Path[]::new);
     appDomain = new AppDomain();
+
+    //init ref symbols
+    localReference = ReferenceSymbol.ReferenceSymbolFactory.createLocalReference();
+    argumentReference = ReferenceSymbol.ReferenceSymbolFactory.createArgumentReference();
+    fieldReference = ReferenceSymbol.ReferenceSymbolFactory.createFieldReference();
+    arrayElementReference = ReferenceSymbol.ReferenceSymbolFactory.createArrayElemReference();
   }
 
   // For test propose only
@@ -66,6 +74,12 @@ public class CILOSTAZOLContext {
     env = null;
     this.libraryPaths = libraryPaths;
     appDomain = new AppDomain();
+
+    //init ref symbols
+    localReference = ReferenceSymbol.ReferenceSymbolFactory.createLocalReference();
+    argumentReference = ReferenceSymbol.ReferenceSymbolFactory.createArgumentReference();
+    fieldReference = ReferenceSymbol.ReferenceSymbolFactory.createFieldReference();
+    arrayElementReference = ReferenceSymbol.ReferenceSymbolFactory.createArrayElemReference();
   }
 
   public static CILOSTAZOLContext get(Node node) {
@@ -84,7 +98,7 @@ public class CILOSTAZOLContext {
     return env;
   }
 
-  // region Symbols
+  //region Symbols
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */
   public NamedTypeSymbol resolveType(String name, String namespace, AssemblyIdentity assembly) {
@@ -115,9 +129,8 @@ public class CILOSTAZOLContext {
 
     return typeInstantiationCache.computeIfAbsent(
         cacheKey,
-        k -> {
-          return k.genType().construct(k.typeArgs());
-        });
+        k -> k.genType().construct(k.typeArgs())
+        );
   }
 
   public MethodSymbol resolveGenericMethodInstantiation(
@@ -129,6 +142,16 @@ public class CILOSTAZOLContext {
         k -> {
           return k.genMethod().construct(k.typeArgs());
         });
+  }
+
+  public ReferenceSymbol resolveReference(ReferenceSymbol.ReferenceType type)
+  {
+    return switch (type) {
+              case Local -> localReference;
+              case Argument -> argumentReference;
+              case Field -> fieldReference;
+              case ArrayElement -> arrayElementReference;
+          };
   }
 
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {
@@ -168,9 +191,9 @@ public class CILOSTAZOLContext {
     appDomain.loadAssembly(result);
     return result;
   }
-  // endregion
+  //endregion
 
-  // region SOM
+  //region SOM
   @CompilerDirectives.CompilationFinal private StaticProperty arrayProperty;
 
   @CompilerDirectives.CompilationFinal
@@ -194,5 +217,108 @@ public class CILOSTAZOLContext {
     }
     return arrayShape;
   }
-  // endregion
+
+  @CompilerDirectives.CompilationFinal
+  private StaticShape<StaticObject.StaticObjectFactory> stackReferenceShape;
+  @CompilerDirectives.CompilationFinal
+  private StaticProperty stackReferenceFrameProperty;
+  @CompilerDirectives.CompilationFinal
+  private StaticProperty stackReferenceIndexProperty;
+
+  private StaticShape<StaticObject.StaticObjectFactory> fieldReferenceShape;
+  @CompilerDirectives.CompilationFinal
+  private StaticProperty fieldReferenceObjectProperty;
+  @CompilerDirectives.CompilationFinal
+  private StaticProperty fieldReferenceFieldProperty;
+
+  @CompilerDirectives.CompilationFinal
+  private StaticShape<StaticObject.StaticObjectFactory> arrayElementReferenceShape;
+  @CompilerDirectives.CompilationFinal
+  private StaticProperty arrayElementReferenceArrayProperty;
+  @CompilerDirectives.CompilationFinal
+  private StaticProperty arrayElementReferenceIndexProperty;
+  public StaticShape<StaticObject.StaticObjectFactory> getStackReferenceShape() {
+    if (stackReferenceShape == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      stackReferenceShape =
+              StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
+                      .property(getStackReferenceFrameProperty(), Object.class, true)
+                      .property(getStackReferenceIndexProperty(), int.class, true)
+                      .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
+    }
+    return stackReferenceShape;
+  }
+
+  public StaticProperty getStackReferenceFrameProperty() {
+    if (stackReferenceFrameProperty == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      stackReferenceFrameProperty = new DefaultStaticProperty("frame");
+    }
+    return stackReferenceFrameProperty;
+  }
+
+  public StaticProperty getStackReferenceIndexProperty() {
+    if (stackReferenceIndexProperty == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      stackReferenceIndexProperty = new DefaultStaticProperty("index");
+    }
+    return stackReferenceIndexProperty;
+  }
+
+  public StaticShape<StaticObject.StaticObjectFactory> getFieldReferenceShape() {
+    if (fieldReferenceShape == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      fieldReferenceShape =
+              StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
+                      .property(getFieldReferenceObjectProperty(), Object.class, true)
+                      .property(getFieldReferenceFieldProperty(), Object.class, true)
+                      .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
+    }
+    return fieldReferenceShape;
+  }
+
+  public StaticProperty getFieldReferenceObjectProperty() {
+    if (fieldReferenceObjectProperty == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      fieldReferenceObjectProperty = new DefaultStaticProperty("object");
+    }
+    return fieldReferenceObjectProperty;
+  }
+
+  public StaticProperty getFieldReferenceFieldProperty() {
+    if (fieldReferenceFieldProperty == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      fieldReferenceFieldProperty = new DefaultStaticProperty("field");
+    }
+    return fieldReferenceFieldProperty;
+  }
+
+  public StaticShape<StaticObject.StaticObjectFactory> getArrayElementReferenceShape() {
+    if (arrayElementReferenceShape == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      arrayElementReferenceShape =
+              StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
+                      .property(getArrayElementReferenceArrayProperty(), Object.class, true)
+                      .property(getArrayElementReferenceIndexProperty(), int.class, true)
+                      .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
+    }
+    return arrayElementReferenceShape;
+  }
+
+  public StaticProperty getArrayElementReferenceArrayProperty() {
+    if (arrayElementReferenceArrayProperty == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      arrayElementReferenceArrayProperty = new DefaultStaticProperty("array");
+    }
+    return arrayElementReferenceArrayProperty;
+  }
+
+  public StaticProperty getArrayElementReferenceIndexProperty() {
+    if (arrayElementReferenceIndexProperty == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      arrayElementReferenceIndexProperty = new DefaultStaticProperty("index");
+    }
+    return arrayElementReferenceIndexProperty;
+  }
+  //endregion
 }

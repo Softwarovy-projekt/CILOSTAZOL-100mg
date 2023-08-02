@@ -1,4 +1,4 @@
-package com.vztekoverflow.cilostazol.runtime.other;
+package com.vztekoverflow.cilostazol.runtime.context;
 
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;

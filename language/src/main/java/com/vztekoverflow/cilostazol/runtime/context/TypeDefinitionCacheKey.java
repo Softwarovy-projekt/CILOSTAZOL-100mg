@@ -1,4 +1,4 @@
-package com.vztekoverflow.cilostazol.runtime.other;
+package com.vztekoverflow.cilostazol.runtime.context;
 
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import java.util.Objects;

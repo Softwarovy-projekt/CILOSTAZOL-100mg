@@ -494,4 +494,11 @@ public final class SymbolResolver {
     return type1.isAssignableFrom(type2);
   }
   // endregion
+
+  //region references
+  public static ReferenceSymbol resolveReference(ReferenceSymbol.ReferenceType type, CILOSTAZOLContext ctx)
+  {
+    return ctx.resolveReference(type);
+  }
+  //endregion
 }
