@@ -21,4 +21,3 @@ public record ArrayCacheKey(TypeSymbol elemType, int rank) {
     return Objects.equals(elemType, that.elemType) && rank == that.rank;
   }
 }
-
