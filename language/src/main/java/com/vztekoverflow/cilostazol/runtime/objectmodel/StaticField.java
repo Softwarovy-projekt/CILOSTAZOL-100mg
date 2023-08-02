@@ -35,6 +35,7 @@ public class StaticField extends StaticProperty {
     return switch (symbol.getSystemType()) {
       case Boolean -> boolean.class;
       case Char -> char.class;
+      case Byte -> byte.class;
       case Float -> float.class;
       case Double -> double.class;
       case Int -> int.class;

@@ -391,6 +391,123 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           loadIndirectRef(frame, topStack);
           break;
 
+          // array
+        case NEWARR:
+          createArray(frame, bytecodeBuffer.getImmToken(pc), topStack - 1);
+          break;
+        case LDLEN:
+          getArrayLength(frame, topStack - 1);
+          break;
+
+        case LDELEM:
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack - 2,
+              (StaticObject) ((StaticObject) getJavaArrElem(frame, topStack - 1)).clone());
+          break;
+        case LDELEM_REF:
+          CILOSTAZOLFrame.putObject(
+              frame, topStack - 2, (StaticObject) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I, LDELEM_U4, LDELEM_I4:
+          CILOSTAZOLFrame.putInt32(frame, topStack - 2, (int) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I1, LDELEM_U1:
+          CILOSTAZOLFrame.putInt32(frame, topStack - 2, (byte) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I2, LDELEM_U2:
+          CILOSTAZOLFrame.putInt32(
+              frame, topStack - 2, (short) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I8:
+          CILOSTAZOLFrame.putInt64(frame, topStack - 2, (long) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_R4:
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack - 2, (float) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_R8:
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack - 2, (double) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEMA:
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack - 2,
+              getMethod()
+                  .getContext()
+                  .getAllocator()
+                  .createArrayElementReference(
+                      SymbolResolver.resolveReference(
+                          ReferenceSymbol.ReferenceType.ArrayElement, getMethod().getContext()),
+                      CILOSTAZOLFrame.popObject(frame, topStack - 2),
+                      CILOSTAZOLFrame.popInt32(frame, topStack - 1)));
+          break;
+
+        case STELEM:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popObject(frame, topStack - 1).clone());
+          break;
+        case STELEM_REF:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popObject(frame, topStack - 1));
+          break;
+        case STELEM_I, STELEM_I4:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+          break;
+        case STELEM_I1:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              (byte) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+          break;
+        case STELEM_I8:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popInt64(frame, topStack - 1));
+          break;
+        case STELEM_R4:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              (float) CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+          break;
+        case STELEM_R8:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+          break;
+
         case TRUFFLE_NODE:
           topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
           break;
@@ -406,6 +523,49 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   // region Helpers
+  private void createArray(VirtualFrame frame, CLITablePtr token, int top) {
+    TypeSymbol elemType =
+        SymbolResolver.resolveType(
+            token,
+            getMethod().getTypeArguments(),
+            getMethod().getDefiningType().getTypeArguments(),
+            getMethod().getModule());
+    int num = CILOSTAZOLFrame.popInt32(frame, top);
+    var arrayType = SymbolResolver.resolveArray(elemType, 1, getMethod().getContext());
+    var object = getMethod().getContext().getArrayShape().getFactory().create(arrayType);
+    Object value =
+        switch (elemType.getSystemType()) {
+          case Boolean -> new boolean[num];
+          case Char -> new char[num];
+          case Int -> new int[num];
+          case Byte -> new byte[num];
+          case Short -> new short[num];
+          case Float -> new float[num];
+          case Long -> new long[num];
+          case Double -> new double[num];
+          case Void -> throw new InterpreterException();
+          case Object -> {
+            var res = new StaticObject[num];
+            Arrays.fill(res, StaticObject.NULL);
+            yield res;
+          }
+        };
+    getMethod().getContext().getArrayProperty().setObject(object, value);
+    CILOSTAZOLFrame.putObject(frame, top, object);
+  }
+
+  private void getArrayLength(VirtualFrame frame, int top) {
+    StaticObject arr = CILOSTAZOLFrame.popObject(frame, top);
+    Object javaArr = getMethod().getContext().getArrayProperty().getObject(arr);
+    CILOSTAZOLFrame.putInt32(frame, top, Array.getLength(javaArr));
+  }
+
+  private Object getJavaArrElem(VirtualFrame frame, int top) {
+    var idx = CILOSTAZOLFrame.popInt32(frame, top);
+    var arr = CILOSTAZOLFrame.popObject(frame, top - 1);
+    return Array.get(getMethod().getContext().getArrayProperty().getObject(arr), idx);
+  }
+
   private void pop(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
     switch (type) {
       case Int32 -> CILOSTAZOLFrame.popInt32(frame, top - 1);

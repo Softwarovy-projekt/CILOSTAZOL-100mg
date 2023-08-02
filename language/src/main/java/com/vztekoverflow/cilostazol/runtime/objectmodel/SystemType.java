@@ -6,6 +6,7 @@ import java.util.Objects;
 public enum SystemType {
   Boolean,
   Char,
+  Byte,
   Int,
   Short,
   Float,
@@ -19,7 +20,8 @@ public enum SystemType {
         && Objects.equals(namespace, "System")) {
       return switch (name) {
         case "Boolean" -> Boolean;
-        case "Byte", "SByte", "Char" -> Char;
+        case "Byte", "SByte" -> Byte;
+        case "Char" -> Char;
         case "Int16", "UInt16" -> Short;
         case "Int32", "UInt32" -> Int;
         case "Double" -> Double;
