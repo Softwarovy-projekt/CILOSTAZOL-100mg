@@ -60,7 +60,7 @@ public class CILOSTAZOLContext {
             .toArray(Path[]::new);
     appDomain = new AppDomain();
 
-    //init ref symbols
+    // init ref symbols
     localReference = ReferenceSymbol.ReferenceSymbolFactory.createLocalReference();
     argumentReference = ReferenceSymbol.ReferenceSymbolFactory.createArgumentReference();
     fieldReference = ReferenceSymbol.ReferenceSymbolFactory.createFieldReference();
@@ -75,7 +75,7 @@ public class CILOSTAZOLContext {
     this.libraryPaths = libraryPaths;
     appDomain = new AppDomain();
 
-    //init ref symbols
+    // init ref symbols
     localReference = ReferenceSymbol.ReferenceSymbolFactory.createLocalReference();
     argumentReference = ReferenceSymbol.ReferenceSymbolFactory.createArgumentReference();
     fieldReference = ReferenceSymbol.ReferenceSymbolFactory.createFieldReference();
@@ -98,7 +98,7 @@ public class CILOSTAZOLContext {
     return env;
   }
 
-  //region Symbols
+  // region Symbols
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */
   public NamedTypeSymbol resolveType(String name, String namespace, AssemblyIdentity assembly) {
@@ -128,9 +128,7 @@ public class CILOSTAZOLContext {
     var cacheKey = new TypeInstantiationCacheKey(type, typeArgs);
 
     return typeInstantiationCache.computeIfAbsent(
-        cacheKey,
-        k -> k.genType().construct(k.typeArgs())
-        );
+        cacheKey, k -> k.genType().construct(k.typeArgs()));
   }
 
   public MethodSymbol resolveGenericMethodInstantiation(
@@ -144,14 +142,13 @@ public class CILOSTAZOLContext {
         });
   }
 
-  public ReferenceSymbol resolveReference(ReferenceSymbol.ReferenceType type)
-  {
+  public ReferenceSymbol resolveReference(ReferenceSymbol.ReferenceType type) {
     return switch (type) {
-              case Local -> localReference;
-              case Argument -> argumentReference;
-              case Field -> fieldReference;
-              case ArrayElement -> arrayElementReference;
-          };
+      case Local -> localReference;
+      case Argument -> argumentReference;
+      case Field -> fieldReference;
+      case ArrayElement -> arrayElementReference;
+    };
   }
 
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {
@@ -191,9 +188,9 @@ public class CILOSTAZOLContext {
     appDomain.loadAssembly(result);
     return result;
   }
-  //endregion
+  // endregion
 
-  //region SOM
+  // region SOM
   @CompilerDirectives.CompilationFinal private StaticProperty arrayProperty;
 
   @CompilerDirectives.CompilationFinal
@@ -220,31 +217,28 @@ public class CILOSTAZOLContext {
 
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> stackReferenceShape;
-  @CompilerDirectives.CompilationFinal
-  private StaticProperty stackReferenceFrameProperty;
-  @CompilerDirectives.CompilationFinal
-  private StaticProperty stackReferenceIndexProperty;
+
+  @CompilerDirectives.CompilationFinal private StaticProperty stackReferenceFrameProperty;
+  @CompilerDirectives.CompilationFinal private StaticProperty stackReferenceIndexProperty;
 
   private StaticShape<StaticObject.StaticObjectFactory> fieldReferenceShape;
-  @CompilerDirectives.CompilationFinal
-  private StaticProperty fieldReferenceObjectProperty;
-  @CompilerDirectives.CompilationFinal
-  private StaticProperty fieldReferenceFieldProperty;
+  @CompilerDirectives.CompilationFinal private StaticProperty fieldReferenceObjectProperty;
+  @CompilerDirectives.CompilationFinal private StaticProperty fieldReferenceFieldProperty;
 
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> arrayElementReferenceShape;
-  @CompilerDirectives.CompilationFinal
-  private StaticProperty arrayElementReferenceArrayProperty;
-  @CompilerDirectives.CompilationFinal
-  private StaticProperty arrayElementReferenceIndexProperty;
+
+  @CompilerDirectives.CompilationFinal private StaticProperty arrayElementReferenceArrayProperty;
+  @CompilerDirectives.CompilationFinal private StaticProperty arrayElementReferenceIndexProperty;
+
   public StaticShape<StaticObject.StaticObjectFactory> getStackReferenceShape() {
     if (stackReferenceShape == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       stackReferenceShape =
-              StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
-                      .property(getStackReferenceFrameProperty(), Object.class, true)
-                      .property(getStackReferenceIndexProperty(), int.class, true)
-                      .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
+          StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
+              .property(getStackReferenceFrameProperty(), Object.class, true)
+              .property(getStackReferenceIndexProperty(), int.class, true)
+              .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
     }
     return stackReferenceShape;
   }
@@ -269,10 +263,10 @@ public class CILOSTAZOLContext {
     if (fieldReferenceShape == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       fieldReferenceShape =
-              StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
-                      .property(getFieldReferenceObjectProperty(), Object.class, true)
-                      .property(getFieldReferenceFieldProperty(), Object.class, true)
-                      .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
+          StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
+              .property(getFieldReferenceObjectProperty(), Object.class, true)
+              .property(getFieldReferenceFieldProperty(), Object.class, true)
+              .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
     }
     return fieldReferenceShape;
   }
@@ -297,10 +291,10 @@ public class CILOSTAZOLContext {
     if (arrayElementReferenceShape == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       arrayElementReferenceShape =
-              StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
-                      .property(getArrayElementReferenceArrayProperty(), Object.class, true)
-                      .property(getArrayElementReferenceIndexProperty(), int.class, true)
-                      .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
+          StaticShape.newBuilder(CILOSTAZOLLanguage.get(null))
+              .property(getArrayElementReferenceArrayProperty(), Object.class, true)
+              .property(getArrayElementReferenceIndexProperty(), int.class, true)
+              .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
     }
     return arrayElementReferenceShape;
   }
@@ -320,5 +314,5 @@ public class CILOSTAZOLContext {
     }
     return arrayElementReferenceIndexProperty;
   }
-  //endregion
+  // endregion
 }

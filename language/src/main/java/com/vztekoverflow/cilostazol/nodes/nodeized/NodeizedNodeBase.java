@@ -2,7 +2,6 @@ package com.vztekoverflow.cilostazol.nodes.nodeized;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 
 public abstract class NodeizedNodeBase extends Node {
 

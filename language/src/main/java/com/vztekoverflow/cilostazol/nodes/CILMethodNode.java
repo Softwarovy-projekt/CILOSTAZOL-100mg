@@ -24,14 +24,12 @@ import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
 import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
 import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
-import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
 import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
-
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
@@ -782,60 +780,56 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     CompilerDirectives.transferToInterpreterAndInvalidate();
     final NodeizedNodeBase node;
 
-    switch (opcode) {
-      case CALL -> {
-        // if method is local
-        //        CILOSTAZOLContext.get(this).get(token);
-        switch (token.getTableId()) {
-          case CLITableConstants.CLI_TABLE_MEMBER_REF -> {
+    if (opcode == CALL) {// if method is local
+      //        CILOSTAZOLContext.get(this).get(token);
+      switch (token.getTableId()) {
+        case CLI_TABLE_MEMBER_REF -> {
             /* Can point to method or field ref
             We can be sure that here we only have method refs */
-            var row = TableRowUtils.getMemberRefRow(method.getModule(), token);
-            var name =
-                row.getNameHeapPtr().read(method.getModule().getDefiningFile().getStringHeap());
-            var klass = row.getKlassTablePtr();
-            var signature =
-                row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
-            var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
-            if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
-              var containingType = SymbolResolver.resolveType(klass, getMethod().getModule());
-              var method =
-                  findMatchingMethod(name, methodSignature, (NamedTypeSymbol) containingType);
+          var row = TableRowUtils.getMemberRefRow(method.getModule(), token);
+          var name =
+                  row.getNameHeapPtr().read(method.getModule().getDefiningFile().getStringHeap());
+          var klass = row.getKlassTablePtr();
+          var signature =
+                  row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
+          var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
+          if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
+            var containingType = SymbolResolver.resolveType(klass, getMethod().getModule());
+            var method =
+                    findMatchingMethod(name, methodSignature, (NamedTypeSymbol) containingType);
 
-              node = getCheckedCALLNode(method, top);
-            } else {
-              CompilerDirectives.transferToInterpreter();
-              throw new InterpreterException();
-            }
-          }
-          case CLITableConstants.CLI_TABLE_METHOD_DEF -> {
-            var row = TableRowUtils.getMethodDefRow(method.getModule(), token);
-            var methodDef = method.getModule().getLocalMethod(row).getItem();
-            node = new CALLNode(methodDef, top);
-          }
-          case CLI_TABLE_METHOD_SPEC -> {
-            var row =
-                method
-                    .getModule()
-                    .getDefiningFile()
-                    .getTableHeads()
-                    .getMethodSpecTableHead()
-                    .skip(token);
-            var instantiation =
-                row.getInstantiationHeapPtr()
-                    .read(this.getMethod().getModule().getDefiningFile().getBlobHeap());
-            throw new NotImplementedException();
-          }
-          default -> {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
+            node = getCheckedCALLNode(method, top);
+          } else {
+            CompilerDirectives.transferToInterpreter();
             throw new InterpreterException();
           }
         }
+        case CLI_TABLE_METHOD_DEF -> {
+          var row = TableRowUtils.getMethodDefRow(method.getModule(), token);
+          var methodDef = method.getModule().getLocalMethod(row).getItem();
+          node = new CALLNode(methodDef, top);
+        }
+        case CLI_TABLE_METHOD_SPEC -> {
+          var row =
+                  method
+                          .getModule()
+                          .getDefiningFile()
+                          .getTableHeads()
+                          .getMethodSpecTableHead()
+                          .skip(token);
+          var instantiation =
+                  row.getInstantiationHeapPtr()
+                          .read(this.getMethod().getModule().getDefiningFile().getBlobHeap());
+          throw new NotImplementedException();
+        }
+        default -> {
+          CompilerDirectives.transferToInterpreterAndInvalidate();
+          throw new InterpreterException();
+        }
       }
-      default -> {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-        throw new InterpreterException();
-      }
+    } else {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      throw new InterpreterException();
     }
 
     int index = addNode(node);

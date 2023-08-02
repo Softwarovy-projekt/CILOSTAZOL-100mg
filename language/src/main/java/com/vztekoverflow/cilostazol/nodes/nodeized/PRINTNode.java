@@ -7,7 +7,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import org.jetbrains.annotations.NotNull;

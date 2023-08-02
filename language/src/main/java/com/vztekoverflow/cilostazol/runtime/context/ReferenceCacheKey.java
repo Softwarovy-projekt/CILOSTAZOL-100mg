@@ -4,10 +4,11 @@ import com.vztekoverflow.cilostazol.runtime.symbols.ReferenceSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import java.util.Objects;
 
-public record ReferenceCacheKey(ReferenceSymbol.ReferenceType referenceType, TypeSymbol underlyingType) {
+public record ReferenceCacheKey(
+    ReferenceSymbol.ReferenceType referenceType, TypeSymbol underlyingType) {
   @Override
   public String toString() {
-    return  "ref " + underlyingType.toString();
+    return "ref " + underlyingType.toString();
   }
 
   @Override
@@ -19,6 +20,7 @@ public record ReferenceCacheKey(ReferenceSymbol.ReferenceType referenceType, Typ
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof ReferenceCacheKey that)) return false;
-    return Objects.equals(referenceType, that.referenceType) && Objects.equals(underlyingType, that.underlyingType);
+    return Objects.equals(referenceType, that.referenceType)
+        && Objects.equals(underlyingType, that.underlyingType);
   }
 }

@@ -495,10 +495,10 @@ public final class SymbolResolver {
   }
   // endregion
 
-  //region references
-  public static ReferenceSymbol resolveReference(ReferenceSymbol.ReferenceType type, CILOSTAZOLContext ctx)
-  {
+  // region references
+  public static ReferenceSymbol resolveReference(
+      ReferenceSymbol.ReferenceType type, CILOSTAZOLContext ctx) {
     return ctx.resolveReference(type);
   }
-  //endregion
+  // endregion
 }

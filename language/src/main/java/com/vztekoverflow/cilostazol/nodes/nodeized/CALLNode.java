@@ -5,7 +5,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import org.jetbrains.annotations.NotNull;
 
 public final class CALLNode extends NodeizedNodeBase {

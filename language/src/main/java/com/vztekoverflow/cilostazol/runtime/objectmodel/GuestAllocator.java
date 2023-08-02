@@ -116,7 +116,7 @@ public final class GuestAllocator {
     return object;
   }
 
-  //region array creation
+  // region array creation
   public StaticObject createNewPrimitiveArray(ArrayTypeSymbol arrayType, int length) {
     var elementType = (NamedTypeSymbol) arrayType.getElementType();
     Object arr;
@@ -172,52 +172,58 @@ public final class GuestAllocator {
     typeSymbol.getContext().getArrayProperty().setObject(newObj, array);
     return trackAllocation(newObj);
   }
-  //endregion
+  // endregion
 
-  //region references creation
-  public StaticObject createStackReference(ReferenceSymbol reference, Frame frame, int index)
-  {
-    StaticObject newRef = reference.getContext().getStackReferenceShape().getFactory().create(reference);
+  // region references creation
+  public StaticObject createStackReference(ReferenceSymbol reference, Frame frame, int index) {
+    StaticObject newRef =
+        reference.getContext().getStackReferenceShape().getFactory().create(reference);
     reference.getContext().getStackReferenceFrameProperty().setObject(frame, newRef);
     reference.getContext().getStackReferenceIndexProperty().setObject(frame, index);
     return newRef;
   }
-  public StaticObject createFieldReference(ReferenceSymbol reference, StaticObject referent, StaticField field)
-  {
-    StaticObject newRef = reference.getContext().getFieldReferenceShape().getFactory().create(reference);
+
+  public StaticObject createFieldReference(
+      ReferenceSymbol reference, StaticObject referent, StaticField field) {
+    StaticObject newRef =
+        reference.getContext().getFieldReferenceShape().getFactory().create(reference);
     reference.getContext().getFieldReferenceFieldProperty().setObject(field, newRef);
     reference.getContext().getFieldReferenceObjectProperty().setObject(referent, newRef);
     return newRef;
   }
-  public StaticObject createArrayElementReference(ReferenceSymbol reference, StaticObject array, int elemIndex)
-  {
-    StaticObject newRef = reference.getContext().getArrayElementReferenceShape().getFactory().create(reference);
+
+  public StaticObject createArrayElementReference(
+      ReferenceSymbol reference, StaticObject array, int elemIndex) {
+    StaticObject newRef =
+        reference.getContext().getArrayElementReferenceShape().getFactory().create(reference);
     reference.getContext().getArrayElementReferenceArrayProperty().setObject(array, newRef);
     reference.getContext().getArrayElementReferenceIndexProperty().setObject(elemIndex, newRef);
     return newRef;
   }
-  //endregion
+  // endregion
 
-  //region string creation
-  public StaticObject createString(String value)
-  {
-    return stringCache.computeIfAbsent(value, k -> {
-      final var ctx = CILOSTAZOLContext.CONTEXT_REF.get(null);
-      final var stringChar = k.toCharArray();
+  // region string creation
+  public StaticObject createString(String value) {
+    return stringCache.computeIfAbsent(
+        value,
+        k -> {
+          final var ctx = CILOSTAZOLContext.CONTEXT_REF.get(null);
+          final var stringChar = k.toCharArray();
 
-      final var stringType = SymbolResolver.getString(ctx);
-      final var charType = SymbolResolver.getChar(CILOSTAZOLContext.CONTEXT_REF.get(null));
-      final var charArrayType = ArrayTypeSymbol.ArrayTypeSymbolFactory.create(charType, charType.getDefiningModule());
-      final var charArray = createNewPrimitiveArray(charArrayType, stringChar.length);
-      ctx.getArrayProperty().setObject(charArray, stringChar);
+          final var stringType = SymbolResolver.getString(ctx);
+          final var charType = SymbolResolver.getChar(CILOSTAZOLContext.CONTEXT_REF.get(null));
+          final var charArrayType =
+              ArrayTypeSymbol.ArrayTypeSymbolFactory.create(charType, charType.getDefiningModule());
+          final var charArray = createNewPrimitiveArray(charArrayType, stringChar.length);
+          ctx.getArrayProperty().setObject(charArray, stringChar);
 
-      final var result = createNew(SymbolResolver.getString(ctx));
-      stringType.getInstanceFields()[0].setInt(result, stringChar.length);
-      stringType.getInstanceFields()[1].setObject(result, charArray);
-      return result;
-    });
+          final var result = createNew(SymbolResolver.getString(ctx));
+          stringType.getInstanceFields()[0].setInt(result, stringChar.length);
+          stringType.getInstanceFields()[1].setObject(result, charArray);
+          return result;
+        });
   }
-  //endregion
+  // endregion
 
   public interface AllocationProfiler {
     AllocationProfiler NO_PROFILE =

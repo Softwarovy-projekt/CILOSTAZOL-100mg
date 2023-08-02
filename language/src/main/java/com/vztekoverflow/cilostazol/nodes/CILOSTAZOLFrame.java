@@ -127,8 +127,7 @@ public final class CILOSTAZOLFrame {
     return result;
   }
 
-  public static int popNativeInt(Frame frame, int slot)
-  {
+  public static int popNativeInt(Frame frame, int slot) {
     assert slot >= 0;
     int result = frame.getIntStatic(slot);
     // Avoid keeping track of popped slots in FrameStates.
