@@ -22,8 +22,12 @@ public class StaticObject implements TruffleObject, Cloneable {
 
   @Override
   @CompilerDirectives.TruffleBoundary
-  public Object clone() throws CloneNotSupportedException {
-    return super.clone();
+  public Object clone() {
+    try {
+      return super.clone();
+    } catch (CloneNotSupportedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public final TypeSymbol getTypeSymbol() {

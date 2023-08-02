@@ -127,6 +127,9 @@ public final class GuestAllocator {
       case Char -> {
         arr = new char[length];
       }
+      case Byte -> {
+        arr = new byte[length];
+      }
       case Short -> {
         arr = new short[length];
       }
@@ -212,8 +215,7 @@ public final class GuestAllocator {
 
           final var stringType = SymbolResolver.getString(ctx);
           final var charType = SymbolResolver.getChar(CILOSTAZOLContext.CONTEXT_REF.get(null));
-          final var charArrayType =
-              ArrayTypeSymbol.ArrayTypeSymbolFactory.create(charType, charType.getDefiningModule());
+          final var charArrayType = SymbolResolver.resolveArray(charType, 1, ctx);
           final var charArray = createNewPrimitiveArray(charArrayType, stringChar.length);
           ctx.getArrayProperty().setObject(charArray, stringChar);
 
