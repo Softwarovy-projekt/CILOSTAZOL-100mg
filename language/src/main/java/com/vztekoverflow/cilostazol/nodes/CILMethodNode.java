@@ -14,8 +14,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.staticobject.StaticProperty;
 import com.vztekoverflow.cil.parser.bytecode.BytecodeBuffer;
 import com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions;
-import com.vztekoverflow.cil.parser.cli.signature.MethodDefSig;
-import com.vztekoverflow.cil.parser.cli.signature.SignatureReader;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
@@ -25,7 +23,6 @@ import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
 import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
-import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
 import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
@@ -1112,54 +1109,14 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private int nodeizeOpToken(VirtualFrame frame, int top, CLITablePtr token, int pc, int opcode) {
     CompilerDirectives.transferToInterpreterAndInvalidate();
     final NodeizedNodeBase node;
-
-    if (opcode == CALL) { // if method is local
-      //        CILOSTAZOLContext.get(this).get(token);
-      switch (token.getTableId()) {
-        case CLI_TABLE_MEMBER_REF -> {
-          /* Can point to method or field ref
-          We can be sure that here we only have method refs */
-          var row = TableRowUtils.getMemberRefRow(method.getModule(), token);
-          var name =
-              row.getNameHeapPtr().read(method.getModule().getDefiningFile().getStringHeap());
-          var klass = row.getKlassTablePtr();
-          var signature =
-              row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
-          var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
-          if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
-            var containingType = SymbolResolver.resolveType(klass, getMethod().getModule());
-            var method =
-                findMatchingMethod(name, methodSignature, (NamedTypeSymbol) containingType);
-
-            node = getCheckedCALLNode(method, top);
-          } else {
-            CompilerDirectives.transferToInterpreter();
-            throw new InterpreterException();
-          }
-        }
-        case CLI_TABLE_METHOD_DEF -> {
-          var row = TableRowUtils.getMethodDefRow(method.getModule(), token);
-          var methodDef = method.getModule().getLocalMethod(row).getItem();
-          node = new CALLNode(methodDef, top);
-        }
-        case CLI_TABLE_METHOD_SPEC -> {
-          var row =
-              method
-                  .getModule()
-                  .getDefiningFile()
-                  .getTableHeads()
-                  .getMethodSpecTableHead()
-                  .skip(token);
-          var instantiation =
-              row.getInstantiationHeapPtr()
-                  .read(this.getMethod().getModule().getDefiningFile().getBlobHeap());
-          throw new NotImplementedException();
-        }
-        default -> {
-          CompilerDirectives.transferToInterpreterAndInvalidate();
-          throw new InterpreterException();
-        }
-      }
+    if (opcode == CALL) {
+      var method =
+          SymbolResolver.resolveMethod(
+              token,
+              getMethod().getTypeArguments(),
+              getMethod().getDefiningType().getTypeArguments(),
+              getMethod().getModule());
+      node = getCheckedCALLNode(method.member, top);
     } else {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       throw new InterpreterException();
@@ -1190,43 +1147,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
 
     return new CALLNode(method, top);
-  }
-
-  private MethodSymbol findMatchingMethod(
-      String name, MethodDefSig methodSignature, NamedTypeSymbol definingType) {
-    var parameterTypes =
-        Arrays.stream(methodSignature.getParams())
-            .map(
-                x ->
-                    TypeSymbol.TypeSymbolFactory.create(
-                        x.getTypeSig(),
-                        new TypeSymbol[0],
-                        new TypeSymbol[0],
-                        this.method.getModule()))
-            .toArray(TypeSymbol[]::new);
-    var returnType =
-        TypeSymbol.TypeSymbolFactory.create(
-            methodSignature.getRetType().getTypeSig(),
-            new TypeSymbol[0],
-            new TypeSymbol[0],
-            this.method.getModule());
-    var matchingMethods =
-        Arrays.stream(definingType.getMethods())
-            .filter(
-                type ->
-                    type.getName().equals(name)
-                        && type.getReturnType().getType().equals(returnType)
-                        && Arrays.equals(
-                            Arrays.stream(type.getParameters())
-                                .map(ParameterSymbol::getType)
-                                .toArray(),
-                            parameterTypes))
-            .toArray(MethodSymbol[]::new);
-
-    // There must be a unique method
-    assert matchingMethods.length == 1;
-
-    return matchingMethods[0];
   }
 
   private int addNode(NodeizedNodeBase node) {
