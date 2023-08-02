@@ -2,6 +2,7 @@ package com.vztekoverflow.cilostazol.runtime.objectmodel;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.instrumentation.AllocationReporter;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
@@ -9,14 +10,17 @@ import com.vztekoverflow.cilostazol.exceptions.InstantiationError;
 import com.vztekoverflow.cilostazol.exceptions.InstantiationException;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NegativeArraySizeException;
-import com.vztekoverflow.cilostazol.runtime.symbols.ArrayTypeSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.Symbol;
+import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
+import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class GuestAllocator {
   private final CILOSTAZOLLanguage language;
   private final AllocationReporter allocationReporter;
+  private final Map<String, StaticObject> stringCache = new HashMap<>();
 
   public GuestAllocator(CILOSTAZOLLanguage language, AllocationReporter allocationReporter) {
     this.language = language;
@@ -167,6 +171,57 @@ public final class GuestAllocator {
     StaticObject newObj = typeSymbol.getContext().getArrayShape().getFactory().create(typeSymbol);
     typeSymbol.getContext().getArrayProperty().setObject(newObj, array);
     return trackAllocation(newObj);
+  }
+  // endregion
+
+  // region references creation
+  public StaticObject createStackReference(ReferenceSymbol reference, Frame frame, int index) {
+    StaticObject newRef =
+        reference.getContext().getStackReferenceShape().getFactory().create(reference);
+    reference.getContext().getStackReferenceFrameProperty().setObject(frame, newRef);
+    reference.getContext().getStackReferenceIndexProperty().setObject(frame, index);
+    return newRef;
+  }
+
+  public StaticObject createFieldReference(
+      ReferenceSymbol reference, StaticObject referent, StaticField field) {
+    StaticObject newRef =
+        reference.getContext().getFieldReferenceShape().getFactory().create(reference);
+    reference.getContext().getFieldReferenceFieldProperty().setObject(field, newRef);
+    reference.getContext().getFieldReferenceObjectProperty().setObject(referent, newRef);
+    return newRef;
+  }
+
+  public StaticObject createArrayElementReference(
+      ReferenceSymbol reference, StaticObject array, int elemIndex) {
+    StaticObject newRef =
+        reference.getContext().getArrayElementReferenceShape().getFactory().create(reference);
+    reference.getContext().getArrayElementReferenceArrayProperty().setObject(array, newRef);
+    reference.getContext().getArrayElementReferenceIndexProperty().setObject(elemIndex, newRef);
+    return newRef;
+  }
+  // endregion
+
+  // region string creation
+  public StaticObject createString(String value) {
+    return stringCache.computeIfAbsent(
+        value,
+        k -> {
+          final var ctx = CILOSTAZOLContext.CONTEXT_REF.get(null);
+          final var stringChar = k.toCharArray();
+
+          final var stringType = SymbolResolver.getString(ctx);
+          final var charType = SymbolResolver.getChar(CILOSTAZOLContext.CONTEXT_REF.get(null));
+          final var charArrayType =
+              ArrayTypeSymbol.ArrayTypeSymbolFactory.create(charType, charType.getDefiningModule());
+          final var charArray = createNewPrimitiveArray(charArrayType, stringChar.length);
+          ctx.getArrayProperty().setObject(charArray, stringChar);
+
+          final var result = createNew(SymbolResolver.getString(ctx));
+          stringType.getInstanceFields()[0].setInt(result, stringChar.length);
+          stringType.getInstanceFields()[1].setObject(result, charArray);
+          return result;
+        });
   }
   // endregion
 

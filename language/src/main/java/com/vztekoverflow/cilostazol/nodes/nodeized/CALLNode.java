@@ -5,7 +5,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import org.jetbrains.annotations.NotNull;
 
 public final class CALLNode extends NodeizedNodeBase {
@@ -23,15 +22,14 @@ public final class CALLNode extends NodeizedNodeBase {
   }
 
   @Override
-  public int execute(VirtualFrame frame, TypeSymbol[] taggedFrame) {
+  public int execute(VirtualFrame frame) {
     Object[] args = getMethodArgsFromStack(frame);
     Object returnValue = indirectCallNode.call(method.getNode().getCallTarget(), args);
 
-    clearArgsFromStack(frame, taggedFrame);
+    clearArgsFromStack(frame);
 
     if (method.hasReturnValue()) {
       CILOSTAZOLFrame.put(frame, returnValue, returnStackTop, method.getReturnType().getType());
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, returnStackTop, method.getReturnType().getType());
     }
 
     // +1 for return value
@@ -39,12 +37,11 @@ public final class CALLNode extends NodeizedNodeBase {
   }
 
   @ExplodeLoop
-  private void clearArgsFromStack(VirtualFrame frame, TypeSymbol[] taggedFrame) {
+  private void clearArgsFromStack(VirtualFrame frame) {
     // Clear the stack
     var topStack = this.topStack - 1;
     for (var arg : method.getParameters()) {
       CILOSTAZOLFrame.pop(frame, topStack, arg.getType());
-      CILOSTAZOLFrame.popTaggedStack(taggedFrame, topStack);
       topStack--;
     }
   }

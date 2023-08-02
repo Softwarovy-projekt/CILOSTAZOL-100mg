@@ -259,6 +259,17 @@ public class NamedTypeSymbol extends TypeSymbol {
     return (flags & IS_TYPE_FORWARDER_FLAG_MASK) != 0;
   }
 
+  public boolean isValueType() {
+    boolean result = false;
+    var predecesor = getDirectBaseClass();
+    while (predecesor != null) {
+      if (Objects.equals(predecesor.getName(), "ValueType")
+          && Objects.equals(predecesor.getNamespace(), "System")) return true;
+      predecesor = predecesor.getDirectBaseClass();
+    }
+    return result;
+  }
+
   @Override
   public boolean equals(Object obj) {
     return obj instanceof NamedTypeSymbol other

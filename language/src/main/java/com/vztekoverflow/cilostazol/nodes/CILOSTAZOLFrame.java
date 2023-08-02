@@ -45,16 +45,6 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack put
-  public static void putTotal(
-      VirtualFrame frame,
-      Object obj,
-      TypeSymbol[] taggedFrame,
-      int topStack,
-      TypeSymbol typeSymbol) {
-    putTaggedStack(taggedFrame, topStack, typeSymbol);
-    put(frame, obj, topStack, typeSymbol);
-  }
-
   public static void put(VirtualFrame frame, Object obj, int topStack, TypeSymbol typeSymbol) {
     put(frame, obj, topStack, typeSymbol.getStackTypeKind());
   }
@@ -96,12 +86,6 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // region stack pop
-  public static Object popTotal(
-      VirtualFrame frame, TypeSymbol[] taggedFrame, int topStack, TypeSymbol typeSymbol) {
-    popTaggedStack(taggedFrame, topStack);
-    return pop(frame, topStack, typeSymbol);
-  }
-
   public static Object pop(VirtualFrame frame, int topStack, TypeSymbol typeSymbol) {
     return pop(frame, topStack, typeSymbol.getStackTypeKind());
   }
@@ -143,11 +127,19 @@ public final class CILOSTAZOLFrame {
     return result;
   }
 
+  public static int popNativeInt(Frame frame, int slot) {
+    assert slot >= 0;
+    int result = frame.getIntStatic(slot);
+    // Avoid keeping track of popped slots in FrameStates.
+    clearPrimitive(frame, slot);
+    return result;
+  }
+
   public static StaticObject popObject(Frame frame, int slot) {
     assert slot >= 0;
     Object result = frame.getObjectStatic(slot);
     // Avoid keeping track of popped slots in FrameStates.
-    clearPrimitive(frame, slot);
+    frame.clearObjectStatic(slot);
     return (StaticObject) result;
   }
 
@@ -167,7 +159,7 @@ public final class CILOSTAZOLFrame {
     switch (stackType) {
       case Int32 -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
       case Int64 -> CILOSTAZOLFrame.setLocalLong(frame, topStack, (long) obj);
-      case NativeFloat -> CILOSTAZOLFrame.setLocalDouble(frame, topStack, (double) obj);
+      case NativeFloat -> CILOSTAZOLFrame.setLocalNativeFloat(frame, topStack, (double) obj);
       case NativeInt -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
       case ManagedPointer -> CILOSTAZOLFrame.setLocalInt(frame, topStack, (int) obj);
       case Object -> CILOSTAZOLFrame.setLocalObject(frame, topStack, (StaticObject) obj);
@@ -192,7 +184,7 @@ public final class CILOSTAZOLFrame {
     frame.setLongStatic(localSlot, value);
   }
 
-  public static void setLocalDouble(Frame frame, int localSlot, double value) {
+  public static void setLocalNativeFloat(Frame frame, int localSlot, double value) {
     assert localSlot >= 0;
     frame.setDoubleStatic(localSlot, value);
   }
@@ -208,7 +200,7 @@ public final class CILOSTAZOLFrame {
     return switch (stackType) {
       case Int32 -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
       case Int64 -> CILOSTAZOLFrame.getLocalLong(frame, topStack);
-      case NativeFloat -> CILOSTAZOLFrame.getLocalDouble(frame, topStack);
+      case NativeFloat -> CILOSTAZOLFrame.getLocalNativeFloat(frame, topStack);
       case NativeInt -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
       case ManagedPointer -> CILOSTAZOLFrame.getLocalInt(frame, topStack);
       case Object -> CILOSTAZOLFrame.getLocalObject(frame, topStack);
@@ -234,7 +226,7 @@ public final class CILOSTAZOLFrame {
     return frame.getLongStatic(localSlot);
   }
 
-  public static double getLocalDouble(Frame frame, int localSlot) {
+  public static double getLocalNativeFloat(Frame frame, int localSlot) {
     assert localSlot >= 0;
     return frame.getDoubleStatic(localSlot);
   }
@@ -281,23 +273,4 @@ public final class CILOSTAZOLFrame {
     assert sourceSlot >= 0 && destSlot >= 0;
     frame.copyStatic(sourceSlot, destSlot);
   }
-
-  // region TaggedFrame
-  public static TypeSymbol popTaggedStack(TypeSymbol[] taggedFrame, int top) {
-    final var result = taggedFrame[top];
-    taggedFrame[top] = null;
-    return result;
-  }
-
-  public static void putTaggedStack(TypeSymbol[] taggedFrame, int top, TypeSymbol type) {
-    assert taggedFrame[top] == null;
-    taggedFrame[top] = type;
-  }
-
-  public static TypeSymbol getTaggedStack(TypeSymbol[] taggedFrame, int top) {
-    assert taggedFrame[top] != null;
-    return taggedFrame[top];
-  }
-
-  // endregion
 }

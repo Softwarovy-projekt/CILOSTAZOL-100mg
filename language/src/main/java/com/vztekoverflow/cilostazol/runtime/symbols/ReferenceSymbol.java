@@ -3,16 +3,40 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 
-public abstract class ReferenceSymbol extends TypeSymbol {
-  private final TypeSymbol underlyingTypeSymbol;
-
-  public ReferenceSymbol(TypeSymbol underlyingTypeSymbol) {
-    super(
-        underlyingTypeSymbol.getDefiningModule(), CILOSTAZOLFrame.StackType.Int32, SystemType.Int);
-    this.underlyingTypeSymbol = underlyingTypeSymbol;
+public final class ReferenceSymbol extends TypeSymbol {
+  public enum ReferenceType {
+    Local,
+    Argument,
+    Field,
+    ArrayElement
   }
 
-  public TypeSymbol getUnderlyingTypeSymbol() {
-    return underlyingTypeSymbol;
+  private final ReferenceType type;
+
+  private ReferenceSymbol(ReferenceType type) {
+    super(null, CILOSTAZOLFrame.StackType.Object, SystemType.Object);
+    this.type = type;
+  }
+
+  public ReferenceType getReferenceType() {
+    return type;
+  }
+
+  public static class ReferenceSymbolFactory {
+    public static ReferenceSymbol createLocalReference() {
+      return new ReferenceSymbol(ReferenceType.Local);
+    }
+
+    public static ReferenceSymbol createArgumentReference() {
+      return new ReferenceSymbol(ReferenceType.Argument);
+    }
+
+    public static ReferenceSymbol createFieldReference() {
+      return new ReferenceSymbol(ReferenceType.Field);
+    }
+
+    public static ReferenceSymbol createArrayElemReference() {
+      return new ReferenceSymbol(ReferenceType.ArrayElement);
+    }
   }
 }
