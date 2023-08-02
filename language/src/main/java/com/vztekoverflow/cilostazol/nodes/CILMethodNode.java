@@ -434,14 +434,14 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           Array.set(
                   getMethod().getContext().getArrayProperty().getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
                   CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                  ((StaticObject)CILOSTAZOLFrame.popObject(frame, topStack - 1)).clone()
+                  CILOSTAZOLFrame.popObject(frame, topStack - 1).clone()
           );
           break;
         case STELEM_REF:
           Array.set(
                   getMethod().getContext().getArrayProperty().getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
                   CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                  (StaticObject)CILOSTAZOLFrame.popObject(frame, topStack - 1)
+                  CILOSTAZOLFrame.popObject(frame, topStack - 1)
           );
           break;
         case STELEM_I, STELEM_I4:

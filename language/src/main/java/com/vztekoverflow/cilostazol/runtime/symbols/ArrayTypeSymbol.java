@@ -60,8 +60,8 @@ public final class ArrayTypeSymbol extends TypeSymbol {
           definingModule);
     }
 
-    public static ArrayTypeSymbol create(TypeSymbol elementType, int rank, ModuleSymbol definingModule)
-    {
+    public static ArrayTypeSymbol create(
+        TypeSymbol elementType, int rank, ModuleSymbol definingModule) {
       return new ArrayTypeSymbol(elementType, rank, new int[0], new int[0], definingModule);
     }
 

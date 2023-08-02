@@ -167,7 +167,9 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getArray(CILOSTAZOLContext ctx) {
     if (Array == null) {
-      Array = (NamedTypeSymbol) resolveType("String", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+      Array =
+          (NamedTypeSymbol)
+              resolveType("String", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
     }
     return Array;
   }
@@ -284,18 +286,20 @@ public final class SymbolResolver {
       case TypeSig.ELEMENT_TYPE_ARRAY -> {
         var shapeSig = signature.getArrayShapeSig();
         if (shapeSig.lengths().length == 0 && shapeSig.lowerBounds().length == 0)
-          yield resolveArray(resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module), shapeSig.rank(), module.getContext());
+          yield resolveArray(
+              resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
+              shapeSig.rank(),
+              module.getContext());
         else
-          yield ArrayTypeSymbol.ArrayTypeSymbolFactory
-            .create(
-                resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
-                    shapeSig,
-                module);
+          yield ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
+              resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
+              shapeSig,
+              module);
       }
       case TypeSig.ELEMENT_TYPE_SZARRAY -> resolveArray(
-              resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
-              1,
-              module.getContext());
+          resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
+          1,
+          module.getContext());
       default -> null;
     };
   }
@@ -315,8 +319,7 @@ public final class SymbolResolver {
   // endregion
 
   // region type resolution - other
-  public static ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank, CILOSTAZOLContext ctx)
-  {
+  public static ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank, CILOSTAZOLContext ctx) {
     return ctx.resolveArray(elemType, rank);
   }
 

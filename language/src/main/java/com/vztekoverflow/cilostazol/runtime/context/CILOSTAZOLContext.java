@@ -38,8 +38,7 @@ public class CILOSTAZOLContext {
   private final Map<MethodInstantiationCacheKey, MethodSymbol> methodInstantiationCache =
       new HashMap<>();
 
-  private final Map<ArrayCacheKey, ArrayTypeSymbol> arrayCache =
-          new HashMap<>();
+  private final Map<ArrayCacheKey, ArrayTypeSymbol> arrayCache = new HashMap<>();
   private final ReferenceSymbol localReference;
   private final ReferenceSymbol argumentReference;
   private final ReferenceSymbol fieldReference;
@@ -106,8 +105,10 @@ public class CILOSTAZOLContext {
     var cacheKey = new ArrayCacheKey(elemType, rank);
 
     return arrayCache.computeIfAbsent(
-            cacheKey,
-            k -> ArrayTypeSymbol.ArrayTypeSymbolFactory.create(k.elemType(), k.rank(), elemType.getDefiningModule()));
+        cacheKey,
+        k ->
+            ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
+                k.elemType(), k.rank(), elemType.getDefiningModule()));
   }
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */
