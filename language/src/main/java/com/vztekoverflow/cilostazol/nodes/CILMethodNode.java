@@ -1,7 +1,6 @@
 package com.vztekoverflow.cilostazol.nodes;
 
 import static com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions.*;
-import static com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants.*;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -19,8 +18,10 @@ import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
+import com.vztekoverflow.cilostazol.nodes.nodeized.NEWOBJNode;
 import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
 import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
@@ -49,20 +50,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   public static CILMethodNode create(MethodSymbol method) {
-    return new CILMethodNode(method); // TODO: not method.createNode()?
-  }
-
-  private TypeSymbol[] createTaggedFrame(LocalSymbol[] localSymbols) {
-    var taggedFrame = new TypeSymbol[frameDescriptor.getNumberOfSlots()];
-
-    for (int i = 0; i < localSymbols.length; i++) {
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, i, localSymbols[i].getType());
-    }
-
-    return taggedFrame;
-  }
-
-  public static CILMethodNode create(MethodSymbol method) {
     return new CILMethodNode(method);
   }
 
@@ -81,31 +68,41 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     return execute(frame, 0, CILOSTAZOLFrame.getStartStackOffset(method));
   }
 
-  private void initializeFrame(VirtualFrame frame) {
-    // Init arguments
-    Object[] args = frame.getArguments();
-
-    boolean hasReceiver = !getMethod().getMethodFlags().hasFlag(Flag.STATIC);
-    TypeSymbol[] argTypes;
-
-    if (hasReceiver) {
-      argTypes = new TypeSymbol[method.getParameterCountIncludingInstance()];
-      argTypes[0] = getMethod().getDefiningType();
-      for (int i = 0; i < method.getParameters().length; i++) {
-        argTypes[i + 1] = method.getParameters()[i].getType();
+  private static void loadValueFromField(
+      VirtualFrame frame, int top, StaticField field, StaticObject object) {
+    switch (field.getKind()) {
+      case Boolean -> {
+        boolean value = field.getBoolean(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value ? 1 : 0);
       }
-
-    } else {
-      argTypes =
-          Arrays.stream(method.getParameters())
-              .map(ParameterSymbol::getType)
-              .toArray(TypeSymbol[]::new);
-    }
-
-    int argsOffset = CILOSTAZOLFrame.getStartArgsOffset(getMethod());
-
-    for (int i = 0; i < args.length; i++) {
-      CILOSTAZOLFrame.put(frame, args[i], argsOffset + i, argTypes[i]);
+      case Char -> {
+        char value = field.getChar(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
+      }
+      case Short -> {
+        short value = field.getShort(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
+      }
+      case Float -> {
+        float value = field.getFloat(object);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, value);
+      }
+      case Double -> {
+        double value = field.getDouble(object);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, value);
+      }
+      case Int -> {
+        int value = field.getInt(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
+      }
+      case Long -> {
+        long value = field.getLong(object);
+        CILOSTAZOLFrame.putInt64(frame, top - 1, value);
+      }
+      default -> {
+        StaticObject value = (StaticObject) field.getObject(object);
+        CILOSTAZOLFrame.putObject(frame, top - 1, value);
+      }
     }
   }
   // endregion
@@ -127,492 +124,14 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
   // endregion
 
-  @ExplodeLoop(kind = ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE)
-  @HostCompilerDirectives.BytecodeInterpreterSwitch
-  private Object execute(VirtualFrame frame, int pc, int topStack) {
+  private void initializeFrame(VirtualFrame frame) {
+    // Init arguments
+    Object[] args = frame.getArguments();
+    TypeSymbol[] argTypes = getMethod().getParameterTypesIncludingInstance();
+    int argsOffset = CILOSTAZOLFrame.getStartArgsOffset(getMethod());
 
-    while (true) {
-      int curOpcode = bytecodeBuffer.getOpcode(pc);
-      int nextpc = bytecodeBuffer.nextInstruction(pc);
-      switch (curOpcode) {
-        case NOP:
-          break;
-        case POP:
-          pop(frame, topStack, getMethod().getOpCodeTypes()[pc]);
-          break;
-        case DUP:
-          duplicateSlot(frame, topStack - 1);
-          break;
-
-          // Loading on top of the stack
-        case LDNULL:
-          CILOSTAZOLFrame.putObject(frame, topStack, StaticObject.NULL);
-          break;
-        case LDC_I4_M1:
-        case LDC_I4_0:
-        case LDC_I4_1:
-        case LDC_I4_2:
-        case LDC_I4_3:
-        case LDC_I4_4:
-        case LDC_I4_5:
-        case LDC_I4_6:
-        case LDC_I4_7:
-        case LDC_I4_8:
-          CILOSTAZOLFrame.putInt32(frame, topStack, curOpcode - LDC_I4_0);
-          break;
-        case LDC_I4_S:
-          CILOSTAZOLFrame.putInt32(frame, topStack, bytecodeBuffer.getImmByte(pc));
-          break;
-        case LDC_I4:
-          CILOSTAZOLFrame.putInt32(frame, topStack, bytecodeBuffer.getImmInt(pc));
-          break;
-        case LDC_I8:
-          CILOSTAZOLFrame.putInt64(frame, topStack, bytecodeBuffer.getImmLong(pc));
-          break;
-        case LDC_R4:
-          CILOSTAZOLFrame.putNativeFloat(
-              frame, topStack, Float.intBitsToFloat(bytecodeBuffer.getImmInt(pc)));
-          break;
-        case LDC_R8:
-          CILOSTAZOLFrame.putNativeFloat(
-              frame, topStack, Double.longBitsToDouble(bytecodeBuffer.getImmLong(pc)));
-          break;
-        case LDSTR:
-          loadString(frame, topStack, bytecodeBuffer.getImmToken(pc));
-          break;
-
-          // Storing to locals
-        case STLOC_0:
-        case STLOC_1:
-        case STLOC_2:
-        case STLOC_3:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              topStack - 1,
-              curOpcode - STLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()));
-          break;
-        case STLOC_S:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              topStack - 1,
-              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()));
-          break;
-
-          // Loading locals to top
-        case LDLOC_0:
-        case LDLOC_1:
-        case LDLOC_2:
-        case LDLOC_3:
-          CILOSTAZOLFrame.copyStatic(
-              frame, curOpcode - LDLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()), topStack);
-          break;
-        case LDLOC_S:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()),
-              topStack);
-          break;
-        case LDLOCA_S:
-          CILOSTAZOLFrame.putObject(
-              frame,
-              topStack,
-              getMethod()
-                  .getContext()
-                  .getAllocator()
-                  .createStackReference(
-                      SymbolResolver.resolveReference(
-                          ReferenceSymbol.ReferenceType.Local, getMethod().getContext()),
-                      frame,
-                      bytecodeBuffer.getImmUByte(pc)
-                          + CILOSTAZOLFrame.isInstantiable(getMethod())));
-          break;
-
-          // Loading args to top
-        case LDARG_0:
-        case LDARG_1:
-        case LDARG_2:
-        case LDARG_3:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + curOpcode - LDARG_0,
-              topStack);
-          break;
-        case LDARG_S:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUByte(pc),
-              topStack);
-          break;
-        case LDARGA_S:
-          CILOSTAZOLFrame.putObject(
-              frame,
-              topStack,
-              getMethod()
-                  .getContext()
-                  .getAllocator()
-                  .createStackReference(
-                      SymbolResolver.resolveReference(
-                          ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
-                      frame,
-                      bytecodeBuffer.getImmUByte(pc)
-                          + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
-          break;
-
-          // Loading fields
-        case LDFLD:
-        case LDSFLD:
-          loadField(frame, topStack, bytecodeBuffer.getImmToken(pc));
-          break;
-        case LDFLDA:
-        case LDSFLDA:
-          // TODO: Requires references to fields
-          break;
-
-          // Storing fields
-        case STFLD:
-        case STSFLD:
-          storeField(frame, topStack, bytecodeBuffer.getImmToken(pc));
-          break;
-
-          // Object manipulation
-        case LDOBJ:
-          copyObject(
-              frame,
-              bytecodeBuffer.getImmToken(pc),
-              getSlotFromReference(frame, topStack - 1),
-              topStack - 1);
-          break;
-        case STOBJ:
-          copyObject(
-              frame,
-              bytecodeBuffer.getImmToken(pc),
-              topStack - 1,
-              getSlotFromReference(frame, topStack - 2));
-          break;
-
-        case INITOBJ:
-          initializeObject(frame, topStack, bytecodeBuffer.getImmToken(pc));
-          break;
-        case NEWOBJ:
-          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
-          break;
-        case CPOBJ:
-          copyObjectIndirectly(frame, topStack - 2, topStack - 1);
-          break;
-        case ISINST:
-          checkIsInstance(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
-          break;
-        case BOX:
-          box(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
-          break;
-        case UNBOX:
-          unbox(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
-          break;
-        case UNBOX_ANY:
-          break;
-
-          // Branching
-        case BEQ:
-        case BGE:
-        case BGT:
-        case BLE:
-        case BLT:
-        case BGE_UN:
-        case BGT_UN:
-        case BLE_UN:
-        case BLT_UN:
-        case BNE_UN:
-          if (binaryCompare(
-              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc])) {
-            // TODO: OSR support
-            pc = nextpc + bytecodeBuffer.getImmInt(pc);
-            topStack += BytecodeInstructions.getStackEffect(curOpcode);
-            continue;
-          }
-          break;
-
-          // Branching - short
-        case BEQ_S:
-        case BGE_S:
-        case BGT_S:
-        case BLE_S:
-        case BLT_S:
-        case BGE_UN_S:
-        case BGT_UN_S:
-        case BLE_UN_S:
-        case BLT_UN_S:
-        case BNE_UN_S:
-          if (binaryCompare(
-              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc])) {
-            // TODO: OSR support
-            pc = nextpc + bytecodeBuffer.getImmByte(pc);
-            topStack += BytecodeInstructions.getStackEffect(curOpcode);
-            continue;
-          }
-          break;
-
-        case BR:
-          // TODO: OSR support
-          pc = nextpc + bytecodeBuffer.getImmInt(pc);
-          continue;
-        case BR_S:
-          // TODO: OSR support
-          pc = nextpc + bytecodeBuffer.getImmByte(pc);
-          continue;
-
-        case BRTRUE:
-        case BRFALSE:
-          if (shouldBranch(curOpcode, frame, topStack - 1)) {
-            // TODO: OSR support
-            pc = nextpc + bytecodeBuffer.getImmInt(pc);
-            topStack += BytecodeInstructions.getStackEffect(curOpcode);
-            continue;
-          }
-          break;
-
-        case BRTRUE_S:
-        case BRFALSE_S:
-          if (shouldBranch(curOpcode, frame, topStack - 1)) {
-            // TODO: OSR support
-            pc = nextpc + bytecodeBuffer.getImmByte(pc);
-            topStack += BytecodeInstructions.getStackEffect(curOpcode);
-            continue;
-          }
-          break;
-
-        case CEQ:
-        case CGT:
-        case CLT:
-        case CGT_UN:
-        case CLT_UN:
-          binaryCompareAndPutOnTop(
-              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc]);
-          break;
-
-        case BREAK:
-          // Inform a debugger that a breakpoint has been reached
-          // This does not interest us at the moment
-          break;
-
-        case JMP:
-          // Exit current method and jump to the specified method
-          // TODO - finish after function calls are done
-          break;
-
-        case SWITCH:
-          // TODO: - find out the how to trigger this instruction from C#
-          break;
-
-        case RET:
-          return getReturnValue(frame, topStack - 1);
-
-        case CALL:
-          var methodToken = bytecodeBuffer.getImmToken(pc);
-          topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALL);
-          break;
-
-          // Store indirect
-        case STIND_I1:
-          storeIndirectByte(frame, topStack);
-          break;
-        case STIND_I2:
-          storeIndirectShort(frame, topStack);
-          break;
-        case STIND_I4:
-          storeIndirectInt(frame, topStack);
-          break;
-        case STIND_I8:
-          storeIndirectLong(frame, topStack);
-          break;
-        case STIND_I:
-          storeIndirectNative(frame, topStack);
-          break;
-        case STIND_R4:
-          storeIndirectFloat(frame, topStack);
-          break;
-        case STIND_R8:
-          storeIndirectDouble(frame, topStack);
-          break;
-        case STIND_REF:
-          storeIndirectRef(frame, topStack);
-          break;
-
-          // Load indirect
-        case LDIND_I1:
-        case LDIND_U1:
-          loadIndirectByte(frame, topStack);
-          break;
-        case LDIND_I2:
-        case LDIND_U2:
-          loadIndirectShort(frame, topStack);
-          break;
-        case LDIND_I4:
-        case LDIND_U4:
-          loadIndirectInt(frame, topStack);
-          break;
-        case LDIND_I8:
-          loadIndirectLong(frame, topStack);
-          break;
-        case LDIND_I:
-          loadIndirectNative(frame, topStack);
-          break;
-        case LDIND_R4:
-          loadIndirectFloat(frame, topStack);
-          break;
-        case LDIND_R8:
-          loadIndirectDouble(frame, topStack);
-          break;
-        case LDIND_REF:
-          loadIndirectRef(frame, topStack);
-          break;
-
-          // array
-        case NEWARR:
-          createArray(frame, bytecodeBuffer.getImmToken(pc), topStack - 1);
-          break;
-        case LDLEN:
-          getArrayLength(frame, topStack - 1);
-          break;
-
-        case LDELEM:
-          CILOSTAZOLFrame.putObject(
-              frame,
-              topStack - 2,
-              (StaticObject) ((StaticObject) getJavaArrElem(frame, topStack - 1)).clone());
-          break;
-        case LDELEM_REF:
-          CILOSTAZOLFrame.putObject(
-              frame, topStack - 2, (StaticObject) getJavaArrElem(frame, topStack - 1));
-          break;
-        case LDELEM_I, LDELEM_U4, LDELEM_I4:
-          CILOSTAZOLFrame.putInt32(frame, topStack - 2, (int) getJavaArrElem(frame, topStack - 1));
-          break;
-        case LDELEM_I1, LDELEM_U1:
-          CILOSTAZOLFrame.putInt32(frame, topStack - 2, (byte) getJavaArrElem(frame, topStack - 1));
-          break;
-        case LDELEM_I2, LDELEM_U2:
-          CILOSTAZOLFrame.putInt32(
-              frame, topStack - 2, (short) getJavaArrElem(frame, topStack - 1));
-          break;
-        case LDELEM_I8:
-          CILOSTAZOLFrame.putInt64(frame, topStack - 2, (long) getJavaArrElem(frame, topStack - 1));
-          break;
-        case LDELEM_R4:
-          CILOSTAZOLFrame.putNativeFloat(
-              frame, topStack - 2, (float) getJavaArrElem(frame, topStack - 1));
-          break;
-        case LDELEM_R8:
-          CILOSTAZOLFrame.putNativeFloat(
-              frame, topStack - 2, (double) getJavaArrElem(frame, topStack - 1));
-          break;
-        case LDELEMA:
-          CILOSTAZOLFrame.putObject(
-              frame,
-              topStack - 2,
-              getMethod()
-                  .getContext()
-                  .getAllocator()
-                  .createArrayElementReference(
-                      SymbolResolver.resolveReference(
-                          ReferenceSymbol.ReferenceType.ArrayElement, getMethod().getContext()),
-                      CILOSTAZOLFrame.popObject(frame, topStack - 2),
-                      CILOSTAZOLFrame.popInt32(frame, topStack - 1)));
-          break;
-
-        case STELEM:
-          Array.set(
-              getMethod()
-                  .getContext()
-                  .getArrayProperty()
-                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-              CILOSTAZOLFrame.popObject(frame, topStack - 1).clone());
-          break;
-        case STELEM_REF:
-          Array.set(
-              getMethod()
-                  .getContext()
-                  .getArrayProperty()
-                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-              CILOSTAZOLFrame.popObject(frame, topStack - 1));
-          break;
-        case STELEM_I, STELEM_I4:
-          Array.set(
-              getMethod()
-                  .getContext()
-                  .getArrayProperty()
-                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-              CILOSTAZOLFrame.popInt32(frame, topStack - 1));
-          break;
-        case STELEM_I1:
-          Array.set(
-              getMethod()
-                  .getContext()
-                  .getArrayProperty()
-                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-              (byte) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
-          break;
-        case STELEM_I8:
-          Array.set(
-              getMethod()
-                  .getContext()
-                  .getArrayProperty()
-                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-              CILOSTAZOLFrame.popInt64(frame, topStack - 1));
-          break;
-        case STELEM_R4:
-          Array.set(
-              getMethod()
-                  .getContext()
-                  .getArrayProperty()
-                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-              (float) CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
-          break;
-        case STELEM_R8:
-          Array.set(
-              getMethod()
-                  .getContext()
-                  .getArrayProperty()
-                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-              CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
-          break;
-
-        case CONV_I:
-        case CONV_I1:
-        case CONV_I2:
-        case CONV_I4:
-        case CONV_I8:
-          convertToInteger(curOpcode, frame, topStack - 1, true);
-          break;
-        case CONV_U:
-        case CONV_U1:
-        case CONV_U2:
-        case CONV_U4:
-        case CONV_U8:
-          convertToInteger(curOpcode, frame, topStack - 1, false);
-          break;
-
-        case CONV_R4:
-        case CONV_R8:
-          break;
-
-        case TRUFFLE_NODE:
-          topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
-          break;
-
-        default:
-          System.out.println("Opcode not implemented: " + curOpcode);
-          break;
-      }
-
-      topStack += BytecodeInstructions.getStackEffect(curOpcode);
-      pc = nextpc;
+    for (int i = 0; i < args.length; i++) {
+      CILOSTAZOLFrame.put(frame, args[i], argsOffset + i, argTypes[i]);
     }
   }
 
@@ -1174,45 +693,531 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void duplicateSlot(VirtualFrame frame, int top) {
     CILOSTAZOLFrame.copyStatic(frame, top, top + 1);
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top + 1, CILOSTAZOLFrame.getTaggedStack(taggedFrame, top));
   }
 
-  private void copyObjectIndirectly(VirtualFrame frame, int sourceIdx, int destIdx) {
-    int sourceSlot = CILOSTAZOLFrame.popInt(frame, sourceIdx);
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, sourceIdx);
-    int descSlot = CILOSTAZOLFrame.popInt(frame, destIdx);
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, destIdx);
-    CILOSTAZOLFrame.copyStatic(frame, sourceSlot, descSlot);
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, descSlot, CILOSTAZOLFrame.getTaggedStack(taggedFrame, sourceSlot));
+  @ExplodeLoop(kind = ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE)
+  @HostCompilerDirectives.BytecodeInterpreterSwitch
+  private Object execute(VirtualFrame frame, int pc, int topStack) {
+
+    while (true) {
+      int curOpcode = bytecodeBuffer.getOpcode(pc);
+      int nextpc = bytecodeBuffer.nextInstruction(pc);
+      switch (curOpcode) {
+        case NOP:
+          break;
+        case POP:
+          pop(frame, topStack, getMethod().getOpCodeTypes()[pc]);
+          break;
+        case DUP:
+          duplicateSlot(frame, topStack - 1);
+          break;
+
+          // Loading on top of the stack
+        case LDNULL:
+          CILOSTAZOLFrame.putObject(frame, topStack, StaticObject.NULL);
+          break;
+        case LDC_I4_M1:
+        case LDC_I4_0:
+        case LDC_I4_1:
+        case LDC_I4_2:
+        case LDC_I4_3:
+        case LDC_I4_4:
+        case LDC_I4_5:
+        case LDC_I4_6:
+        case LDC_I4_7:
+        case LDC_I4_8:
+          CILOSTAZOLFrame.putInt32(frame, topStack, curOpcode - LDC_I4_0);
+          break;
+        case LDC_I4_S:
+          CILOSTAZOLFrame.putInt32(frame, topStack, bytecodeBuffer.getImmByte(pc));
+          break;
+        case LDC_I4:
+          CILOSTAZOLFrame.putInt32(frame, topStack, bytecodeBuffer.getImmInt(pc));
+          break;
+        case LDC_I8:
+          CILOSTAZOLFrame.putInt64(frame, topStack, bytecodeBuffer.getImmLong(pc));
+          break;
+        case LDC_R4:
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack, Float.intBitsToFloat(bytecodeBuffer.getImmInt(pc)));
+          break;
+        case LDC_R8:
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack, Double.longBitsToDouble(bytecodeBuffer.getImmLong(pc)));
+          break;
+        case LDSTR:
+          loadString(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
+
+          // Storing to locals
+        case STLOC_0:
+        case STLOC_1:
+        case STLOC_2:
+        case STLOC_3:
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              topStack - 1,
+              curOpcode - STLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()));
+          break;
+        case STLOC_S:
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              topStack - 1,
+              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()));
+          break;
+
+          // Loading locals to top
+        case LDLOC_0:
+        case LDLOC_1:
+        case LDLOC_2:
+        case LDLOC_3:
+          CILOSTAZOLFrame.copyStatic(
+              frame, curOpcode - LDLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()), topStack);
+          break;
+        case LDLOC_S:
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()),
+              topStack);
+          break;
+        case LDLOCA_S:
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack,
+              getMethod()
+                  .getContext()
+                  .getAllocator()
+                  .createStackReference(
+                      SymbolResolver.resolveReference(
+                          ReferenceSymbol.ReferenceType.Local, getMethod().getContext()),
+                      frame,
+                      bytecodeBuffer.getImmUByte(pc)
+                          + CILOSTAZOLFrame.isInstantiable(getMethod())));
+          break;
+
+          // Loading args to top
+        case LDARG_0:
+        case LDARG_1:
+        case LDARG_2:
+        case LDARG_3:
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + curOpcode - LDARG_0,
+              topStack);
+          break;
+        case LDARG_S:
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUByte(pc),
+              topStack);
+          break;
+        case LDARGA_S:
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack,
+              getMethod()
+                  .getContext()
+                  .getAllocator()
+                  .createStackReference(
+                      SymbolResolver.resolveReference(
+                          ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
+                      frame,
+                      bytecodeBuffer.getImmUByte(pc)
+                          + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
+          break;
+
+          // Loading fields
+        case LDFLD:
+          loadInstanceField(
+              frame, topStack, bytecodeBuffer.getImmToken(pc), getMethod().getOpCodeTypes()[pc]);
+          break;
+        case LDSFLD:
+          loadStaticField(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
+        case LDFLDA:
+        case LDSFLDA:
+          // TODO: Requires references to fields
+          break;
+
+          // Storing fields
+        case STFLD:
+          storeInstanceField(
+              frame, topStack, bytecodeBuffer.getImmToken(pc), getMethod().getOpCodeTypes()[pc]);
+          break;
+        case STSFLD:
+          storeStaticField(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
+
+          // Object manipulation
+        case LDOBJ:
+          copyObject(
+              frame,
+              bytecodeBuffer.getImmToken(pc),
+              getSlotFromReference(frame, topStack - 1),
+              topStack - 1);
+          break;
+        case STOBJ:
+          copyObject(
+              frame,
+              bytecodeBuffer.getImmToken(pc),
+              topStack - 1,
+              getSlotFromReference(frame, topStack - 2));
+          break;
+
+        case INITOBJ:
+          initializeObject(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
+        case NEWOBJ:
+          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
+          break;
+        case CPOBJ:
+          copyObjectIndirectly(frame, topStack - 2, topStack - 1);
+          break;
+        case ISINST:
+          checkIsInstance(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
+          break;
+        case BOX:
+          box(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
+          break;
+        case UNBOX:
+          // TODO
+          break;
+        case UNBOX_ANY:
+          // TODO
+          break;
+
+          // Branching
+        case BEQ:
+        case BGE:
+        case BGT:
+        case BLE:
+        case BLT:
+        case BGE_UN:
+        case BGT_UN:
+        case BLE_UN:
+        case BLT_UN:
+        case BNE_UN:
+          if (binaryCompare(
+              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc])) {
+            // TODO: OSR support
+            pc = nextpc + bytecodeBuffer.getImmInt(pc);
+            topStack += BytecodeInstructions.getStackEffect(curOpcode);
+            continue;
+          }
+          break;
+
+          // Branching - short
+        case BEQ_S:
+        case BGE_S:
+        case BGT_S:
+        case BLE_S:
+        case BLT_S:
+        case BGE_UN_S:
+        case BGT_UN_S:
+        case BLE_UN_S:
+        case BLT_UN_S:
+        case BNE_UN_S:
+          if (binaryCompare(
+              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc])) {
+            // TODO: OSR support
+            pc = nextpc + bytecodeBuffer.getImmByte(pc);
+            topStack += BytecodeInstructions.getStackEffect(curOpcode);
+            continue;
+          }
+          break;
+
+        case BR:
+          // TODO: OSR support
+          pc = nextpc + bytecodeBuffer.getImmInt(pc);
+          continue;
+        case BR_S:
+          // TODO: OSR support
+          pc = nextpc + bytecodeBuffer.getImmByte(pc);
+          continue;
+
+        case BRTRUE:
+        case BRFALSE:
+          if (shouldBranch(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc])) {
+            // TODO: OSR support
+            pc = nextpc + bytecodeBuffer.getImmInt(pc);
+            topStack += BytecodeInstructions.getStackEffect(curOpcode);
+            continue;
+          }
+          break;
+
+        case BRTRUE_S:
+        case BRFALSE_S:
+          if (shouldBranch(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc])) {
+            // TODO: OSR support
+            pc = nextpc + bytecodeBuffer.getImmByte(pc);
+            topStack += BytecodeInstructions.getStackEffect(curOpcode);
+            continue;
+          }
+          break;
+
+        case CEQ:
+        case CGT:
+        case CLT:
+        case CGT_UN:
+        case CLT_UN:
+          binaryCompareAndPutOnTop(
+              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc]);
+          break;
+
+        case BREAK:
+          // Inform a debugger that a breakpoint has been reached
+          // This does not interest us at the moment
+          break;
+
+        case JMP:
+          // Exit current method and jump to the specified method
+          // TODO - finish after function calls are done
+          break;
+
+        case SWITCH:
+          // TODO: - find out the how to trigger this instruction from C#
+          break;
+
+        case RET:
+          return getReturnValue(frame, topStack - 1);
+
+        case CALL:
+          var methodToken = bytecodeBuffer.getImmToken(pc);
+          topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALL);
+          break;
+
+          // Store indirect
+        case STIND_I1:
+          storeIndirectByte(frame, topStack);
+          break;
+        case STIND_I2:
+          storeIndirectShort(frame, topStack);
+          break;
+        case STIND_I4:
+          storeIndirectInt(frame, topStack);
+          break;
+        case STIND_I8:
+          storeIndirectLong(frame, topStack);
+          break;
+        case STIND_I:
+          storeIndirectNative(frame, topStack);
+          break;
+        case STIND_R4:
+          storeIndirectFloat(frame, topStack);
+          break;
+        case STIND_R8:
+          storeIndirectDouble(frame, topStack);
+          break;
+        case STIND_REF:
+          storeIndirectRef(frame, topStack);
+          break;
+
+          // Load indirect
+        case LDIND_I1:
+        case LDIND_U1:
+          loadIndirectByte(frame, topStack);
+          break;
+        case LDIND_I2:
+        case LDIND_U2:
+          loadIndirectShort(frame, topStack);
+          break;
+        case LDIND_I4:
+        case LDIND_U4:
+          loadIndirectInt(frame, topStack);
+          break;
+        case LDIND_I8:
+          loadIndirectLong(frame, topStack);
+          break;
+        case LDIND_I:
+          loadIndirectNative(frame, topStack);
+          break;
+        case LDIND_R4:
+          loadIndirectFloat(frame, topStack);
+          break;
+        case LDIND_R8:
+          loadIndirectDouble(frame, topStack);
+          break;
+        case LDIND_REF:
+          loadIndirectRef(frame, topStack);
+          break;
+
+          // array
+        case NEWARR:
+          createArray(frame, bytecodeBuffer.getImmToken(pc), topStack - 1);
+          break;
+        case LDLEN:
+          getArrayLength(frame, topStack - 1);
+          break;
+
+        case LDELEM:
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack - 2,
+              (StaticObject) ((StaticObject) getJavaArrElem(frame, topStack - 1)).clone());
+          break;
+        case LDELEM_REF:
+          CILOSTAZOLFrame.putObject(
+              frame, topStack - 2, (StaticObject) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I, LDELEM_U4, LDELEM_I4:
+          CILOSTAZOLFrame.putInt32(frame, topStack - 2, (int) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I1, LDELEM_U1:
+          CILOSTAZOLFrame.putInt32(frame, topStack - 2, (byte) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I2, LDELEM_U2:
+          CILOSTAZOLFrame.putInt32(
+              frame, topStack - 2, (short) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I8:
+          CILOSTAZOLFrame.putInt64(frame, topStack - 2, (long) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_R4:
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack - 2, (float) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_R8:
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack - 2, (double) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEMA:
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack - 2,
+              getMethod()
+                  .getContext()
+                  .getAllocator()
+                  .createArrayElementReference(
+                      SymbolResolver.resolveReference(
+                          ReferenceSymbol.ReferenceType.ArrayElement, getMethod().getContext()),
+                      CILOSTAZOLFrame.popObject(frame, topStack - 2),
+                      CILOSTAZOLFrame.popInt32(frame, topStack - 1)));
+          break;
+
+        case STELEM:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popObject(frame, topStack - 1).clone());
+          break;
+        case STELEM_REF:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popObject(frame, topStack - 1));
+          break;
+        case STELEM_I, STELEM_I4:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+          break;
+        case STELEM_I1:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              (byte) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+          break;
+        case STELEM_I8:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popInt64(frame, topStack - 1));
+          break;
+        case STELEM_R4:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              (float) CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+          break;
+        case STELEM_R8:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+          break;
+
+        case CONV_I:
+        case CONV_I1:
+        case CONV_I2:
+        case CONV_I4:
+        case CONV_I8:
+          convertToInteger(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc], true);
+          break;
+        case CONV_U:
+        case CONV_U1:
+        case CONV_U2:
+        case CONV_U4:
+        case CONV_U8:
+          convertToInteger(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc], false);
+          break;
+
+        case CONV_R4:
+        case CONV_R8:
+          break;
+
+        case TRUFFLE_NODE:
+          topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
+          break;
+
+        default:
+          System.out.println("Opcode not implemented: " + curOpcode);
+          break;
+      }
+
+      topStack += BytecodeInstructions.getStackEffect(curOpcode);
+      pc = nextpc;
+    }
   }
 
   private void copyObject(VirtualFrame frame, CLITablePtr typePtr, int sourceSlot, int destSlot) {
     var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
     CILOSTAZOLFrame.copyStatic(frame, sourceSlot, destSlot);
-    CILOSTAZOLFrame.putTaggedStack(taggedFrame, destSlot, type);
+  }
+
+  private void copyObjectIndirectly(VirtualFrame frame, int sourceIdx, int destIdx) {
+    int sourceSlot = CILOSTAZOLFrame.popInt32(frame, sourceIdx);
+    int descSlot = CILOSTAZOLFrame.popInt32(frame, destIdx);
+    CILOSTAZOLFrame.copyStatic(frame, sourceSlot, descSlot);
   }
 
   private int getSlotFromReference(VirtualFrame frame, int referenceIdx) {
-    var sourceSlot = CILOSTAZOLFrame.popInt(frame, referenceIdx);
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, referenceIdx);
-    return sourceSlot;
+    return CILOSTAZOLFrame.popInt32(frame, referenceIdx);
   }
 
   private void checkIsInstance(VirtualFrame frame, int slot, CLITablePtr typePtr) {
     // TODO: The value can be a Nullable<T>, which is handled differently than T
     var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
-    var sourceType = CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot);
     var object = CILOSTAZOLFrame.popObject(frame, slot);
+    var sourceType = object.getTypeSymbol();
     if (sourceType.isAssignableFrom(targetType)) {
       // Success: put object back on stack with a new type
       CILOSTAZOLFrame.putObject(frame, slot, object);
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, slot, targetType);
+      // TODO: Decide how to denote the change in type in the static analysis
     } else {
       // Failure: keep the previous type and put null on the stack
       CILOSTAZOLFrame.putObject(frame, slot, StaticObject.NULL);
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, slot, sourceType);
     }
   }
 
@@ -1240,40 +1245,39 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       throw new InterpreterException("Could not find matching field for value type");
     }
 
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot);
     switch (matchingField.getSystemType()) {
       case Int -> {
-        var value = CILOSTAZOLFrame.popInt(frame, slot);
+        var value = CILOSTAZOLFrame.popInt32(frame, slot);
         StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
         type.getAssignableInstanceField(matchingField).setInt(boxedObject, value);
       }
       case Long -> {
-        var value = CILOSTAZOLFrame.popLong(frame, slot);
+        var value = CILOSTAZOLFrame.popInt64(frame, slot);
         StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
         type.getAssignableInstanceField(matchingField).setLong(boxedObject, value);
       }
       case Float -> {
-        var value = CILOSTAZOLFrame.popDouble(frame, slot);
+        var value = CILOSTAZOLFrame.popNativeFloat(frame, slot);
         StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
         type.getAssignableInstanceField(matchingField).setFloat(boxedObject, (float) value);
       }
       case Double -> {
-        var value = CILOSTAZOLFrame.popDouble(frame, slot);
+        var value = CILOSTAZOLFrame.popNativeFloat(frame, slot);
         StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
         type.getAssignableInstanceField(matchingField).setDouble(boxedObject, value);
       }
       case Short -> {
-        var value = CILOSTAZOLFrame.popInt(frame, slot);
+        var value = CILOSTAZOLFrame.popInt32(frame, slot);
         StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
         type.getAssignableInstanceField(matchingField).setShort(boxedObject, (short) value);
       }
       case Char -> {
-        var value = CILOSTAZOLFrame.popInt(frame, slot);
+        var value = CILOSTAZOLFrame.popInt32(frame, slot);
         StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
         type.getAssignableInstanceField(matchingField).setChar(boxedObject, (char) value);
       }
       case Boolean -> {
-        var value = CILOSTAZOLFrame.popInt(frame, slot);
+        var value = CILOSTAZOLFrame.popInt32(frame, slot);
         StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
         type.getAssignableInstanceField(matchingField).setBoolean(boxedObject, value != 0);
       }
@@ -1286,14 +1290,15 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
   }
 
-  private void unbox(VirtualFrame frame, int slot, CLITablePtr typePtr) {
-    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+  private StaticObject createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {
+    StaticObject object = type.getContext().getAllocator().createNew(type);
+    CILOSTAZOLFrame.setLocalObject(frame, dest, object);
+    return object;
   }
 
   private void initializeObject(VirtualFrame frame, int top, CLITablePtr typePtr) {
     var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
-    int dest = CILOSTAZOLFrame.popInt(frame, top - 1);
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+    int dest = CILOSTAZOLFrame.popInt32(frame, top - 1);
 
     if (type.isValueType()) {
       // Initialize value type
@@ -1303,138 +1308,74 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
     // Initialize reference type
     CILOSTAZOLFrame.setLocalObject(frame, dest, StaticObject.NULL);
-    CILOSTAZOLFrame.setTaggedStack(taggedFrame, dest, type);
   }
 
-  private StaticObject createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {
-    StaticObject object = type.getContext().getAllocator().createNew(type);
-    CILOSTAZOLFrame.setLocalObject(frame, dest, object);
-    CILOSTAZOLFrame.setTaggedStack(taggedFrame, dest, type);
-    return object;
-  }
-
-  private void loadField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
+  private void loadInstanceField(
+      VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field;
-    StaticObject object;
-    if (classMember.member.isStatic()) {
-      field = classMember.symbol.getAssignableStaticField(classMember.member);
-      object = classMember.symbol.getStaticInstance();
-      top++;
-    } else {
-      field = classMember.symbol.getAssignableInstanceField(classMember.member);
-      object = CILOSTAZOLFrame.popObjectFromPossibleReference(frame, taggedFrame, method, top - 1);
-    }
+    StaticField field = classMember.symbol.getAssignableInstanceField(classMember.member);
+    StaticObject object = CILOSTAZOLFrame.popObjectFromPossibleReference(frame, type, top - 1);
+    loadValueFromField(frame, top, field, object);
+  }
+
+  private void loadStaticField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
+    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
+    StaticField field = classMember.symbol.getAssignableStaticField(classMember.member);
+    StaticObject object = classMember.symbol.getStaticInstance();
+    loadValueFromField(frame, top + 1, field, object);
+  }
+
+  void storeInstanceField(
+      VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
+    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
+    StaticField field = classMember.symbol.getAssignableInstanceField(classMember.member);
+    StaticObject object = CILOSTAZOLFrame.popObjectFromPossibleReference(frame, type, top - 2);
+    assignValueToField(frame, top, field, object);
+  }
+
+  private void storeStaticField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
+    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
+    StaticField field = classMember.symbol.getAssignableStaticField(classMember.member);
+    StaticObject object = classMember.symbol.getStaticInstance();
+    assignValueToField(frame, top, field, object);
+  }
+
+  private void assignValueToField(
+      VirtualFrame frame, int top, StaticField field, StaticObject object) {
     switch (field.getKind()) {
       case Boolean -> {
-        boolean value = field.getBoolean(object);
-        CILOSTAZOLFrame.putInt(frame, top - 1, value ? 1 : 0);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top - 1, SymbolResolver.getBoolean(CILOSTAZOLContext.get(this)));
-      }
-      case Char -> {
-        char value = field.getChar(object);
-        CILOSTAZOLFrame.putInt(frame, top - 1, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top - 1, SymbolResolver.getChar(CILOSTAZOLContext.get(this)));
-      }
-      case Short -> {
-        short value = field.getShort(object);
-        CILOSTAZOLFrame.putInt(frame, top - 1, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top - 1, SymbolResolver.getInt16(CILOSTAZOLContext.get(this)));
-      }
-      case Float -> {
-        float value = field.getFloat(object);
-        CILOSTAZOLFrame.putDouble(frame, top - 1, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top - 1, SymbolResolver.getSingle(CILOSTAZOLContext.get(this)));
-      }
-      case Double -> {
-        double value = field.getDouble(object);
-        CILOSTAZOLFrame.putDouble(frame, top - 1, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top - 1, SymbolResolver.getDouble(CILOSTAZOLContext.get(this)));
-      }
-      case Int -> {
-        int value = field.getInt(object);
-        CILOSTAZOLFrame.putInt(frame, top - 1, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top - 1, SymbolResolver.getInt32(CILOSTAZOLContext.get(this)));
-      }
-      case Long -> {
-        long value = field.getLong(object);
-        CILOSTAZOLFrame.putLong(frame, top - 1, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top - 1, SymbolResolver.getInt64(CILOSTAZOLContext.get(this)));
-      }
-      default -> {
-        StaticObject value = (StaticObject) field.getObject(object);
-        CILOSTAZOLFrame.putObject(frame, top - 1, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top - 1, SymbolResolver.getObject(CILOSTAZOLContext.get(this)));
-      }
-    }
-  }
-
-  void storeField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
-    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field;
-    StaticObject object;
-    if (classMember.member.isStatic()) {
-      field = classMember.symbol.getAssignableStaticField(classMember.member);
-      object = classMember.symbol.getStaticInstance();
-    } else {
-      field = classMember.symbol.getAssignableInstanceField(classMember.member);
-      object = CILOSTAZOLFrame.popObjectFromPossibleReference(frame, taggedFrame, method, top - 2);
-    }
-    switch (field.getKind()) {
-      case Boolean -> {
-        int value = CILOSTAZOLFrame.popInt(frame, top - 1);
-        CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+        int value = CILOSTAZOLFrame.popInt32(frame, top - 1);
         field.setBoolean(object, value != 0);
       }
       case Short -> {
-        int value = CILOSTAZOLFrame.popInt(frame, top - 1);
-        CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+        int value = CILOSTAZOLFrame.popInt32(frame, top - 1);
         field.setShort(object, (short) value);
       }
       case Char -> {
-        int value = CILOSTAZOLFrame.popInt(frame, top - 1);
-        CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+        int value = CILOSTAZOLFrame.popInt32(frame, top - 1);
         field.setChar(object, (char) value);
       }
       case Float -> {
-        double value = CILOSTAZOLFrame.popDouble(frame, top - 1);
-        CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+        double value = CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
         field.setFloat(object, (float) value);
       }
       case Double -> {
-        double value = CILOSTAZOLFrame.popDouble(frame, top - 1);
-        CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+        double value = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
         field.setDouble(object, value);
       }
       case Int -> {
-        int value = CILOSTAZOLFrame.popInt(frame, top - 1);
-        CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+        int value = CILOSTAZOLFrame.popInt32(frame, top - 1);
         field.setInt(object, value);
       }
       case Long -> {
-        long value = CILOSTAZOLFrame.popLong(frame, top - 1);
-        CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
+        long value = CILOSTAZOLFrame.popInt64(frame, top - 1);
         field.setLong(object, value);
       }
       default -> {
         StaticObject value = CILOSTAZOLFrame.popObject(frame, top - 1);
-        CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1);
         field.setObject(object, value);
       }
     }
-  }
-
-  private void popStack(int top) {
-    // pop taggedFrame
-    taggedFrame[top] = null;
   }
 
   private Object getReturnValue(VirtualFrame frame, int top) {
@@ -1471,51 +1412,24 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private int nodeizeOpToken(VirtualFrame frame, int top, CLITablePtr token, int pc, int opcode) {
     CompilerDirectives.transferToInterpreterAndInvalidate();
     final NodeizedNodeBase node;
-    if (opcode == CALL) {
-      var method =
-          SymbolResolver.resolveMethod(
-              token,
-              getMethod().getTypeArguments(),
-              getMethod().getDefiningType().getTypeArguments(),
-              getMethod().getModule());
-      node = getCheckedCALLNode(method.member, top);
-    } else {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      throw new InterpreterException();
-
     switch (opcode) {
-      case LDSTR -> {
-        CLIUSHeapPtr ptr = new CLIUSHeapPtr(token.getRowNo());
-        node =
-            new LDSTRNode(
-                ptr.readString(method.getModule().getDefiningFile().getUSHeap()),
-                top,
-                SymbolResolver.getString(CILOSTAZOLContext.get(this)));
-      }
       case NEWOBJ -> {
-        MethodSymbol methodSymbol;
-        switch (token.getTableId()) {
-          case CLITableConstants.CLI_TABLE_MEMBER_REF -> {
-            methodSymbol = getMethodSymbolFromMemberRef(top, token);
-          }
-          case CLITableConstants.CLI_TABLE_METHOD_DEF -> {
-            methodSymbol = getMethodSymbolFromMethodDef(top, token);
-          }
-          default -> {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new InterpreterException();
-          }
-        }
-        node = new NEWOBJNode(methodSymbol, top);
+        var method =
+            SymbolResolver.resolveMethod(
+                token,
+                getMethod().getTypeArguments(),
+                getMethod().getDefiningType().getTypeArguments(),
+                getMethod().getModule());
+        node = new NEWOBJNode(method.member, top);
       }
       case CALL -> {
-          var method =
-                  SymbolResolver.resolveMethod(
-                          token,
-                          getMethod().getTypeArguments(),
-                          getMethod().getDefiningType().getTypeArguments(),
-                          getMethod().getModule());
-          node = getCheckedCALLNode(method.member, top);
+        var method =
+            SymbolResolver.resolveMethod(
+                token,
+                getMethod().getTypeArguments(),
+                getMethod().getDefiningType().getTypeArguments(),
+                getMethod().getModule());
+        node = getCheckedCALLNode(method.member, top);
       }
       default -> {
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -1560,59 +1474,46 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   // endregion
 
   // region Conversion
-  private void convertToInteger(int opcode, VirtualFrame frame, int top, boolean signed) {
-    var type = CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
+  private void convertToInteger(
+      int opcode,
+      VirtualFrame frame,
+      int top,
+      StaticOpCodeAnalyser.OpCodeType type,
+      boolean signed) {
     long value =
-        switch (type.getStackTypeKind()) {
-          case Int -> signed
-              ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popInt(frame, top))
-              : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popInt(frame, top));
-          case Long -> CILOSTAZOLFrame.popLong(frame, top);
-          case Double -> (long) CILOSTAZOLFrame.popDouble(frame, top);
-          default -> throw new InterpreterException(
-              "Invalid type for conversion: " + type.getStackTypeKind());
+        switch (type) {
+          case Int32 -> signed
+              ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popInt32(frame, top))
+              : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popInt32(frame, top));
+          case Int64 -> CILOSTAZOLFrame.popInt64(frame, top);
+          case NativeFloat -> (long) CILOSTAZOLFrame.popNativeFloat(frame, top);
+          default -> throw new InterpreterException("Invalid type for conversion: " + type);
         };
 
     switch (opcode) {
       case CONV_I1:
-        CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.signExtend8(value));
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, SymbolResolver.getSByte(CILOSTAZOLContext.get(this)));
+        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend8(value));
         break;
       case CONV_I2:
-        CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.signExtend16(value));
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, SymbolResolver.getInt16(CILOSTAZOLContext.get(this)));
+        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend16(value));
         break;
       case CONV_I4:
-        CILOSTAZOLFrame.putInt(frame, top, (int) TypeHelpers.truncate32(value));
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, SymbolResolver.getInt32(CILOSTAZOLContext.get(this)));
+        CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.truncate32(value));
         break;
       case CONV_I8:
-        CILOSTAZOLFrame.putLong(frame, top, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, SymbolResolver.getInt64(CILOSTAZOLContext.get(this)));
+        CILOSTAZOLFrame.putInt64(frame, top, value);
         break;
       case CONV_U1:
-        CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.zeroExtend8(value));
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, SymbolResolver.getByte(CILOSTAZOLContext.get(this)));
+        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8(value));
         break;
       case CONV_U2:
-        CILOSTAZOLFrame.putInt(frame, top, TypeHelpers.zeroExtend16(value));
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, SymbolResolver.getUInt16(CILOSTAZOLContext.get(this)));
+        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend16(value));
         break;
       case CONV_U4:
-        CILOSTAZOLFrame.putLong(frame, top, TypeHelpers.zeroExtend32(value));
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, SymbolResolver.getUInt32(CILOSTAZOLContext.get(this)));
+        CILOSTAZOLFrame.putInt64(frame, top, TypeHelpers.zeroExtend32(value));
         break;
       case CONV_U8:
-        CILOSTAZOLFrame.putLong(frame, top, value);
-        CILOSTAZOLFrame.putTaggedStack(
-            taggedFrame, top, SymbolResolver.getUInt64(CILOSTAZOLContext.get(this)));
+        CILOSTAZOLFrame.putInt64(frame, top, value);
         break;
       case CONV_U:
       case CONV_I:
@@ -1633,9 +1534,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
    *
    * @return whether to take the branch or not
    */
-  private boolean shouldBranch(int opcode, VirtualFrame frame, int slot) {
+  private boolean shouldBranch(
+      int opcode, VirtualFrame frame, int slot, StaticOpCodeAnalyser.OpCodeType type) {
     boolean value;
-    if (frame.isObject(slot)) {
+    if (type == StaticOpCodeAnalyser.OpCodeType.Object) {
       value = CILOSTAZOLFrame.popObject(frame, slot) != StaticObject.NULL;
     } else {
       value = CILOSTAZOLFrame.popInt32(frame, slot) != 0;

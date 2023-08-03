@@ -11,6 +11,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
 import com.vztekoverflow.cilostazol.runtime.symbols.ReferenceSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
+import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
 import java.util.Objects;
 
 public final class CILOSTAZOLFrame {
@@ -145,10 +146,19 @@ public final class CILOSTAZOLFrame {
   }
 
   public static StaticObject popObjectFromPossibleReference(
-      VirtualFrame frame, TypeSymbol[] taggedFrame, MethodSymbol method, int slot) {
-    TypeSymbol type = popTaggedStack(taggedFrame, slot);
+      VirtualFrame frame, StaticOpCodeAnalyser.OpCodeType type, int slot) {
+    if (type == StaticOpCodeAnalyser.OpCodeType.ManagedPointer) {
+      slot = popInt32(frame, slot);
+      return getLocalObject(frame, slot);
+    }
+
+    return popObject(frame, slot);
+  }
+
+  public static StaticObject popObjectFromPossibleReference(
+      VirtualFrame frame, TypeSymbol type, int slot) {
     if (type instanceof ReferenceSymbol) {
-      slot = popInt(frame, slot);
+      slot = popInt32(frame, slot);
       return getLocalObject(frame, slot);
     }
 
