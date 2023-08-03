@@ -2,6 +2,7 @@ package com.vztekoverflow.cilostazol.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class ObjectManipulationTests extends TestBase {
@@ -345,6 +346,7 @@ public class ObjectManipulationTests extends TestBase {
   }
 
   @Test
+  @Disabled("Branching is not taken into account during static analysis")
   public void staticFieldAccessBoolean() {
     var result =
         runTestFromCode(

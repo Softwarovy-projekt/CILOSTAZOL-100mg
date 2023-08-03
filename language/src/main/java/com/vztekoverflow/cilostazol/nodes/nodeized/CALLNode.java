@@ -60,7 +60,8 @@ public final class CALLNode extends NodeizedNodeBase {
     if (instantiableOffset > 0) {
       final var idx = topStack - args.length;
       args[0] =
-          CILOSTAZOLFrame.popObjectFromPossibleReference(frame, method.getDefiningType(), idx);
+          CILOSTAZOLFrame.popObjectFromPossibleReference(
+              frame, method.getDefiningType(), idx, method.getContext());
     }
 
     return args;

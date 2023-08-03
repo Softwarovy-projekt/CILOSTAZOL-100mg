@@ -20,7 +20,7 @@ public class StaticOpCodeAnalyser {
   public static OpCodeType[] analyseOpCodes(MethodSymbol method) {
     return getOpcodeTypes(
         method.getOriginalCIL(),
-        method.getMaxStack(),
+        method.getMaxStack() + method.getParameterCountIncludingInstance(),
         method.getParameterTypesIncludingInstance(),
         method.getLocals(),
         method.getModule());
@@ -343,15 +343,15 @@ public class StaticOpCodeAnalyser {
         case LDFLD:
           {
             var fieldPtr = bytecodeBuffer.getImmToken(pc);
-            var field = SymbolResolver.resolveField(fieldPtr, module).symbol;
-            replace(stack, topStack, field.getStackTypeKind());
+            var field = SymbolResolver.resolveField(fieldPtr, module).member;
+            replace(stack, topStack, field.getType().getStackTypeKind());
             break;
           }
         case LDSFLD:
           {
             var fieldPtr = bytecodeBuffer.getImmToken(pc);
-            var field = SymbolResolver.resolveField(fieldPtr, module).symbol;
-            push(stack, topStack, field.getStackTypeKind());
+            var field = SymbolResolver.resolveField(fieldPtr, module).member;
+            push(stack, topStack, field.getType().getStackTypeKind());
             break;
           }
         case LDFLDA:
@@ -360,8 +360,8 @@ public class StaticOpCodeAnalyser {
         case LDSFLDA:
           {
             var fieldPtr = bytecodeBuffer.getImmToken(pc);
-            var field = SymbolResolver.resolveField(fieldPtr, module).symbol;
-            handleLdsflda(field, stack, topStack, pc);
+            var field = SymbolResolver.resolveField(fieldPtr, module).member;
+            handleLdsflda((NamedTypeSymbol) field.getType(), stack, topStack, pc);
             break;
           }
         case STFLD:

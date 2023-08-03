@@ -205,8 +205,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putInt32(frame, top - 1, CILOSTAZOLFrame.getLocalInt(refFrame, index));
       }
       case Field -> {
@@ -239,8 +238,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putInt32(frame, top - 1, CILOSTAZOLFrame.getLocalInt(refFrame, index));
       }
       case Field -> {
@@ -273,8 +271,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putInt32(frame, top - 1, CILOSTAZOLFrame.getLocalInt(refFrame, index));
       }
       case Field -> {
@@ -307,8 +304,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putInt64(frame, top - 1, CILOSTAZOLFrame.getLocalLong(frame, index));
       }
       case Field -> {
@@ -341,8 +337,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putNativeFloat(
             frame, top - 1, CILOSTAZOLFrame.getLocalNativeFloat(refFrame, index));
       }
@@ -376,8 +371,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putNativeFloat(
             frame, top - 1, CILOSTAZOLFrame.getLocalNativeFloat(refFrame, index));
       }
@@ -411,8 +405,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putObject(frame, top - 1, CILOSTAZOLFrame.getLocalObject(refFrame, index));
       }
       case Field -> {
@@ -450,8 +443,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putInt32(refFrame, index, value);
       }
       case Field -> {
@@ -485,8 +477,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putInt32(refFrame, index, value);
       }
       case Field -> {
@@ -520,8 +511,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putInt32(refFrame, index, value);
       }
       case Field -> {
@@ -555,8 +545,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putInt64(refFrame, index, value);
       }
       case Field -> {
@@ -590,8 +579,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putNativeFloat(refFrame, index, value);
       }
       case Field -> {
@@ -625,8 +613,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putNativeFloat(refFrame, index, value);
       }
       case Field -> {
@@ -660,8 +647,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Local, Argument -> {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
-        int index =
-            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
         CILOSTAZOLFrame.putObject(refFrame, index, value);
       }
       case Field -> {
@@ -1298,7 +1284,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void initializeObject(VirtualFrame frame, int top, CLITablePtr typePtr) {
     var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
-    int dest = CILOSTAZOLFrame.popInt32(frame, top - 1);
+    var destReference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    assert ((ReferenceSymbol) destReference.getTypeSymbol()).getReferenceType()
+        == ReferenceSymbol.ReferenceType.Local;
+    int dest = getMethod().getContext().getStackReferenceIndexProperty().getInt(destReference);
 
     if (type.isValueType()) {
       // Initialize value type
@@ -1314,7 +1303,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
     StaticField field = classMember.symbol.getAssignableInstanceField(classMember.member);
-    StaticObject object = CILOSTAZOLFrame.popObjectFromPossibleReference(frame, type, top - 1);
+    StaticObject object =
+        (StaticObject)
+            CILOSTAZOLFrame.popObjectFromPossibleReference(
+                frame, top - 1, getMethod().getContext());
     loadValueFromField(frame, top, field, object);
   }
 
@@ -1329,7 +1321,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
     StaticField field = classMember.symbol.getAssignableInstanceField(classMember.member);
-    StaticObject object = CILOSTAZOLFrame.popObjectFromPossibleReference(frame, type, top - 2);
+    StaticObject object =
+        (StaticObject)
+            CILOSTAZOLFrame.popObjectFromPossibleReference(
+                frame, top - 2, getMethod().getContext());
     assignValueToField(frame, top, field, object);
   }
 
@@ -1360,7 +1355,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         field.setFloat(object, (float) value);
       }
       case Double -> {
-        double value = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        double value = CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
         field.setDouble(object, value);
       }
       case Int -> {
