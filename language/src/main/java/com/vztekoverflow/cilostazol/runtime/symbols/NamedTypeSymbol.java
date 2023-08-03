@@ -491,7 +491,8 @@ public class NamedTypeSymbol extends TypeSymbol {
         CLIInterfaceImplTableRow row, ModuleSymbol module, NamedTypeSymbol symbol) {
       CLITablePtr tablePtr = row.getInterfaceTablePtr();
       assert tablePtr != null; // Should never should be
-      return (NamedTypeSymbol) SymbolResolver.resolveType(tablePtr, module);
+      return (NamedTypeSymbol)
+          SymbolResolver.resolveType(tablePtr, module, symbol.getTypeArguments());
     }
 
     public static NamedTypeSymbol createDirectBaseClass(NamedTypeSymbol namedTypeSymbol) {
@@ -508,7 +509,8 @@ public class NamedTypeSymbol extends TypeSymbol {
       return baseClassPtr.isEmpty()
           ? null
           : (NamedTypeSymbol)
-              SymbolResolver.resolveType(baseClassPtr, namedTypeSymbol.definingModule);
+              SymbolResolver.resolveType(
+                  baseClassPtr, namedTypeSymbol.definingModule, namedTypeSymbol.getTypeArguments());
     }
 
     public static NamedTypeSymbol[] createSuperClasses(NamedTypeSymbol namedTypeSymbol) {

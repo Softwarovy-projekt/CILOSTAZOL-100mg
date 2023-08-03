@@ -196,6 +196,11 @@ public final class SymbolResolver {
   }
 
   public static TypeSymbol resolveType(
+      CLITablePtr row, ModuleSymbol module, TypeSymbol[] typeArguments) {
+    return resolveType(row, new TypeSymbol[0], typeArguments, module);
+  }
+
+  public static TypeSymbol resolveType(
       CLITablePtr row,
       TypeSymbol[] methodTypeArgs,
       TypeSymbol[] typeTypeArgs,
