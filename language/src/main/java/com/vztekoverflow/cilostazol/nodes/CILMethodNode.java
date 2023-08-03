@@ -6,27 +6,27 @@ import static com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.HostCompilerDirectives;
+import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.BytecodeOSRNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.staticobject.StaticProperty;
 import com.vztekoverflow.cil.parser.bytecode.BytecodeBuffer;
 import com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions;
-import com.vztekoverflow.cil.parser.cli.signature.MethodDefSig;
-import com.vztekoverflow.cil.parser.cli.signature.SignatureReader;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
-import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
-import com.vztekoverflow.cilostazol.nodes.nodeized.*;
-import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
+import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
+import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
+import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
-import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
+import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
@@ -34,7 +34,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private final byte[] cil;
   private final BytecodeBuffer bytecodeBuffer;
   private final FrameDescriptor frameDescriptor;
-  private final TypeSymbol[] taggedFrame;
 
   @Children private NodeizedNodeBase[] nodes = new NodeizedNodeBase[0];
 
@@ -47,7 +46,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             method.getLocals().length,
             method.getMaxStack());
     this.bytecodeBuffer = new BytecodeBuffer(cil);
-    taggedFrame = createTaggedFrame(method.getLocals());
   }
 
   public static CILMethodNode create(MethodSymbol method) {
@@ -62,6 +60,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
 
     return taggedFrame;
+  }
+
+  public static CILMethodNode create(MethodSymbol method) {
+    return new CILMethodNode(method);
   }
 
   public MethodSymbol getMethod() {
@@ -83,7 +85,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     // Init arguments
     Object[] args = frame.getArguments();
 
-    //    int receiverSlot = CILOSTAZOLFrame.isInstantiable(getMethod());
     boolean hasReceiver = !getMethod().getMethodFlags().hasFlag(Flag.STATIC);
     TypeSymbol[] argTypes;
 
@@ -105,7 +106,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
     for (int i = 0; i < args.length; i++) {
       CILOSTAZOLFrame.put(frame, args[i], argsOffset + i, argTypes[i]);
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, argsOffset + i, argTypes[i]);
     }
   }
   // endregion
@@ -138,7 +138,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case NOP:
           break;
         case POP:
-          CILOSTAZOLFrame.popTaggedStack(taggedFrame, topStack - 1);
+          pop(frame, topStack, getMethod().getOpCodeTypes()[pc]);
           break;
         case DUP:
           duplicateSlot(frame, topStack - 1);
@@ -146,7 +146,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           // Loading on top of the stack
         case LDNULL:
-          loadNull(frame, topStack);
+          CILOSTAZOLFrame.putObject(frame, topStack, StaticObject.NULL);
           break;
         case LDC_I4_M1:
         case LDC_I4_0:
@@ -158,25 +158,27 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case LDC_I4_6:
         case LDC_I4_7:
         case LDC_I4_8:
-          loadValueOnTop(frame, topStack, curOpcode - LDC_I4_0);
+          CILOSTAZOLFrame.putInt32(frame, topStack, curOpcode - LDC_I4_0);
           break;
         case LDC_I4_S:
-          loadValueOnTop(frame, topStack, bytecodeBuffer.getImmByte(pc));
+          CILOSTAZOLFrame.putInt32(frame, topStack, bytecodeBuffer.getImmByte(pc));
           break;
         case LDC_I4:
-          loadValueOnTop(frame, topStack, bytecodeBuffer.getImmInt(pc));
+          CILOSTAZOLFrame.putInt32(frame, topStack, bytecodeBuffer.getImmInt(pc));
           break;
         case LDC_I8:
-          loadValueOnTop(frame, topStack, bytecodeBuffer.getImmLong(pc));
+          CILOSTAZOLFrame.putInt64(frame, topStack, bytecodeBuffer.getImmLong(pc));
           break;
         case LDC_R4:
-          loadValueOnTop(frame, topStack, Float.intBitsToFloat(bytecodeBuffer.getImmInt(pc)));
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack, Float.intBitsToFloat(bytecodeBuffer.getImmInt(pc)));
           break;
         case LDC_R8:
-          loadValueOnTop(frame, topStack, Double.longBitsToDouble(bytecodeBuffer.getImmLong(pc)));
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack, Double.longBitsToDouble(bytecodeBuffer.getImmLong(pc)));
           break;
         case LDSTR:
-          topStack = nodeizeOpToken(frame, topStack, bytecodeBuffer.getImmToken(pc), pc, curOpcode);
+          loadString(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
 
           // Storing to locals
@@ -184,10 +186,16 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case STLOC_1:
         case STLOC_2:
         case STLOC_3:
-          storeValueToLocal(frame, curOpcode - STLOC_0, topStack - 1);
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              topStack - 1,
+              curOpcode - STLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()));
           break;
         case STLOC_S:
-          storeValueToLocal(frame, bytecodeBuffer.getImmUByte(pc), topStack - 1);
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              topStack - 1,
+              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()));
           break;
 
           // Loading locals to top
@@ -195,13 +203,28 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case LDLOC_1:
         case LDLOC_2:
         case LDLOC_3:
-          loadLocalToTop(frame, curOpcode - LDLOC_0, topStack);
+          CILOSTAZOLFrame.copyStatic(
+              frame, curOpcode - LDLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()), topStack);
           break;
         case LDLOC_S:
-          loadLocalToTop(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()),
+              topStack);
           break;
         case LDLOCA_S:
-          loadLocalRefToTop(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack,
+              getMethod()
+                  .getContext()
+                  .getAllocator()
+                  .createStackReference(
+                      SymbolResolver.resolveReference(
+                          ReferenceSymbol.ReferenceType.Local, getMethod().getContext()),
+                      frame,
+                      bytecodeBuffer.getImmUByte(pc)
+                          + CILOSTAZOLFrame.isInstantiable(getMethod())));
           break;
 
           // Loading args to top
@@ -209,13 +232,30 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case LDARG_1:
         case LDARG_2:
         case LDARG_3:
-          loadArgToTop(frame, curOpcode - LDARG_0, topStack);
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + curOpcode - LDARG_0,
+              topStack);
           break;
         case LDARG_S:
-          loadArgToTop(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUByte(pc),
+              topStack);
           break;
         case LDARGA_S:
-          loadArgRefToTop(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack,
+              getMethod()
+                  .getContext()
+                  .getAllocator()
+                  .createStackReference(
+                      SymbolResolver.resolveReference(
+                          ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
+                      frame,
+                      bytecodeBuffer.getImmUByte(pc)
+                          + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
           break;
 
           // Loading fields
@@ -282,7 +322,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case BLE_UN:
         case BLT_UN:
         case BNE_UN:
-          if (binaryCompare(curOpcode, frame, topStack - 2, topStack - 1)) {
+          if (binaryCompare(
+              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc])) {
             // TODO: OSR support
             pc = nextpc + bytecodeBuffer.getImmInt(pc);
             topStack += BytecodeInstructions.getStackEffect(curOpcode);
@@ -301,7 +342,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case BLE_UN_S:
         case BLT_UN_S:
         case BNE_UN_S:
-          if (binaryCompare(curOpcode, frame, topStack - 2, topStack - 1)) {
+          if (binaryCompare(
+              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc])) {
             // TODO: OSR support
             pc = nextpc + bytecodeBuffer.getImmByte(pc);
             topStack += BytecodeInstructions.getStackEffect(curOpcode);
@@ -343,7 +385,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case CLT:
         case CGT_UN:
         case CLT_UN:
-          binaryCompareAndPutOnTop(curOpcode, frame, topStack - 2, topStack - 1);
+          binaryCompareAndPutOnTop(
+              curOpcode, frame, topStack - 2, topStack - 1, getMethod().getOpCodeTypes()[pc]);
           break;
 
         case BREAK:
@@ -370,29 +413,174 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           // Store indirect
         case STIND_I1:
+          storeIndirectByte(frame, topStack);
+          break;
         case STIND_I2:
+          storeIndirectShort(frame, topStack);
+          break;
         case STIND_I4:
+          storeIndirectInt(frame, topStack);
+          break;
         case STIND_I8:
+          storeIndirectLong(frame, topStack);
+          break;
         case STIND_I:
+          storeIndirectNative(frame, topStack);
+          break;
         case STIND_R4:
+          storeIndirectFloat(frame, topStack);
+          break;
         case STIND_R8:
+          storeIndirectDouble(frame, topStack);
+          break;
         case STIND_REF:
-          storeIndirect(frame, topStack - 1);
+          storeIndirectRef(frame, topStack);
           break;
 
           // Load indirect
         case LDIND_I1:
         case LDIND_U1:
+          loadIndirectByte(frame, topStack);
+          break;
         case LDIND_I2:
         case LDIND_U2:
+          loadIndirectShort(frame, topStack);
+          break;
         case LDIND_I4:
         case LDIND_U4:
+          loadIndirectInt(frame, topStack);
+          break;
         case LDIND_I8:
+          loadIndirectLong(frame, topStack);
+          break;
         case LDIND_I:
+          loadIndirectNative(frame, topStack);
+          break;
         case LDIND_R4:
+          loadIndirectFloat(frame, topStack);
+          break;
         case LDIND_R8:
+          loadIndirectDouble(frame, topStack);
+          break;
         case LDIND_REF:
-          loadIndirect(frame, topStack - 1);
+          loadIndirectRef(frame, topStack);
+          break;
+
+          // array
+        case NEWARR:
+          createArray(frame, bytecodeBuffer.getImmToken(pc), topStack - 1);
+          break;
+        case LDLEN:
+          getArrayLength(frame, topStack - 1);
+          break;
+
+        case LDELEM:
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack - 2,
+              (StaticObject) ((StaticObject) getJavaArrElem(frame, topStack - 1)).clone());
+          break;
+        case LDELEM_REF:
+          CILOSTAZOLFrame.putObject(
+              frame, topStack - 2, (StaticObject) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I, LDELEM_U4, LDELEM_I4:
+          CILOSTAZOLFrame.putInt32(frame, topStack - 2, (int) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I1, LDELEM_U1:
+          CILOSTAZOLFrame.putInt32(frame, topStack - 2, (byte) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I2, LDELEM_U2:
+          CILOSTAZOLFrame.putInt32(
+              frame, topStack - 2, (short) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_I8:
+          CILOSTAZOLFrame.putInt64(frame, topStack - 2, (long) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_R4:
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack - 2, (float) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEM_R8:
+          CILOSTAZOLFrame.putNativeFloat(
+              frame, topStack - 2, (double) getJavaArrElem(frame, topStack - 1));
+          break;
+        case LDELEMA:
+          CILOSTAZOLFrame.putObject(
+              frame,
+              topStack - 2,
+              getMethod()
+                  .getContext()
+                  .getAllocator()
+                  .createArrayElementReference(
+                      SymbolResolver.resolveReference(
+                          ReferenceSymbol.ReferenceType.ArrayElement, getMethod().getContext()),
+                      CILOSTAZOLFrame.popObject(frame, topStack - 2),
+                      CILOSTAZOLFrame.popInt32(frame, topStack - 1)));
+          break;
+
+        case STELEM:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popObject(frame, topStack - 1).clone());
+          break;
+        case STELEM_REF:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popObject(frame, topStack - 1));
+          break;
+        case STELEM_I, STELEM_I4:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+          break;
+        case STELEM_I1:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              (byte) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+          break;
+        case STELEM_I8:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popInt64(frame, topStack - 1));
+          break;
+        case STELEM_R4:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              (float) CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+          break;
+        case STELEM_R8:
+          Array.set(
+              getMethod()
+                  .getContext()
+                  .getArrayProperty()
+                  .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+              CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+              CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
           break;
 
         case CONV_I:
@@ -415,7 +603,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           break;
 
         case TRUFFLE_NODE:
-          topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame, taggedFrame);
+          topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
           break;
 
         default:
@@ -429,108 +617,559 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   // region Helpers
-  private void loadIndirect(VirtualFrame frame, int top) {
-    // TODO: Check types, do we need to distinguish types ?
-    var referenceType = (ReferenceSymbol) CILOSTAZOLFrame.getTaggedStack(taggedFrame, top);
-    assert referenceType.getStackTypeKind() == CILOSTAZOLFrame.StackType.Int;
-
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
-    int index = CILOSTAZOLFrame.popInt(frame, top);
-
-    index = updateByStackType(referenceType, index);
-    CILOSTAZOLFrame.copyStatic(frame, index, top);
-    CILOSTAZOLFrame.putTaggedStack(taggedFrame, top, referenceType.getUnderlyingTypeSymbol());
+  private void createArray(VirtualFrame frame, CLITablePtr token, int top) {
+    TypeSymbol elemType =
+        SymbolResolver.resolveType(
+            token,
+            getMethod().getTypeArguments(),
+            getMethod().getDefiningType().getTypeArguments(),
+            getMethod().getModule());
+    int num = CILOSTAZOLFrame.popInt32(frame, top);
+    var arrayType = SymbolResolver.resolveArray(elemType, 1, getMethod().getContext());
+    var object = getMethod().getContext().getArrayShape().getFactory().create(arrayType);
+    Object value =
+        switch (elemType.getSystemType()) {
+          case Boolean -> new boolean[num];
+          case Char -> new char[num];
+          case Int -> new int[num];
+          case Byte -> new byte[num];
+          case Short -> new short[num];
+          case Float -> new float[num];
+          case Long -> new long[num];
+          case Double -> new double[num];
+          case Void -> throw new InterpreterException();
+          case Object -> {
+            var res = new StaticObject[num];
+            Arrays.fill(res, StaticObject.NULL);
+            yield res;
+          }
+        };
+    getMethod().getContext().getArrayProperty().setObject(object, value);
+    CILOSTAZOLFrame.putObject(frame, top, object);
   }
 
-  private int updateByStackType(ReferenceSymbol referenceType, int index) {
-    if (referenceType instanceof ArgReferenceSymbol)
-      index += CILOSTAZOLFrame.getStartArgsOffset(getMethod());
-    return index;
+  private void getArrayLength(VirtualFrame frame, int top) {
+    StaticObject arr = CILOSTAZOLFrame.popObject(frame, top);
+    Object javaArr = getMethod().getContext().getArrayProperty().getObject(arr);
+    CILOSTAZOLFrame.putInt32(frame, top, Array.getLength(javaArr));
   }
 
-  private void storeIndirect(VirtualFrame frame, int top) {
-    // TODO: Check types
-    var referenceType = (ReferenceSymbol) CILOSTAZOLFrame.getTaggedStack(taggedFrame, top - 1);
-    int index = CILOSTAZOLFrame.getLocalInt(frame, top - 1);
-    index = updateByStackType(referenceType, index);
-    CILOSTAZOLFrame.copyStatic(frame, top, index);
-
-    CILOSTAZOLFrame.pop(frame, top, CILOSTAZOLFrame.popTaggedStack(taggedFrame, top));
-    CILOSTAZOLFrame.pop(frame, top - 1, CILOSTAZOLFrame.popTaggedStack(taggedFrame, top - 1));
+  private Object getJavaArrElem(VirtualFrame frame, int top) {
+    var idx = CILOSTAZOLFrame.popInt32(frame, top);
+    var arr = CILOSTAZOLFrame.popObject(frame, top - 1);
+    return Array.get(getMethod().getContext().getArrayProperty().getObject(arr), idx);
   }
 
-  private void loadValueOnTop(VirtualFrame frame, int top, int value) {
-    // We want to tag the stack by types in it
-    CILOSTAZOLFrame.putInt(frame, top, value);
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, SymbolResolver.getInt32(CILOSTAZOLContext.get(this)));
+  private void pop(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
+    switch (type) {
+      case Int32 -> CILOSTAZOLFrame.popInt32(frame, top - 1);
+      case Int64 -> CILOSTAZOLFrame.popInt64(frame, top - 1);
+      case Object -> CILOSTAZOLFrame.popObject(frame, top - 1);
+      case ManagedPointer -> CILOSTAZOLFrame.popObject(frame, top - 1);
+      case NativeInt -> CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+      case NativeFloat -> CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
+      default -> throw new InterpreterException();
+    }
   }
 
-  private void loadValueOnTop(VirtualFrame frame, int top, long value) {
-    // We want to tag the stack by types in it
-    CILOSTAZOLFrame.putLong(frame, top, value);
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, SymbolResolver.getInt64(CILOSTAZOLContext.get(this)));
+  private void loadString(VirtualFrame frame, int top, CLITablePtr token) {
+    CLIUSHeapPtr ptr = new CLIUSHeapPtr(token.getRowNo());
+    String value = ptr.readString(method.getModule().getDefiningFile().getUSHeap());
+    CILOSTAZOLFrame.putObject(
+        frame, top, getMethod().getContext().getAllocator().createString(value));
   }
 
-  private void loadValueOnTop(VirtualFrame frame, int top, double value) {
-    // We want to tag the stack by types in it
-    CILOSTAZOLFrame.putDouble(frame, top, value);
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, SymbolResolver.getDouble(CILOSTAZOLContext.get(this)));
+  private void loadIndirectByte(VirtualFrame frame, int top) {
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, CILOSTAZOLFrame.getLocalInt(refFrame, index));
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, refField.getByte(refObj));
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, (byte) Array.get(javaArr, index));
+      }
+    }
   }
 
-  private void loadValueOnTop(VirtualFrame frame, int top, float value) {
-    // We want to tag the stack by types in it
-    CILOSTAZOLFrame.putDouble(frame, top, value);
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, SymbolResolver.getSingle(CILOSTAZOLContext.get(this)));
+  private void loadIndirectShort(VirtualFrame frame, int top) {
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, CILOSTAZOLFrame.getLocalInt(refFrame, index));
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, refField.getShort(refObj));
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, (short) Array.get(javaArr, index));
+      }
+    }
   }
 
-  private void loadLocalToTop(VirtualFrame frame, int localIdx, int top) {
-    CILOSTAZOLFrame.copyStatic(frame, localIdx, top);
-    // Tag the top of the stack
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, CILOSTAZOLFrame.getTaggedStack(taggedFrame, localIdx));
+  private void loadIndirectInt(VirtualFrame frame, int top) {
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, CILOSTAZOLFrame.getLocalInt(refFrame, index));
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, refField.getInt(refObj));
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, (int) Array.get(javaArr, index));
+      }
+    }
   }
 
-  private void loadArgToTop(VirtualFrame frame, int argIdx, int top) {
-    int argSlot = CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + argIdx;
-    CILOSTAZOLFrame.copyStatic(frame, argSlot, top);
-    // Tag the top of the stack
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame, top, CILOSTAZOLFrame.getTaggedStack(taggedFrame, argSlot));
+  private void loadIndirectLong(VirtualFrame frame, int top) {
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putInt64(frame, top - 1, CILOSTAZOLFrame.getLocalLong(frame, index));
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        CILOSTAZOLFrame.putInt64(frame, top - 1, refField.getLong(refObj));
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        CILOSTAZOLFrame.putInt64(frame, top - 1, (long) Array.get(javaArr, index));
+      }
+    }
   }
 
-  private void loadLocalRefToTop(VirtualFrame frame, int localIdx, int top) {
-    CILOSTAZOLFrame.putInt(frame, top, localIdx);
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame,
-        top,
-        new LocalReferenceSymbol(CILOSTAZOLFrame.getTaggedStack(taggedFrame, localIdx)));
+  private void loadIndirectFloat(VirtualFrame frame, int top) {
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putNativeFloat(
+            frame, top - 1, CILOSTAZOLFrame.getLocalNativeFloat(refFrame, index));
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, refField.getFloat(refObj));
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, (float) Array.get(javaArr, index));
+      }
+    }
   }
 
-  private void loadArgRefToTop(VirtualFrame frame, int argIdx, int top) {
-    int argSlot = CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + argIdx;
-    CILOSTAZOLFrame.putInt(frame, top, argSlot);
-    CILOSTAZOLFrame.putTaggedStack(
-        taggedFrame,
-        top,
-        new ArgReferenceSymbol(CILOSTAZOLFrame.getTaggedStack(taggedFrame, argSlot)));
+  private void loadIndirectDouble(VirtualFrame frame, int top) {
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putNativeFloat(
+            frame, top - 1, CILOSTAZOLFrame.getLocalNativeFloat(refFrame, index));
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, refField.getDouble(refObj));
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, (double) Array.get(javaArr, index));
+      }
+    }
   }
 
-  private void loadNull(VirtualFrame frame, int top) {
-    // In this situation we don't know the type of null yet -> it will be determined later
-    CILOSTAZOLFrame.putObject(frame, top, StaticObject.NULL);
-    CILOSTAZOLFrame.putTaggedStack(taggedFrame, top, new NullSymbol());
+  private void loadIndirectRef(VirtualFrame frame, int top) {
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putObject(frame, top - 1, CILOSTAZOLFrame.getLocalObject(refFrame, index));
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        CILOSTAZOLFrame.putObject(frame, top - 1, (StaticObject) refField.getObject(refObj));
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        CILOSTAZOLFrame.putObject(frame, top - 1, (StaticObject) Array.get(javaArr, index));
+      }
+    }
   }
 
-  private void storeValueToLocal(VirtualFrame frame, int localIdx, int top) {
-    // Locals are already typed
-    // TODO: type checking
-    CILOSTAZOLFrame.copyStatic(frame, top, localIdx);
-    // pop taggedFrame
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
+  private void loadIndirectNative(VirtualFrame frame, int top) {
+    loadIndirectInt(frame, top);
+  }
+
+  private void storeIndirectByte(VirtualFrame frame, int top) {
+    var value = (byte) CILOSTAZOLFrame.popInt32(frame, top - 1);
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 2);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putInt32(refFrame, index, value);
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        refField.setByte(refObj, value);
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        Array.setByte(javaArr, index, value);
+      }
+    }
+  }
+
+  private void storeIndirectShort(VirtualFrame frame, int top) {
+    var value = (short) CILOSTAZOLFrame.popInt32(frame, top - 1);
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 2);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putInt32(refFrame, index, value);
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        refField.setShort(refObj, value);
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        Array.setShort(javaArr, index, value);
+      }
+    }
+  }
+
+  private void storeIndirectInt(VirtualFrame frame, int top) {
+    var value = CILOSTAZOLFrame.popInt32(frame, top - 1);
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 2);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putInt32(refFrame, index, value);
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        refField.setInt(refObj, value);
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        Array.setInt(javaArr, index, value);
+      }
+    }
+  }
+
+  private void storeIndirectLong(VirtualFrame frame, int top) {
+    var value = CILOSTAZOLFrame.popInt64(frame, top - 1);
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 2);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putInt64(refFrame, index, value);
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        refField.setLong(refObj, value);
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        Array.setLong(javaArr, index, value);
+      }
+    }
+  }
+
+  private void storeIndirectFloat(VirtualFrame frame, int top) {
+    var value = (float) CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 2);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putNativeFloat(refFrame, index, value);
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        refField.setFloat(refObj, value);
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        Array.setFloat(javaArr, index, value);
+      }
+    }
+  }
+
+  private void storeIndirectDouble(VirtualFrame frame, int top) {
+    var value = CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 2);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putNativeFloat(refFrame, index, value);
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        refField.setDouble(refObj, value);
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        Array.setDouble(javaArr, index, value);
+      }
+    }
+  }
+
+  private void storeIndirectRef(VirtualFrame frame, int top) {
+    var value = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 2);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame =
+            (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
+        CILOSTAZOLFrame.putObject(refFrame, index, value);
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject)
+                getMethod().getContext().getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty)
+                getMethod().getContext().getFieldReferenceFieldProperty().getObject(reference);
+        refField.setObject(refObj, value);
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject)
+                getMethod()
+                    .getContext()
+                    .getArrayElementReferenceArrayProperty()
+                    .getObject(reference);
+        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
+        Array.set(javaArr, index, value);
+      }
+    }
+  }
+
+  private void storeIndirectNative(VirtualFrame frame, int top) {
+    storeIndirectInt(frame, top);
   }
 
   private void duplicateSlot(VirtualFrame frame, int top) {
@@ -801,8 +1440,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private Object getReturnValue(VirtualFrame frame, int top) {
     if (getMethod().hasReturnValue()) {
       TypeSymbol retType = getMethod().getReturnType().getType();
-      CILOSTAZOLFrame.popTaggedStack(taggedFrame, top);
-      // TODO: type checking
       return CILOSTAZOLFrame.pop(frame, top, retType);
     }
     // return code 0;
@@ -834,6 +1471,17 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private int nodeizeOpToken(VirtualFrame frame, int top, CLITablePtr token, int pc, int opcode) {
     CompilerDirectives.transferToInterpreterAndInvalidate();
     final NodeizedNodeBase node;
+    if (opcode == CALL) {
+      var method =
+          SymbolResolver.resolveMethod(
+              token,
+              getMethod().getTypeArguments(),
+              getMethod().getDefiningType().getTypeArguments(),
+              getMethod().getModule());
+      node = getCheckedCALLNode(method.member, top);
+    } else {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      throw new InterpreterException();
 
     switch (opcode) {
       case LDSTR -> {
@@ -861,35 +1509,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         node = new NEWOBJNode(methodSymbol, top);
       }
       case CALL -> {
-        // if method is local
-        //        CILOSTAZOLContext.get(this).get(token);
-        switch (token.getTableId()) {
-          case CLITableConstants.CLI_TABLE_MEMBER_REF -> {
-            var method = getMethodSymbolFromMemberRef(top, token);
-            node = getCheckedCALLNode(method, top);
-          }
-          case CLITableConstants.CLI_TABLE_METHOD_DEF -> {
-            var method = getMethodSymbolFromMethodDef(top, token);
-            node = new CALLNode(method, top);
-          }
-          case CLI_TABLE_METHOD_SPEC -> {
-            var row =
-                method
-                    .getModule()
-                    .getDefiningFile()
-                    .getTableHeads()
-                    .getMethodSpecTableHead()
-                    .skip(token);
-            var instantiation =
-                row.getInstantiationHeapPtr()
-                    .read(this.getMethod().getModule().getDefiningFile().getBlobHeap());
-            throw new NotImplementedException();
-          }
-          default -> {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new InterpreterException();
-          }
-        }
+          var method =
+                  SymbolResolver.resolveMethod(
+                          token,
+                          getMethod().getTypeArguments(),
+                          getMethod().getDefiningType().getTypeArguments(),
+                          getMethod().getModule());
+          node = getCheckedCALLNode(method.member, top);
       }
       default -> {
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -907,31 +1533,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     bytecodeBuffer.patchBytecode(pc, patch);
 
     // execute the new node
-    return nodes[index].execute(frame, taggedFrame);
-  }
-
-  private MethodSymbol getMethodSymbolFromMethodDef(int top, CLITablePtr token) {
-    var row = TableRowUtils.getMethodDefRow(method.getModule(), token);
-    return method.getModule().getLocalMethod(row).getItem();
-  }
-
-  private MethodSymbol getMethodSymbolFromMemberRef(int top, CLITablePtr token) {
-    final NodeizedNodeBase node;
-    /* Can point to method or field ref
-    We can be sure that here we only have method refs */
-    var row = TableRowUtils.getMemberRefRow(method.getModule(), token);
-    var name = row.getNameHeapPtr().read(method.getModule().getDefiningFile().getStringHeap());
-    var klass = row.getKlassTablePtr();
-    var signature =
-        row.getSignatureHeapPtr().read(method.getModule().getDefiningFile().getBlobHeap());
-    var methodSignature = MethodDefSig.parse(new SignatureReader(signature));
-    if (klass.getTableId() == CLI_TABLE_TYPE_REF) {
-      var containingType = SymbolResolver.resolveType(klass, getMethod().getModule());
-      return findMatchingMethod(name, methodSignature, (NamedTypeSymbol) containingType);
-    } else {
-      CompilerDirectives.transferToInterpreter();
-      throw new InterpreterException();
-    }
+    return nodes[index].execute(frame);
   }
 
   private NodeizedNodeBase getCheckedCALLNode(MethodSymbol method, int top) {
@@ -946,43 +1548,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
 
     return new CALLNode(method, top);
-  }
-
-  private MethodSymbol findMatchingMethod(
-      String name, MethodDefSig methodSignature, NamedTypeSymbol definingType) {
-    var parameterTypes =
-        Arrays.stream(methodSignature.getParams())
-            .map(
-                x ->
-                    TypeSymbol.TypeSymbolFactory.create(
-                        x.getTypeSig(),
-                        new TypeSymbol[0],
-                        new TypeSymbol[0],
-                        this.method.getModule()))
-            .toArray(TypeSymbol[]::new);
-    var returnType =
-        TypeSymbol.TypeSymbolFactory.create(
-            methodSignature.getRetType().getTypeSig(),
-            new TypeSymbol[0],
-            new TypeSymbol[0],
-            this.method.getModule());
-    var matchingMethods =
-        Arrays.stream(definingType.getMethods())
-            .filter(
-                type ->
-                    type.getName().equals(name)
-                        && type.getReturnType().getType().equals(returnType)
-                        && Arrays.equals(
-                            Arrays.stream(type.getParameters())
-                                .map(ParameterSymbol::getType)
-                                .toArray(),
-                            parameterTypes))
-            .toArray(MethodSymbol[]::new);
-
-    // There must be a unique method
-    assert matchingMethods.length == 1;
-
-    return matchingMethods[0];
   }
 
   private int addNode(NodeizedNodeBase node) {
@@ -1070,12 +1635,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
    */
   private boolean shouldBranch(int opcode, VirtualFrame frame, int slot) {
     boolean value;
-    if (taggedFrame[slot].getStackTypeKind() == CILOSTAZOLFrame.StackType.Object) {
+    if (frame.isObject(slot)) {
       value = CILOSTAZOLFrame.popObject(frame, slot) != StaticObject.NULL;
     } else {
-      value = CILOSTAZOLFrame.popInt(frame, slot) != 0;
+      value = CILOSTAZOLFrame.popInt32(frame, slot) != 0;
     }
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot);
 
     if (opcode == BRFALSE || opcode == BRFALSE_S) {
       value = !value;
@@ -1088,9 +1652,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
    * Do a binary comparison of values on the evaluation stack and put the result on the evaluation
    * stack.
    */
-  private void binaryCompareAndPutOnTop(int opcode, VirtualFrame frame, int slot1, int slot2) {
-    boolean result = binaryCompare(opcode, frame, slot1, slot2);
-    loadValueOnTop(frame, slot1, result ? 1 : 0);
+  private void binaryCompareAndPutOnTop(
+      int opcode, VirtualFrame frame, int slot1, int slot2, StaticOpCodeAnalyser.OpCodeType type) {
+    boolean result = binaryCompare(opcode, frame, slot1, slot2, type);
+    CILOSTAZOLFrame.putInt32(frame, slot1, result ? 1 : 0);
   }
 
   /**
@@ -1105,40 +1670,37 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
    *
    * @return the comparison result as a boolean
    */
-  private boolean binaryCompare(int opcode, VirtualFrame frame, int slot1, int slot2) {
+  private boolean binaryCompare(
+      int opcode, VirtualFrame frame, int slot1, int slot2, StaticOpCodeAnalyser.OpCodeType type) {
     assert slot1 < slot2;
-    var slot1Type = CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot1).getStackTypeKind();
-    var slot2Type = CILOSTAZOLFrame.popTaggedStack(taggedFrame, slot2).getStackTypeKind();
 
-    if (slot1Type == CILOSTAZOLFrame.StackType.Int && slot2Type == CILOSTAZOLFrame.StackType.Int) {
-      long op1 = CILOSTAZOLFrame.popInt(frame, slot1);
-      long op2 = CILOSTAZOLFrame.popInt(frame, slot2);
+    if (type == StaticOpCodeAnalyser.OpCodeType.Int32
+        || type == StaticOpCodeAnalyser.OpCodeType.NativeInt) {
+      long op1 = CILOSTAZOLFrame.popInt32(frame, slot1);
+      long op2 = CILOSTAZOLFrame.popInt32(frame, slot2);
       return binaryCompareInt32(opcode, op1, op2);
     }
 
-    if (slot1Type == CILOSTAZOLFrame.StackType.Long
-        && slot2Type == CILOSTAZOLFrame.StackType.Long) {
-      long op1 = CILOSTAZOLFrame.popLong(frame, slot1);
-      long op2 = CILOSTAZOLFrame.popLong(frame, slot2);
+    if (type == StaticOpCodeAnalyser.OpCodeType.Int64) {
+      long op1 = CILOSTAZOLFrame.popInt64(frame, slot1);
+      long op2 = CILOSTAZOLFrame.popInt64(frame, slot2);
       return binaryCompareInt64(opcode, op1, op2);
     }
 
-    if (slot1Type == CILOSTAZOLFrame.StackType.Double
-        && slot2Type == CILOSTAZOLFrame.StackType.Double) {
-      double op1 = CILOSTAZOLFrame.popDouble(frame, slot1);
-      double op2 = CILOSTAZOLFrame.popDouble(frame, slot2);
+    if (type == StaticOpCodeAnalyser.OpCodeType.NativeFloat) {
+      double op1 = CILOSTAZOLFrame.popNativeFloat(frame, slot1);
+      double op2 = CILOSTAZOLFrame.popNativeFloat(frame, slot2);
       return binaryCompareDouble(opcode, op1, op2);
     }
 
-    if (slot1Type == CILOSTAZOLFrame.StackType.Object
-        || slot2Type == CILOSTAZOLFrame.StackType.Object) {
+    if (type == StaticOpCodeAnalyser.OpCodeType.Object) {
       var op1 = CILOSTAZOLFrame.popObject(frame, slot1);
       var op2 = CILOSTAZOLFrame.popObject(frame, slot2);
       return binaryCompareByReference(opcode, frame, op1, op2);
     }
 
     CompilerDirectives.transferToInterpreterAndInvalidate();
-    throw new InterpreterException("Invalid types for comparison: " + slot1Type + " " + slot2Type);
+    throw new InterpreterException("Invalid types for comparison: " + type.name());
   }
 
   private boolean binaryCompareByReference(int opcode, VirtualFrame frame, Object op1, Object op2) {

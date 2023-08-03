@@ -11,7 +11,7 @@ import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 
 public final class SymbolResolver {
-  // region Primitive types and String
+  // region builtin types
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Boolean = null;
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Byte = null;
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol SByte = null;
@@ -28,6 +28,7 @@ public final class SymbolResolver {
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Void = null;
 
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol String = null;
+  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Array = null;
 
   public static NamedTypeSymbol getBoolean(CILOSTAZOLContext ctx) {
     if (Boolean == null) {
@@ -164,6 +165,14 @@ public final class SymbolResolver {
     return String;
   }
 
+  public static NamedTypeSymbol getArray(CILOSTAZOLContext ctx) {
+    if (Array == null) {
+      Array =
+          (NamedTypeSymbol)
+              resolveType("String", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+    }
+    return Array;
+  }
   // endregion
 
   // region assembly resolution - CLI file
@@ -274,18 +283,22 @@ public final class SymbolResolver {
       case TypeSig.ELEMENT_TYPE_OBJECT, TypeSig.ELEMENT_TYPE_STRING -> getObject(
           module.getContext());
       case TypeSig.ELEMENT_TYPE_VOID -> getVoid(module.getContext());
-      case TypeSig.ELEMENT_TYPE_ARRAY -> ArrayTypeSymbol.ArrayTypeSymbolFactory
-          .create( // TODO: cache also this type of array
+      case TypeSig.ELEMENT_TYPE_ARRAY -> {
+        var shapeSig = signature.getArrayShapeSig();
+        if (shapeSig.lengths().length == 0 && shapeSig.lowerBounds().length == 0)
+          yield resolveArray(
               resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
-              signature.getArrayShapeSig(),
+              shapeSig.rank(),
+              module.getContext());
+        else
+          yield ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
+              resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
+              shapeSig,
               module);
-      case TypeSig.ELEMENT_TYPE_SZARRAY -> resolveType(
-          (NamedTypeSymbol)
-              resolveType(
-                  "Array", "System", AssemblyIdentity.SystemRuntimeLib700(), module.getContext()),
-          new TypeSymbol[] {
-            resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module)
-          },
+      }
+      case TypeSig.ELEMENT_TYPE_SZARRAY -> resolveArray(
+          resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
+          1,
           module.getContext());
       default -> null;
     };
@@ -306,6 +319,10 @@ public final class SymbolResolver {
   // endregion
 
   // region type resolution - other
+  public static ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank, CILOSTAZOLContext ctx) {
+    return ctx.resolveArray(elemType, rank);
+  }
+
   public static TypeSymbol resolveType(
       String name, String namespace, AssemblyIdentity assembly, CILOSTAZOLContext ctx) {
     return ctx.resolveType(name, namespace, assembly);
@@ -375,6 +392,10 @@ public final class SymbolResolver {
   // endregion
 
   // region method resolution - CLI file
+  public static ClassMember<MethodSymbol> resolveMethod(CLITablePtr row, ModuleSymbol module) {
+    return resolveMethod(row, new TypeSymbol[0], new TypeSymbol[0], module);
+  }
+
   public static ClassMember<MethodSymbol> resolveMethod(
       CLITablePtr row,
       TypeSymbol[] methodTypeArgs,
@@ -399,8 +420,7 @@ public final class SymbolResolver {
   public static ClassMember<MethodSymbol> resolveMethod(
       CLIMethodDefTableRow row, ModuleSymbol module) {
     var idx = module.getLocalMethod(row);
-    return new ClassMember<MethodSymbol>(
-        idx.getSymbol(), idx.getSymbol().getMethods()[idx.getIndex()]);
+    return new ClassMember<MethodSymbol>(idx.getSymbol(), idx.getItem());
   }
 
   public static ClassMember<MethodSymbol> resolveMethod(
@@ -499,6 +519,13 @@ public final class SymbolResolver {
 
   private static boolean isCompatible(TypeSymbol type1, TypeSymbol type2) {
     return type1.isAssignableFrom(type2);
+  }
+  // endregion
+
+  // region references
+  public static ReferenceSymbol resolveReference(
+      ReferenceSymbol.ReferenceType type, CILOSTAZOLContext ctx) {
+    return ctx.resolveReference(type);
   }
   // endregion
 }

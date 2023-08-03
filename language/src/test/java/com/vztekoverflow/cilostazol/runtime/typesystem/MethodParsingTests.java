@@ -6,7 +6,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import java.util.Arrays;
 import org.junit.Assert;
 
-public class MethodParsingTests extends TestBase {
+public class MethodParsingTests extends TypeSystemTestBase {
   public void testMethodParsingGeneral() {
     final String projectName = "MethodParsingGeneral";
     final CILOSTAZOLContext ctx = init(getDllPath(projectName));

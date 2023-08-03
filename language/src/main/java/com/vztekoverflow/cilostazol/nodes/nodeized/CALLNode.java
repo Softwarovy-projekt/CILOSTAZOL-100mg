@@ -5,7 +5,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import org.jetbrains.annotations.NotNull;
 
 public final class CALLNode extends NodeizedNodeBase {
@@ -23,34 +22,44 @@ public final class CALLNode extends NodeizedNodeBase {
   }
 
   @Override
-  public int execute(VirtualFrame frame, TypeSymbol[] taggedFrame) {
-    Object[] args = getMethodArgsFromStack(frame, taggedFrame);
+  public int execute(VirtualFrame frame) {
+    Object[] args = getMethodArgsFromStack(frame);
     Object returnValue = indirectCallNode.call(method.getNode().getCallTarget(), args);
+
+    clearArgsFromStack(frame);
 
     if (method.hasReturnValue()) {
       CILOSTAZOLFrame.put(frame, returnValue, returnStackTop, method.getReturnType().getType());
-      CILOSTAZOLFrame.putTaggedStack(taggedFrame, returnStackTop, method.getReturnType().getType());
     }
 
     // +1 for return value
     return returnStackTop + 1;
   }
 
+  @ExplodeLoop
+  private void clearArgsFromStack(VirtualFrame frame) {
+    // Clear the stack
+    var topStack = this.topStack - 1;
+    for (var arg : method.getParameters()) {
+      CILOSTAZOLFrame.pop(frame, topStack, arg.getType());
+      topStack--;
+    }
+  }
+
   @NotNull
   @ExplodeLoop
-  private Object[] getMethodArgsFromStack(VirtualFrame frame, TypeSymbol[] taggedFrame) {
+  private Object[] getMethodArgsFromStack(VirtualFrame frame) {
     final var argTypes = method.getParameters();
     final var instantiableOffset = CILOSTAZOLFrame.isInstantiable(method);
     final Object[] args = new Object[argTypes.length + instantiableOffset];
     for (int i = instantiableOffset; i < args.length; i++) {
       final var idx = topStack - args.length + i;
-      CILOSTAZOLFrame.popTaggedStack(taggedFrame, idx);
       args[i] = CILOSTAZOLFrame.pop(frame, idx, argTypes[i - instantiableOffset].getType());
     }
 
     if (instantiableOffset > 0) {
       final var idx = topStack - args.length;
-      args[0] = CILOSTAZOLFrame.popObjectFromPossibleReference(frame, taggedFrame, method, idx);
+      args[0] = CILOSTAZOLFrame.popObjectFromPossibleReference(frame, method, idx);
     }
 
     return args;

@@ -7,7 +7,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import org.jetbrains.annotations.NotNull;
@@ -29,20 +28,14 @@ public class PRINTNode extends NodeizedNodeBase {
   }
 
   @Override
-  public int execute(VirtualFrame frame, TypeSymbol[] taggedFrame) {
+  public int execute(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(this).getEnv();
-    assert taggedFrame[argumentTop]
-                instanceof com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol namedType
-            && namedType.getName().equals("String")
-            && namedType.getNamespace().equals("System")
-        : "Only support for Console.WriteLine(String)";
 
     StringBuilder result = getStringFromFrame(frame);
     print(env.out(), result.toString());
 
     //    var type = taggedFrame[argumentTop];
     //    CILOSTAZOLFrame.pop(frame, originalTop, type);
-    CILOSTAZOLFrame.popTaggedStack(taggedFrame, argumentTop);
     // for eating an argument and not returning anything
     return originalTop - 1;
   }

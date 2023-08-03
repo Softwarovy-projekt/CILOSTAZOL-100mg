@@ -4,7 +4,7 @@ import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 
-public class SubstitutionTest extends TestBase {
+public class SubstitutionTest extends TypeSystemTestBase {
   public void testSubTypeParameter() {
     final String projectName = "SubstitutionTest";
     final CILOSTAZOLContext ctx = init(getDllPath(projectName));

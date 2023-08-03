@@ -6,25 +6,22 @@ import java.util.Objects;
 public enum SystemType {
   Boolean,
   Char,
+  Byte,
   Int,
   Short,
   Float,
   Long,
   Double,
   Void,
-  Object,
-  /**
-   * <b><i>NOT A REAL TYPE</i></b><br>
-   * This one is purely for stack sanity purposes Used for clearing the stack after a call
-   */
-  None;
+  Object;
 
   public static SystemType getTypeKind(String name, String namespace, AssemblyIdentity assembly) {
     if (AssemblyIdentity.SystemPrivateCoreLib700().equalsVersionAgnostic(assembly)
         && Objects.equals(namespace, "System")) {
       return switch (name) {
         case "Boolean" -> Boolean;
-        case "Byte", "SByte", "Char" -> Char;
+        case "Byte", "SByte" -> Byte;
+        case "Char" -> Char;
         case "Int16", "UInt16" -> Short;
         case "Int32", "UInt32" -> Int;
         case "Double" -> Double;
