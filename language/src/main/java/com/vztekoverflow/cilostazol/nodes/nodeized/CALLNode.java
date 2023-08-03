@@ -26,24 +26,12 @@ public final class CALLNode extends NodeizedNodeBase {
     Object[] args = getMethodArgsFromStack(frame);
     Object returnValue = indirectCallNode.call(method.getNode().getCallTarget(), args);
 
-    clearArgsFromStack(frame);
-
     if (method.hasReturnValue()) {
       CILOSTAZOLFrame.put(frame, returnValue, returnStackTop, method.getReturnType().getType());
     }
 
     // +1 for return value
     return returnStackTop + 1;
-  }
-
-  @ExplodeLoop
-  private void clearArgsFromStack(VirtualFrame frame) {
-    // Clear the stack
-    var topStack = this.topStack - 1;
-    for (var arg : method.getParameters()) {
-      CILOSTAZOLFrame.pop(frame, topStack, arg.getType());
-      topStack--;
-    }
   }
 
   @NotNull
