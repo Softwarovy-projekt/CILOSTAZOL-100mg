@@ -266,4 +266,147 @@ public class ObjectManipulationTests extends TestBase {
 
     assertEquals(42, result.exitCode());
   }
+
+  @Test
+  public void staticFieldAccessInt64() {
+    var result =
+        runTestFromCode(
+            """
+                    TestStruct.a = 42L;
+                    if (TestStruct.a == 42L)
+                        return 42;
+
+                    return 0;
+
+                    public struct TestStruct
+                    {
+                        public static long a;
+                    }
+                    """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void staticFieldAccessFloat32() {
+    var result =
+        runTestFromCode(
+            """
+                        TestStruct.a = 42;
+                        if (TestStruct.a == 42)
+                            return 42;
+
+                        return 0;
+
+                        public struct TestStruct
+                        {
+                            public static float a;
+                        }
+                        """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void staticFieldAccessFloat64() {
+    var result =
+        runTestFromCode(
+            """
+                        TestStruct.a = 42;
+                        if (TestStruct.a == 42)
+                            return 42;
+
+                        return 0;
+
+                        public struct TestStruct
+                        {
+                            public static double a;
+                        }
+                        """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void staticFieldAccessChar() {
+    var result =
+        runTestFromCode(
+            """
+                    TestStruct.a = 'a';
+                    return TestStruct.a;
+
+                    public struct TestStruct
+                    {
+                        public static char a;
+                    }
+                    """);
+
+    assertEquals('a', result.exitCode());
+  }
+
+  @Test
+  public void staticFieldAccessBoolean() {
+    var result =
+        runTestFromCode(
+            """
+                        TestStruct.a = true;
+                        if (TestStruct.a)
+                            return 1;
+
+                        return 0;
+
+                        public struct TestStruct
+                        {
+                            public static bool a;
+                        }
+                        """);
+
+    assertEquals(1, result.exitCode());
+  }
+
+  @Test
+  public void staticFieldAccessObject() {
+    var result =
+        runTestFromCode(
+            """
+                        TestStruct.a = default;
+                        if (TestStruct.a == default(object))
+                            return 1;
+
+                        return 0;
+
+                        public struct TestStruct
+                        {
+                            public static object a;
+                        }
+                        """);
+
+    assertEquals(1, result.exitCode());
+  }
+
+  @Test
+  public void isInstance() {
+    var result =
+        runTestFromCode(
+            """
+                    TestClass obj = new TestClass();
+                    if (obj.b is int)
+                        return 42;
+
+                    return 41;
+
+                    public class TestClass
+                    {
+                        public int a;
+                        public object b;
+
+                        public TestClass()
+                        {
+                            b = 42;
+                        }
+                    }
+                    """);
+
+    assertEquals(42, result.exitCode());
+  }
 }

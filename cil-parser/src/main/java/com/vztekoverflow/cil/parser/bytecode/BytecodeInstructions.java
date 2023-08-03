@@ -360,8 +360,8 @@ public class BytecodeInstructions {
 
     def(STFLD, "stfld", "otttt", -2);
     def(LDFLD, "ldfld", "otttt", 0);
-    def(LDSFLD, "ldsfld", "otttt", 0);
-    def(STSFLD, "stsfld", "otttt", 0);
+    def(LDSFLD, "ldsfld", "otttt", 1);
+    def(STSFLD, "stsfld", "otttt", -1);
     def(LDFLDA, "ldflda", "otttt", 0);
     def(LDSFLDA, "ldsfdla", "otttt", 0);
 
@@ -464,6 +464,7 @@ public class BytecodeInstructions {
     def(BOX, "box", "otttt", 0);
     def(UNBOX, "unbox", "otttt", 0);
     def(UNBOX_ANY, "unbox.any", "otttt", 0);
+    def(ISINST, "isinst", "otttt", 0);
 
     def(CONV_I1, "conv.i1", "o", 0);
     def(CONV_I2, "conv.i2", "o", 0);

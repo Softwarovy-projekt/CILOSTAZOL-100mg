@@ -48,6 +48,9 @@ public class NamedTypeSymbol extends TypeSymbol {
   protected NamedTypeSymbol[] lazyInterfaces;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
+  protected NamedTypeSymbol[] lazySuperClasses;
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected MethodSymbol[] lazyMethods;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
@@ -59,12 +62,16 @@ public class NamedTypeSymbol extends TypeSymbol {
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected FieldSymbol[] lazyFields;
 
+  @CompilerDirectives.CompilationFinal private boolean isValueType = false;
+
   // region SOM - fields
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> instanceShape;
 
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> staticShape;
+
+  @CompilerDirectives.CompilationFinal private StaticObject staticInstance;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private StaticField[] instanceFields;
@@ -126,9 +133,22 @@ public class NamedTypeSymbol extends TypeSymbol {
     if (lazyDirectBaseClass == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyDirectBaseClass = LazyFactory.createDirectBaseClass(this);
+      isValueType =
+          lazyDirectBaseClass != null
+              && lazyDirectBaseClass.getNamespace().equals("System")
+              && lazyDirectBaseClass.getName().equals("ValueType");
     }
 
     return lazyDirectBaseClass;
+  }
+
+  public NamedTypeSymbol[] getSuperClasses() {
+    if (lazySuperClasses == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      lazySuperClasses = LazyFactory.createSuperClasses(this);
+    }
+
+    return lazySuperClasses;
   }
 
   public NamedTypeSymbol[] getInterfaces() {
@@ -138,6 +158,15 @@ public class NamedTypeSymbol extends TypeSymbol {
     }
 
     return lazyInterfaces;
+  }
+
+  protected int getHierarchyDepth() {
+    if (lazySuperClasses == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      lazySuperClasses = LazyFactory.createSuperClasses(this);
+    }
+
+    return lazySuperClasses.length;
   }
 
   public MethodSymbol[] getMethods() {
@@ -188,16 +217,30 @@ public class NamedTypeSymbol extends TypeSymbol {
     return lazyFields;
   }
 
-  public StaticField getStaticField(FieldSymbol field) {
+  public StaticField getAssignableInstanceField(FieldSymbol field) {
     if (instanceShape == null) {
       createShapes();
     }
 
-    if (field.isStatic()) {
-      return staticFields[staticFieldIndexMapping.get(field)];
+    assert !field.isStatic();
+    return instanceFields[instanceFieldIndexMapping.get(field)];
+  }
+
+  public StaticField getAssignableStaticField(FieldSymbol field) {
+    if (staticShape == null) {
+      createShapes();
     }
 
-    return instanceFields[instanceFieldIndexMapping.get(field)];
+    assert field.isStatic();
+    return staticFields[staticFieldIndexMapping.get(field)];
+  }
+
+  public StaticObject getStaticInstance() {
+    if (staticInstance == null) {
+      createShapes();
+    }
+
+    return staticInstance;
   }
 
   public ConstructedNamedTypeSymbol construct(TypeSymbol[] typeArguments) {
@@ -322,6 +365,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     staticShape = layout.staticShape;
     instanceFields = layout.instanceFields;
     staticFields = layout.staticFields;
+    staticInstance = staticShape.getFactory().create(this);
   }
 
   public void safelyInitialize() {
@@ -329,9 +373,55 @@ public class NamedTypeSymbol extends TypeSymbol {
   }
   // endregion
 
+  public boolean isValueType() {
+    if (lazyDirectBaseClass == null) {
+      getDirectBaseClass();
+    }
+
+    return isValueType;
+  }
+
   @Override
   public String toString() {
     return this.namespace + "/" + this.name;
+  }
+
+  // region Flags
+  public enum NamedTypeSymbolLayout {
+    Auto,
+    Sequential,
+    Explicit;
+    public static final int MASK = 0x18;
+
+    public static NamedTypeSymbolLayout fromFlags(int flags) {
+      return NamedTypeSymbolLayout.values()[(flags & MASK) >> 3];
+    }
+  }
+
+  public enum NamedTypeSymbolSemantics {
+    Class,
+    Interface;
+    public static final int MASK = 0x20;
+
+    public static NamedTypeSymbolSemantics fromFlags(int flags) {
+      return NamedTypeSymbolSemantics.values()[(flags & MASK) >> 5];
+    }
+  }
+
+  public enum NamedTypeSymbolVisibility {
+    NotPublic,
+    Public,
+    NestedPublic,
+    NestedPrivate,
+    NestedFamily,
+    NestedAssembly,
+    NestedFamANDAssem,
+    NestedFamORAssem;
+    public static final int MASK = 0x7;
+
+    public static NamedTypeSymbolVisibility fromFlags(int flags) {
+      return NamedTypeSymbolVisibility.values()[flags & MASK];
+    }
   }
 
   private static class LazyFactory {
@@ -401,9 +491,7 @@ public class NamedTypeSymbol extends TypeSymbol {
         CLIInterfaceImplTableRow row, ModuleSymbol module, NamedTypeSymbol symbol) {
       CLITablePtr tablePtr = row.getInterfaceTablePtr();
       assert tablePtr != null; // Should never should be
-      return (NamedTypeSymbol)
-          TypeSymbol.TypeSymbolFactory.create(
-              tablePtr, new TypeSymbol[0], symbol.getTypeArguments(), module);
+      return (NamedTypeSymbol) SymbolResolver.resolveType(tablePtr, module);
     }
 
     public static NamedTypeSymbol createDirectBaseClass(NamedTypeSymbol namedTypeSymbol) {
@@ -420,11 +508,21 @@ public class NamedTypeSymbol extends TypeSymbol {
       return baseClassPtr.isEmpty()
           ? null
           : (NamedTypeSymbol)
-              TypeSymbol.TypeSymbolFactory.create(
-                  baseClassPtr,
-                  new TypeSymbol[0],
-                  namedTypeSymbol.getTypeArguments(),
-                  namedTypeSymbol.definingModule);
+              SymbolResolver.resolveType(baseClassPtr, namedTypeSymbol.definingModule);
+    }
+
+    public static NamedTypeSymbol[] createSuperClasses(NamedTypeSymbol namedTypeSymbol) {
+      NamedTypeSymbol baseClass = namedTypeSymbol.getDirectBaseClass();
+      if (baseClass == null) {
+        return new NamedTypeSymbol[0];
+      }
+
+      NamedTypeSymbol[] baseTypeSuperClasses = baseClass.getSuperClasses();
+      NamedTypeSymbol[] result = new NamedTypeSymbol[baseTypeSuperClasses.length + 1];
+      result[baseTypeSuperClasses.length] = baseClass;
+      System.arraycopy(baseTypeSuperClasses, 0, result, 0, baseTypeSuperClasses.length);
+
+      return result;
     }
 
     public static MethodSymbol[] createMethodsImpl(NamedTypeSymbol symbol) {
@@ -578,44 +676,6 @@ public class NamedTypeSymbol extends TypeSymbol {
       } else {
         return null;
       }
-    }
-  }
-
-  // region Flags
-  public enum NamedTypeSymbolLayout {
-    Auto,
-    Sequential,
-    Explicit;
-    public static final int MASK = 0x18;
-
-    public static NamedTypeSymbolLayout fromFlags(int flags) {
-      return NamedTypeSymbolLayout.values()[(flags & MASK) >> 3];
-    }
-  }
-
-  public enum NamedTypeSymbolSemantics {
-    Class,
-    Interface;
-    public static final int MASK = 0x20;
-
-    public static NamedTypeSymbolSemantics fromFlags(int flags) {
-      return NamedTypeSymbolSemantics.values()[(flags & MASK) >> 5];
-    }
-  }
-
-  public enum NamedTypeSymbolVisibility {
-    NotPublic,
-    Public,
-    NestedPublic,
-    NestedPrivate,
-    NestedFamily,
-    NestedAssembly,
-    NestedFamANDAssem,
-    NestedFamORAssem;
-    public static final int MASK = 0x7;
-
-    public static NamedTypeSymbolVisibility fromFlags(int flags) {
-      return NamedTypeSymbolVisibility.values()[flags & MASK];
     }
   }
   // endregion
