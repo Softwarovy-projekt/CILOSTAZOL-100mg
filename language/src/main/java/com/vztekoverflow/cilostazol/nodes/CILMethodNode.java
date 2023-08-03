@@ -1,7 +1,6 @@
 package com.vztekoverflow.cilostazol.nodes;
 
 import static com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions.*;
-import static com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants.*;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -505,6 +504,50 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
           break;
 
+          //  arithmetics
+        case ADD:
+        case DIV:
+        case MUL:
+        case REM:
+        case SUB:
+          doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, false);
+        break;
+
+        case OR:
+        case AND:
+        case XOR:
+          doIntegerBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
+        break;
+
+        case NEG:
+          doNeg(frame, topStack, getMethod().getOpCodeTypes()[pc]);
+          break;
+        case NOT:
+          doNot(frame, topStack, getMethod().getOpCodeTypes()[pc]);
+          break;
+
+        case SHL:
+        case SHR:
+        case SHR_UN:
+          doShiftBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
+          break;
+
+        case ADD_OVF:
+        case MUL_OVF:
+        case SUB_OVF:
+          doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], true, false);
+          break;
+        case ADD_OVF_UN:
+        case SUB_OVF_UN:
+        case MUL_OVF_UN:
+          doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], true, true);
+          break;
+
+        case DIV_UN:
+        case REM_UN:
+          doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, true);
+          break;
+
         case TRUFFLE_NODE:
           topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
           break;
@@ -518,6 +561,278 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       pc = nextpc;
     }
   }
+
+  //region arithmetics
+  private int doNumericBinary(int op1, int op2, int opcode, boolean ovfCheck, boolean unsigned)
+  {
+    return switch(opcode)
+            {
+              case ADD:
+                if (ovfCheck)
+                  yield Math.addExact(op1, op2);
+                else
+                  yield op1 + op2;
+              case SUB:
+                yield op1 - op2;
+              case MUL:
+                if (ovfCheck)
+                  yield Math.multiplyExact(op1, op2);
+                else
+                  yield op1 * op2;
+              case DIV:
+                if (unsigned)
+                  yield Integer.divideUnsigned(op1, op2);
+                else
+                  yield op1 / op2;
+              case REM:
+                if (unsigned)
+                  yield Integer.remainderUnsigned(op1, op2);
+                else
+                  yield op1 % op2;
+              default:
+                throw new InterpreterException();
+            };
+  }
+
+  private long doNumericBinary(long op1, long op2, int opcode, boolean ovfCheck, boolean unsigned)
+  {
+    return switch(opcode)
+            {
+              case ADD:
+                if (ovfCheck)
+                  yield Math.addExact(op1, op2);
+                else
+                  yield op1 + op2;
+              case SUB:
+                yield op1 - op2;
+              case MUL:
+                if (ovfCheck)
+                  yield Math.multiplyExact(op1, op2);
+                else
+                  yield op1 * op2;
+              case DIV:
+                if (unsigned)
+                  yield Long.divideUnsigned(op1, op2);
+                else
+                  yield op1 / op2;
+              case REM:
+                if (unsigned)
+                  yield Long.divideUnsigned(op1, op2);
+                else
+                  yield op1 % op2;
+              default:
+                throw new InterpreterException();
+            };
+  }
+
+  private double doNumericBinary(double op1, double op2, int opcode, boolean ovfCheck)
+  {
+    return switch(opcode)
+            {
+              case ADD:
+                var result = op1 + op2;
+                if (ovfCheck && Double.isInfinite(result))
+                  throw new ArithmeticException();
+                yield result;
+              case DIV:
+                yield op1 / op2;
+              case MUL:
+                result = op1 * op2;
+                if (ovfCheck && Double.isInfinite(result))
+                  throw new ArithmeticException();
+                yield result;
+              case REM:
+                yield op1 % op2;
+              case SUB:
+                yield op1 - op2;
+              default:
+                throw new InterpreterException();
+            };
+  }
+
+  private int doIntegerBinary(int op1, int op2, int opcode)
+  {
+    return switch(opcode)
+            {
+              case AND:
+                yield op1 & op2;
+              case OR:
+                yield op1 | op2;
+              case XOR:
+                yield op1 ^ op2;
+              default:
+                throw new InterpreterException();
+            };
+  }
+
+  private long doIntegerBinary(long op1, long op2, int opcode)
+  {
+    return switch(opcode)
+            {
+              case AND:
+                yield op1 & op2;
+              case OR:
+                yield op1 | op2;
+              case XOR:
+                yield op1 ^ op2;
+              default:
+                throw new InterpreterException();
+            };
+  }
+  private void doIntegerBinary(VirtualFrame frame, int top, int opcode, StaticOpCodeAnalyser.OpCodeType type)
+  {
+    switch (type) {
+      case Int32 -> {
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        CILOSTAZOLFrame.putInt32(frame, top - 2, doIntegerBinary(op1, op2, opcode));
+      }
+      case Int64 -> {
+        final var op1 = CILOSTAZOLFrame.popInt64(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
+        CILOSTAZOLFrame.putInt64(frame, top - 2, doIntegerBinary(op1, op2, opcode));
+      }
+      case NativeInt -> {
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doIntegerBinary(op1, op2, opcode));
+      }
+      case Int32_NativeInt -> {
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doIntegerBinary(op1, op2, opcode));
+      }
+      case NativeInt_Int32 -> {
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doIntegerBinary(op1, op1, opcode));
+      }
+      default -> throw new InterpreterException();
+    }
+  }
+
+  private void doNumericBinary(
+          VirtualFrame frame, int top, int opcode, StaticOpCodeAnalyser.OpCodeType type, boolean ovfCheck, boolean unsigned) {
+    switch (type) {
+      case Int32 -> {
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        CILOSTAZOLFrame.putInt32(frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+      }
+      case Int64 -> {
+        final var op1 = CILOSTAZOLFrame.popInt64(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
+        CILOSTAZOLFrame.putInt64(frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+      }
+      case NativeInt -> {
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+      }
+      case NativeFloat -> {
+        if (unsigned)
+          throw new InterpreterException();
+        final var op1 = CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeFloat(frame, top - 2);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck));
+      }
+      case Int32_NativeInt -> {
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+      }
+      case NativeInt_Int32 -> {
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+      }
+      default -> throw new InterpreterException();
+    }
+  }
+
+  private int doShiftBinary(int value, int amount, int opcode)
+  {
+    return switch (opcode)
+    {
+      case SHL -> value << amount;
+      case SHR -> value >> amount;
+      case SHR_UN -> value >>> amount;
+      default -> throw new InterpreterException();
+    };
+  }
+
+  private long doShiftBinary(long value, int amount, int opcode)
+  {
+    return switch (opcode)
+            {
+              case SHL -> value << amount;
+              case SHR -> value >> amount;
+              case SHR_UN -> value >>> amount;
+              default -> throw new InterpreterException();
+            };
+  }
+
+  private void doShiftBinary(VirtualFrame frame, int top, int opcode, StaticOpCodeAnalyser.OpCodeType type)
+  {
+    switch (type)
+    {
+      case Int32 -> {
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        CILOSTAZOLFrame.putInt32(frame, top - 2, doShiftBinary(op2, op1, opcode));
+      }
+      case NativeInt -> {
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
+        CILOSTAZOLFrame.putInt64(frame, top - 2, doShiftBinary(op2, op1, opcode));
+      }
+      case Int64_Int32 -> {
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doShiftBinary(op2, op1, opcode));
+      }
+      case NativeInt_Int32 -> {
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        CILOSTAZOLFrame.putInt32(frame, top - 2, doShiftBinary(op2, op1, opcode));
+      }
+      case Int32_NativeInt -> {
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
+        CILOSTAZOLFrame.putInt64(frame, top - 2, doShiftBinary(op2, op1, opcode));
+      }
+      case Int64_NativeInt -> {
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doShiftBinary(op2, op1, opcode));
+      }
+
+      default -> throw new InterpreterException();
+    }
+  }
+
+  private void doNot(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type)
+  {
+    switch (type)
+    {
+      case Int32 ->  CILOSTAZOLFrame.putInt32(frame, top - 1, ~CILOSTAZOLFrame.popInt32(frame, top - 1));
+      case Int64 ->  CILOSTAZOLFrame.putInt64(frame, top - 1, ~CILOSTAZOLFrame.popInt64(frame, top - 1));
+      case NativeInt -> CILOSTAZOLFrame.putNativeInt(frame, top - 1, ~CILOSTAZOLFrame.popNativeInt(frame, top - 1));
+      default -> throw new InterpreterException();
+    }
+  }
+
+  private void doNeg(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type)
+  {
+    switch (type)
+    {
+      case Int32 -> CILOSTAZOLFrame.putInt32(frame, top - 1, CILOSTAZOLFrame.popInt32(frame, top - 1));
+      case Int64 -> CILOSTAZOLFrame.putInt64(frame, top - 1, CILOSTAZOLFrame.popInt64(frame, top - 1));
+      case NativeInt -> CILOSTAZOLFrame.putNativeInt(frame, top - 1, CILOSTAZOLFrame.popNativeInt(frame, top - 1));
+      default -> throw new InterpreterException();
+    }
+  }
+  //endregion
 
   // region Helpers
   private void createArray(VirtualFrame frame, CLITablePtr token, int top) {

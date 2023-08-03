@@ -83,6 +83,10 @@ public final class CILOSTAZOLFrame {
     assert slot >= 0;
     frame.setDoubleStatic(slot, value);
   }
+
+  public static void putNativeInt(Frame frame, int slot, int value) {
+    putInt32(frame, slot, value);
+  }
   // endregion
 
   // region stack pop
