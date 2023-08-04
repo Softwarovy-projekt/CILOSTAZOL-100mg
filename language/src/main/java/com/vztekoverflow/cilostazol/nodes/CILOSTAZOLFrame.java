@@ -4,12 +4,16 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.staticobject.StaticProperty;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
+import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Flag;
+import com.vztekoverflow.cilostazol.runtime.symbols.ReferenceSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
+import java.lang.reflect.Array;
 import java.util.Objects;
 
 public final class CILOSTAZOLFrame {
@@ -31,11 +35,11 @@ public final class CILOSTAZOLFrame {
 
   // region stack offsets
   public static int getStartStackOffset(MethodSymbol method) {
-    return getStartArgsOffset(method) + method.getParameters().length;
+    return getStartArgsOffset(method) + method.getParameterCountIncludingInstance();
   }
 
   public static int getStartArgsOffset(MethodSymbol methodSymbol) {
-    return isInstantiable(methodSymbol) + methodSymbol.getLocals().length;
+    return methodSymbol.getLocals().length;
   }
 
   /** Instantiable methods have `this` as the first argument. */
@@ -147,10 +151,70 @@ public final class CILOSTAZOLFrame {
     return (StaticObject) result;
   }
 
+  public static Object popObjectFromPossibleReference(
+      VirtualFrame frame, int slot, CILOSTAZOLContext context) {
+    StaticObject staticObject = popObject(frame, slot);
+    TypeSymbol type = staticObject.getTypeSymbol();
+    if (type instanceof ReferenceSymbol) {
+      return getObjectFromReferenceBasedOnReferenceType(
+          context, (ReferenceSymbol) type, staticObject);
+    }
+
+    return staticObject;
+  }
+
+  public static Object popObjectFromPossibleReference(
+      VirtualFrame frame, TypeSymbol type, int slot, CILOSTAZOLContext context) {
+    if (type instanceof ReferenceSymbol) {
+      return getObjectFromReference(frame, slot, context);
+    }
+
+    return popObject(frame, slot);
+  }
+
   private static void clearPrimitive(Frame frame, int slot) {
     assert slot >= 0;
     frame.clearPrimitiveStatic(slot);
   }
+  // endregion
+
+  // region reference fetch
+
+  public static Object getObjectFromReference(
+      VirtualFrame frame, int top, CILOSTAZOLContext context) {
+    var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    var referenceType = (ReferenceSymbol) reference.getTypeSymbol();
+    return getObjectFromReferenceBasedOnReferenceType(context, referenceType, reference);
+  }
+
+  private static Object getObjectFromReferenceBasedOnReferenceType(
+      CILOSTAZOLContext context, ReferenceSymbol referenceType, StaticObject reference) {
+    switch (referenceType.getReferenceType()) {
+      case Local, Argument -> {
+        Frame refFrame = (Frame) context.getStackReferenceFrameProperty().getObject(reference);
+        int index = context.getStackReferenceIndexProperty().getInt(reference);
+        return CILOSTAZOLFrame.getLocalObject(refFrame, index);
+      }
+      case Field -> {
+        StaticObject refObj =
+            (StaticObject) context.getFieldReferenceObjectProperty().getObject(reference);
+        StaticProperty refField =
+            (StaticProperty) context.getFieldReferenceFieldProperty().getObject(reference);
+        return refField.getObject(refObj);
+      }
+      case ArrayElement -> {
+        StaticObject refArr =
+            (StaticObject) context.getArrayElementReferenceArrayProperty().getObject(reference);
+        int index = context.getArrayElementReferenceIndexProperty().getInt(refArr);
+        var javaArr = context.getArrayProperty().getObject(refArr);
+        return Array.get(javaArr, index);
+      }
+    }
+
+    throw new InterpreterException(
+        CILOSTAZOLBundle.message("cilostazol.exception.unknown.reference.type"));
+  }
+
   // endregion
 
   // region stack set
@@ -236,16 +300,6 @@ public final class CILOSTAZOLFrame {
   }
   // endregion
 
-  // region stack types
-  public enum StackType {
-    Object,
-    Int32,
-    Int64,
-    NativeFloat,
-    NativeInt,
-    ManagedPointer,
-  }
-
   // TODO: It should rely on Assembly as well...
   public static StackType getStackTypeKind(String name, String namespace) {
     if (Objects.equals(namespace, "System")) {
@@ -271,10 +325,20 @@ public final class CILOSTAZOLFrame {
 
     return StackType.Object;
   }
-  // endregion
 
   public static void copyStatic(Frame frame, int sourceSlot, int destSlot) {
     assert sourceSlot >= 0 && destSlot >= 0;
     frame.copyStatic(sourceSlot, destSlot);
+  }
+  // endregion
+
+  // region stack types
+  public enum StackType {
+    Object,
+    Int32,
+    Int64,
+    NativeFloat,
+    NativeInt,
+    ManagedPointer,
   }
 }

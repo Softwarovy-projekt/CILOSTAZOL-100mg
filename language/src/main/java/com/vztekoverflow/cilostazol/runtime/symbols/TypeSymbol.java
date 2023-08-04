@@ -12,6 +12,7 @@ import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeSpecTableRow;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
+import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
@@ -68,7 +69,7 @@ public abstract class TypeSymbol extends Symbol {
 
     if (this.isArray()) {
       if (other.isArray()) {
-        return false; // ((ArrayKlass) this).arrayTypeChecks((ArrayKlass) other);
+        return false;
       }
     }
 
@@ -86,7 +87,7 @@ public abstract class TypeSymbol extends Symbol {
    */
   public boolean checkOrdinaryClassSubclassing(TypeSymbol other) {
     int depth = getHierarchyDepth();
-    return other.getHierarchyDepth() >= depth && other.getSuperTypes()[depth] == this;
+    return other.getHierarchyDepth() >= depth && other.getSuperClasses()[depth] == this;
   }
 
   /**
@@ -101,8 +102,7 @@ public abstract class TypeSymbol extends Symbol {
   }
 
   protected int getHierarchyDepth() {
-    // TODO
-    return 0;
+    throw new NotImplementedException();
   }
   // endregion
 
@@ -119,11 +119,11 @@ public abstract class TypeSymbol extends Symbol {
   }
 
   public NamedTypeSymbol[] getInterfaces() {
-    return new NamedTypeSymbol[0];
+    throw new NotImplementedException();
   }
 
-  public NamedTypeSymbol[] getSuperTypes() {
-    return new NamedTypeSymbol[0];
+  public NamedTypeSymbol[] getSuperClasses() {
+    throw new NotImplementedException();
   }
 
   public SystemType getSystemType() {

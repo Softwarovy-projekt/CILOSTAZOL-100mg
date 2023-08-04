@@ -196,6 +196,11 @@ public final class SymbolResolver {
   }
 
   public static TypeSymbol resolveType(
+      CLITablePtr row, ModuleSymbol module, TypeSymbol[] typeArguments) {
+    return resolveType(row, new TypeSymbol[0], typeArguments, module);
+  }
+
+  public static TypeSymbol resolveType(
       CLITablePtr row,
       TypeSymbol[] methodTypeArgs,
       TypeSymbol[] typeTypeArgs,
@@ -344,6 +349,16 @@ public final class SymbolResolver {
       this.symbol = symbol;
       this.member = member;
     }
+  }
+
+  public static ClassMember<FieldSymbol> resolveField(CLITablePtr ptr, ModuleSymbol module) {
+    return switch (ptr.getTableId()) {
+      case CLITableConstants.CLI_TABLE_FIELD -> resolveField(
+          module.getDefiningFile().getTableHeads().getFieldTableHead().skip(ptr), module);
+      case CLITableConstants.CLI_TABLE_MEMBER_REF -> resolveField(
+          module.getDefiningFile().getTableHeads().getMemberRefTableHead().skip(ptr), module);
+      default -> throw new CILParserException();
+    };
   }
 
   public static ClassMember<FieldSymbol> resolveField(CLIFieldTableRow row, ModuleSymbol module) {

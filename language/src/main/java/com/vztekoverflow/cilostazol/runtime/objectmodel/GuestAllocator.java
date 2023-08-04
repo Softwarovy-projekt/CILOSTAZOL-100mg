@@ -52,7 +52,7 @@ public final class GuestAllocator {
     for (StaticField f : typeSymbol.getInstanceFields()) {
       assert !f.isStatic();
       if (f.getKind() == SystemType.Object) {
-        f.setObjectValue(obj, StaticObject.NULL);
+        f.setObject(obj, StaticObject.NULL);
       }
     }
   }
@@ -61,7 +61,7 @@ public final class GuestAllocator {
     for (StaticField f : typeSymbol.getInstanceFields()) {
       assert !f.isStatic();
       if (f.getKind() == SystemType.Object) {
-        f.setObjectValue(obj, StaticObject.NULL);
+        f.setObject(obj, StaticObject.NULL);
       }
     }
   }
@@ -181,8 +181,8 @@ public final class GuestAllocator {
   public StaticObject createStackReference(ReferenceSymbol reference, Frame frame, int index) {
     StaticObject newRef =
         reference.getContext().getStackReferenceShape().getFactory().create(reference);
-    reference.getContext().getStackReferenceFrameProperty().setObject(frame, newRef);
-    reference.getContext().getStackReferenceIndexProperty().setObject(frame, index);
+    reference.getContext().getStackReferenceFrameProperty().setObject(newRef, frame);
+    reference.getContext().getStackReferenceIndexProperty().setInt(newRef, index);
     return newRef;
   }
 
@@ -190,8 +190,8 @@ public final class GuestAllocator {
       ReferenceSymbol reference, StaticObject referent, StaticField field) {
     StaticObject newRef =
         reference.getContext().getFieldReferenceShape().getFactory().create(reference);
-    reference.getContext().getFieldReferenceFieldProperty().setObject(field, newRef);
-    reference.getContext().getFieldReferenceObjectProperty().setObject(referent, newRef);
+    reference.getContext().getFieldReferenceFieldProperty().setObject(newRef, field);
+    reference.getContext().getFieldReferenceObjectProperty().setObject(newRef, referent);
     return newRef;
   }
 
@@ -199,8 +199,8 @@ public final class GuestAllocator {
       ReferenceSymbol reference, StaticObject array, int elemIndex) {
     StaticObject newRef =
         reference.getContext().getArrayElementReferenceShape().getFactory().create(reference);
-    reference.getContext().getArrayElementReferenceArrayProperty().setObject(array, newRef);
-    reference.getContext().getArrayElementReferenceIndexProperty().setObject(elemIndex, newRef);
+    reference.getContext().getArrayElementReferenceArrayProperty().setObject(newRef, array);
+    reference.getContext().getArrayElementReferenceIndexProperty().setInt(newRef, elemIndex);
     return newRef;
   }
   // endregion

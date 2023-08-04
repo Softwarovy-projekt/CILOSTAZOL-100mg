@@ -34,6 +34,29 @@ public class NonVirtualCallsTests extends TestBase {
   }
 
   @Test
+  public void simpleStructInstanceCall() {
+    var result =
+        runTestFromCode(
+            """
+                            var obj = new TestStruct();
+                            return obj.Foo();
+
+                            public struct TestStruct
+                            {
+                                public int a;
+                                public object b;
+
+                                public int Foo()
+                                {
+                                    return 42;
+                                }
+                            }
+                            """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
   public void simpleStaticCallWithArgs() {
     var result =
         runTestFromCode(
@@ -55,6 +78,51 @@ public class NonVirtualCallsTests extends TestBase {
             }
           }
             """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void simpleStructInstanceCallWithArgs() {
+    var result =
+        runTestFromCode(
+            """
+                    var obj = new TestStruct();
+                    return obj.Foo(42);
+
+                    public struct TestStruct
+                    {
+                        public int a;
+                        public object b;
+
+                        public int Foo(int x)
+                        {
+                            return x;
+                        }
+                    }
+                    """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  @Disabled(
+      "Missing branch for klass.getTableId() == CLI_TABLE_TYPE_SPEC in getMethodSymbolFromMemberRef")
+  public void simpleClassInstanceCallWithArgs() {
+    var result =
+        runTestFromCode(
+            """
+                    var obj = new TestClass();
+                    return (int) obj?.Foo(41);
+
+                    public class TestClass
+                    {
+                        public int Foo(int x)
+                        {
+                            return x;
+                        }
+                    }
+                    """);
 
     assertEquals(42, result.exitCode());
   }

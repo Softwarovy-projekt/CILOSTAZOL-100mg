@@ -10,14 +10,6 @@ public class StaticField extends StaticProperty {
     this.symbol = symbol;
   }
 
-  public final void setObjectValue(StaticObject obj, Object value) {
-    // assert symbol.getDeclaringType().isAssignableFrom(obj.getTypeSymbol())
-    //   : this + " does not exist in " + obj.getTypeSymbol();
-
-    // Call to StaticProperty!
-    setObject(obj, value);
-  }
-
   public boolean isStatic() {
     return symbol.isStatic();
   }
@@ -27,11 +19,6 @@ public class StaticField extends StaticProperty {
   }
 
   public Class<?> getPropertyType() {
-    // TODO: Remove
-    if (symbol == null) {
-      return int.class;
-    }
-
     return switch (symbol.getSystemType()) {
       case Boolean -> boolean.class;
       case Char -> char.class;

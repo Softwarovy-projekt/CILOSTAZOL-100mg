@@ -12,34 +12,16 @@ import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InvalidCLIException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
-import com.vztekoverflow.cilostazol.runtime.other.TableRowUtils;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
 
 public class StaticOpCodeAnalyser {
 
-  public enum OpCodeType {
-    Int32,
-    Int64,
-    Object,
-    ManagedPointer,
-    NativeInt,
-    NativeFloat,
-    Int32_NativeInt,
-    Int32_ManagedPointer,
-    NativeInt_Int32,
-    NativeInt_ManagedPointer,
-    ManagedPointer_Int32,
-    ManagedPointer_NativeInt,
-    Int64_Int32,
-    Int64_NativeInt,
-  }
-
   // region Stack manipulation
   public static OpCodeType[] analyseOpCodes(MethodSymbol method) {
     return getOpcodeTypes(
-        method.getCIL(),
-        method.getMaxStack(),
-        method.getParameters(),
+        method.getOriginalCIL(),
+        method.getMaxStack() + method.getParameterCountIncludingInstance(),
+        method.getParameterTypesIncludingInstance(),
         method.getLocals(),
         method.getModule());
   }
@@ -47,7 +29,7 @@ public class StaticOpCodeAnalyser {
   private static OpCodeType[] getOpcodeTypes(
       byte[] cil,
       int maxStack,
-      ParameterSymbol[] parameters,
+      TypeSymbol[] parameters,
       LocalSymbol[] locals,
       ModuleSymbol module) {
     var bytecodeBuffer = new BytecodeBuffer(cil);
@@ -110,7 +92,7 @@ public class StaticOpCodeAnalyser {
           break;
 
         case LDNULL:
-          push(stack, pc, StackType.Object);
+          push(stack, topStack, StackType.Object);
           break;
 
         case LDC_I4_M1:
@@ -148,14 +130,14 @@ public class StaticOpCodeAnalyser {
           {
             var methodPtr = bytecodeBuffer.getImmToken(pc);
             var method = SymbolResolver.resolveMethod(methodPtr, module).member;
-            topStack = handleMethod(method, stack, topStack, false);
+            topStack = handleMethod(method, stack, topStack);
             break;
           }
         case CALLVIRT:
           {
             var methodPtr = bytecodeBuffer.getImmToken(pc);
             var method = SymbolResolver.resolveMethod(methodPtr, module).member;
-            topStack = handleMethod(method, stack, topStack, true);
+            topStack = handleMethod(method, stack, topStack);
             break;
           }
         case CALLI:
@@ -339,7 +321,7 @@ public class StaticOpCodeAnalyser {
           // Obj cast to Obj
           break;
         case ISINST:
-          // Obj to bool
+          // Obj to Obj
           break;
         case UNBOX:
           replace(stack, topStack, ManagedPointer);
@@ -360,16 +342,16 @@ public class StaticOpCodeAnalyser {
           break;
         case LDFLD:
           {
-            var fieldPtr = TableRowUtils.getMemberRefRow(module, bytecodeBuffer.getImmToken(pc));
-            var field = SymbolResolver.resolveField(fieldPtr, module).symbol;
-            replace(stack, topStack, field.getStackTypeKind());
+            var fieldPtr = bytecodeBuffer.getImmToken(pc);
+            var field = SymbolResolver.resolveField(fieldPtr, module).member;
+            replace(stack, topStack, field.getType().getStackTypeKind());
             break;
           }
         case LDSFLD:
           {
-            var fieldPtr = TableRowUtils.getMemberRefRow(module, bytecodeBuffer.getImmToken(pc));
-            var field = SymbolResolver.resolveField(fieldPtr, module).symbol;
-            push(stack, topStack, field.getStackTypeKind());
+            var fieldPtr = bytecodeBuffer.getImmToken(pc);
+            var field = SymbolResolver.resolveField(fieldPtr, module).member;
+            push(stack, topStack, field.getType().getStackTypeKind());
             break;
           }
         case LDFLDA:
@@ -377,9 +359,9 @@ public class StaticOpCodeAnalyser {
           break;
         case LDSFLDA:
           {
-            var fieldPtr = TableRowUtils.getMemberRefRow(module, bytecodeBuffer.getImmToken(pc));
-            var field = SymbolResolver.resolveField(fieldPtr, module).symbol;
-            handleLdsflda(field, stack, topStack, pc);
+            var fieldPtr = bytecodeBuffer.getImmToken(pc);
+            var field = SymbolResolver.resolveField(fieldPtr, module).member;
+            handleLdsflda((NamedTypeSymbol) field.getType(), stack, topStack, pc);
             break;
           }
         case STFLD:
@@ -503,6 +485,9 @@ public class StaticOpCodeAnalyser {
           setTypeByStack(types, stack, topStack, pc, curOpcode);
           clear(stack, topStack);
           break;
+        case TRUFFLE_NODE:
+          // TODO
+          break;
         default:
           ThrowNotSupportedException();
           break;
@@ -535,33 +520,34 @@ public class StaticOpCodeAnalyser {
   private static int handleCtor(
       CLITablePtr ctorPtr, StackType[] stack, int topStack, ModuleSymbol module) {
     var ctor = SymbolResolver.resolveMethod(ctorPtr, module).member;
-    // ctor does not have return value but puts on stack the new object
-    topStack = updateStackByMethod(stack, topStack, ctor, false);
-    replace(stack, topStack - ctor.getParameters().length, Object);
+    // A new argument is added during the constructor call -> topStack + 1
+    topStack = updateStackByMethod(stack, topStack + 1, ctor);
+    // A new object is added to the stack after the constructor call -> topStack + 1
+    topStack++;
+    replace(stack, topStack, Object);
     return topStack;
   }
 
-  private static int handleMethod(
-      MethodSymbol method, StackType[] stack, int topStack, boolean isVirtual) {
-    return updateStackByMethod(stack, topStack, method, isVirtual);
+  private static int handleMethod(MethodSymbol method, StackType[] stack, int topStack) {
+    return updateStackByMethod(stack, topStack, method);
   }
 
-  private static int updateStackByMethod(
-      StackType[] stack, int topStack, MethodSymbol method, boolean isVirtual) {
+  private static int updateStackByMethod(StackType[] stack, int topStack, MethodSymbol method) {
     // remove args from stack
     // put ret type to stack
-    for (int i = 0; i < method.getParameters().length; i++) {
+    for (int i = 0; i < method.getParameterCountIncludingInstance(); i++) {
       clear(stack, topStack - i);
     }
-    if (isVirtual) clear(stack, topStack - method.getParameters().length);
 
     if (method.hasReturnValue())
       replace(
           stack,
-          topStack - method.getParameters().length - (isVirtual ? 1 : 0),
+          topStack - method.getParameterCountIncludingInstance(),
           method.getReturnType().getType().getStackTypeKind());
 
-    return topStack - method.getParameters().length + (method.hasReturnValue() ? 1 : 0);
+    return topStack
+        - method.getParameterCountIncludingInstance()
+        + (method.hasReturnValue() ? 1 : 0);
   }
 
   /**
@@ -682,7 +668,12 @@ public class StaticOpCodeAnalyser {
             || opCodeType == OpCodeType.ManagedPointer_NativeInt
             || opCodeType == OpCodeType.Object;
     boolean isAllowedOpCode =
-        opCode == BEQ || opCode == BEQ_S || opCode == BNE_UN || opCode == BNE_UN_S || opCode == CEQ;
+        opCode == BEQ
+            || opCode == BEQ_S
+            || opCode == BNE_UN
+            || opCode == BNE_UN_S
+            || opCode == CEQ
+            || opCode == CGT_UN;
     if (isRestrictedOpCodeType && !isAllowedOpCode)
       ThrowInvalidCLI(
           CILOSTAZOLBundle.message(
@@ -846,6 +837,7 @@ public class StaticOpCodeAnalyser {
   private static void ThrowNotSupportedException() {
     throw new NotImplementedException();
   }
+
   // region type comparison helpers
   private static OpCodeType getUnaryOpCodeType(StackType operand, int opCode) {
     return switch (operand) {
@@ -970,16 +962,15 @@ public class StaticOpCodeAnalyser {
     return left == StackType.Object && right == StackType.Object;
   }
 
-  // endregion
-
   private static void handleLoc(LocalSymbol[] locals, StackType[] stack, int topStack, int idx) {
     var locType = locals[idx].getType().getStackTypeKind();
     push(stack, topStack, locType);
   }
 
-  private static void handleArg(
-      ParameterSymbol[] parameters, StackType[] stack, int topStack, int idx) {
-    var argType = parameters[idx].getType().getStackTypeKind();
+  // endregion
+
+  private static void handleArg(TypeSymbol[] parameters, StackType[] stack, int topStack, int idx) {
+    var argType = parameters[idx].getStackTypeKind();
     push(stack, topStack, argType);
   }
 
@@ -993,6 +984,23 @@ public class StaticOpCodeAnalyser {
 
   private static void push(StackType[] stack, int topStack, StackType stackType) {
     stack[topStack] = stackType;
+  }
+
+  public enum OpCodeType {
+    Int32,
+    Int64,
+    Object,
+    ManagedPointer,
+    NativeInt,
+    NativeFloat,
+    Int32_NativeInt,
+    Int32_ManagedPointer,
+    NativeInt_Int32,
+    NativeInt_ManagedPointer,
+    ManagedPointer_Int32,
+    ManagedPointer_NativeInt,
+    Int64_Int32,
+    Int64_NativeInt,
   }
   // endregion
 }

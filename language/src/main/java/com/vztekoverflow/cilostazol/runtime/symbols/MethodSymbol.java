@@ -35,6 +35,7 @@ public class MethodSymbol extends Symbol {
   protected final ReturnSymbol returnSymbol;
   protected final ExceptionHandlerSymbol[] exceptionHandlers;
   protected final byte[] cil;
+  protected final byte[] originalCil;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private StaticOpCodeAnalyser.OpCodeType[] opCodeTypes = null;
@@ -72,6 +73,7 @@ public class MethodSymbol extends Symbol {
     this.returnSymbol = returnSymbol;
     this.exceptionHandlers = exceptionHandlers;
     this.cil = cil;
+    this.originalCil = cil.clone();
     this.maxStack = maxStack;
     this.methodHeaderFlags = methodHeaderFlags;
   }
@@ -87,6 +89,10 @@ public class MethodSymbol extends Symbol {
 
   public ParameterSymbol[] getParameters() {
     return parameters;
+  }
+
+  public int getParameterCountIncludingInstance() {
+    return parameters.length + (getMethodFlags().hasFlag(MethodFlags.Flag.STATIC) ? 0 : 1);
   }
 
   public LocalSymbol[] getLocals() {
@@ -129,12 +135,35 @@ public class MethodSymbol extends Symbol {
     return cil;
   }
 
+  public byte[] getOriginalCIL() {
+    return originalCil;
+  }
+
   public StaticOpCodeAnalyser.OpCodeType[] getOpCodeTypes() {
     if (opCodeTypes == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       opCodeTypes = StaticOpCodeAnalyser.analyseOpCodes(this);
     }
     return opCodeTypes;
+  }
+
+  public TypeSymbol[] getParameterTypesIncludingInstance() {
+    boolean hasReceiver = !getMethodFlags().hasFlag(MethodFlags.Flag.STATIC);
+    TypeSymbol[] paramTypes;
+
+    if (hasReceiver) {
+      paramTypes = new TypeSymbol[getParameterCountIncludingInstance()];
+      paramTypes[0] = getDefiningType();
+      for (int i = 0; i < parameters.length; i++) {
+        paramTypes[i + 1] = parameters[i].getType();
+      }
+
+    } else {
+      paramTypes =
+          Arrays.stream(parameters).map(ParameterSymbol::getType).toArray(TypeSymbol[]::new);
+    }
+
+    return paramTypes;
   }
 
   public String toString() {
@@ -224,7 +253,12 @@ public class MethodSymbol extends Symbol {
 
       // Method header parsing
       if (!flags.hasFlag(MethodFlags.Flag.ABSTRACT)) {
-        final ByteSequenceBuffer buf = file.getBuffer(mDef.getRVA());
+        int rva = mDef.getRVA();
+        if (rva == 0) {
+          // TODO: Remove this workaround, see if this only happens with System.Object::GetType
+          rva = mDef.getRVA(8);
+        }
+        final ByteSequenceBuffer buf = file.getBuffer(rva);
 
         final byte firstByte = buf.getByte();
         final MethodHeaderFlags pom = new MethodHeaderFlags(firstByte);

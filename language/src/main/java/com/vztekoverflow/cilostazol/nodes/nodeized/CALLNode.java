@@ -16,7 +16,7 @@ public final class CALLNode extends NodeizedNodeBase {
 
   public CALLNode(MethodSymbol method, int topStack) {
     this.method = method;
-    this.returnStackTop = topStack - method.getParameters().length;
+    this.returnStackTop = topStack - method.getParameterCountIncludingInstance();
     this.topStack = topStack;
     this.indirectCallNode = IndirectCallNode.create();
   }
@@ -26,8 +26,6 @@ public final class CALLNode extends NodeizedNodeBase {
     Object[] args = getMethodArgsFromStack(frame);
     Object returnValue = indirectCallNode.call(method.getNode().getCallTarget(), args);
 
-    clearArgsFromStack(frame);
-
     if (method.hasReturnValue()) {
       CILOSTAZOLFrame.put(frame, returnValue, returnStackTop, method.getReturnType().getType());
     }
@@ -36,25 +34,24 @@ public final class CALLNode extends NodeizedNodeBase {
     return returnStackTop + 1;
   }
 
-  @ExplodeLoop
-  private void clearArgsFromStack(VirtualFrame frame) {
-    // Clear the stack
-    var topStack = this.topStack - 1;
-    for (var arg : method.getParameters()) {
-      CILOSTAZOLFrame.pop(frame, topStack, arg.getType());
-      topStack--;
-    }
-  }
-
   @NotNull
   @ExplodeLoop
   private Object[] getMethodArgsFromStack(VirtualFrame frame) {
     final var argTypes = method.getParameters();
-    final Object[] args = new Object[argTypes.length];
-    for (int i = 0; i < args.length; i++) {
+    final var instantiableOffset = CILOSTAZOLFrame.isInstantiable(method);
+    final Object[] args = new Object[argTypes.length + instantiableOffset];
+    for (int i = instantiableOffset; i < args.length; i++) {
       final var idx = topStack - args.length + i;
-      args[i] = CILOSTAZOLFrame.getLocal(frame, idx, argTypes[i].getType());
+      args[i] = CILOSTAZOLFrame.pop(frame, idx, argTypes[i - instantiableOffset].getType());
     }
+
+    if (instantiableOffset > 0) {
+      final var idx = topStack - args.length;
+      args[0] =
+          CILOSTAZOLFrame.popObjectFromPossibleReference(
+              frame, method.getDefiningType(), idx, method.getContext());
+    }
+
     return args;
   }
 }

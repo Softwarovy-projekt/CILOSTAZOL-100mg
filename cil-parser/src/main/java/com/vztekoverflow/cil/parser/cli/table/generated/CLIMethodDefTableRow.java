@@ -18,6 +18,10 @@ public class CLIMethodDefTableRow extends CLITableRow<CLIMethodDefTableRow> {
     return getInt(offset);
   }
 
+  public final int getRVA(int offset) {
+    return getInt(offset);
+  }
+
   public final short getImplFlags() {
     int offset = 4;
     return getShort(offset);
