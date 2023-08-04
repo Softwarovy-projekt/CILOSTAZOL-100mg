@@ -577,6 +577,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
         case CONV_R4:
         case CONV_R8:
+        case CONV_R_UN:
+          convertToFloat(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc]);
           break;
 
           //  arithmetics
@@ -1785,6 +1787,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popInt32(frame, top))
               : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popInt32(frame, top));
           case Int64 -> CILOSTAZOLFrame.popInt64(frame, top);
+          case NativeInt -> CILOSTAZOLFrame.popNativeInt(frame, top);
           case NativeFloat -> (long) CILOSTAZOLFrame.popNativeFloat(frame, top);
           default -> throw new InterpreterException("Invalid type for conversion: " + type);
         };
@@ -1796,6 +1799,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case CONV_I2:
         CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend16(value));
         break;
+      case CONV_I:
+      case CONV_U:
       case CONV_I4:
         CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.truncate32(value));
         break;
@@ -1814,14 +1819,30 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case CONV_U8:
         CILOSTAZOLFrame.putInt64(frame, top, value);
         break;
-      case CONV_U:
-      case CONV_I:
-        // TODO
-        CompilerAsserts.neverPartOfCompilation();
-        throw new InterpreterException("CONV_U/I not implemented");
       default:
         CompilerAsserts.neverPartOfCompilation();
         throw new InterpreterException("Invalid opcode for conversion");
+    }
+  }
+
+  private void convertToFloat(
+      int opcode, VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
+    double value =
+        switch (type) {
+          case Int32 -> CILOSTAZOLFrame.popInt32(frame, top);
+          case Int64 -> CILOSTAZOLFrame.popInt64(frame, top);
+          case NativeInt -> CILOSTAZOLFrame.popNativeInt(frame, top);
+          case NativeFloat -> CILOSTAZOLFrame.popNativeFloat(frame, top);
+          default -> throw new InterpreterException("Invalid type for conversion: " + type);
+        };
+
+    switch (opcode) {
+      case CONV_R4 -> CILOSTAZOLFrame.putNativeFloat(frame, top, (float) value);
+      case CONV_R8 -> CILOSTAZOLFrame.putNativeFloat(frame, top, value);
+      default -> {
+        CompilerAsserts.neverPartOfCompilation();
+        throw new InterpreterException("Invalid opcode for conversion");
+      }
     }
   }
   // endregion
