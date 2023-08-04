@@ -1577,8 +1577,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     loadValueFromField(frame, top + 1, field, object);
   }
 
-  private void loadValueFromField(
-          VirtualFrame frame, int top, StaticField field, StaticObject object) {
+  private void loadValueFromField(VirtualFrame frame, int top, StaticField field, StaticObject object) {
     switch (field.getKind()) {
       case Boolean -> {
         boolean value = field.getBoolean(object);
