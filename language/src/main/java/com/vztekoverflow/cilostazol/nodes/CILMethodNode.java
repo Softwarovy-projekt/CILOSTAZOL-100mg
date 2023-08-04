@@ -67,44 +67,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     initializeFrame(frame);
     return execute(frame, 0, CILOSTAZOLFrame.getStartStackOffset(method));
   }
-
-  private void loadValueFromField(
-      VirtualFrame frame, int top, StaticField field, StaticObject object) {
-    switch (field.getKind()) {
-      case Boolean -> {
-        boolean value = field.getBoolean(object);
-        CILOSTAZOLFrame.putInt32(frame, top - 1, value ? 1 : 0);
-      }
-      case Char -> {
-        char value = field.getChar(object);
-        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
-      }
-      case Short -> {
-        short value = field.getShort(object);
-        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
-      }
-      case Float -> {
-        float value = field.getFloat(object);
-        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, value);
-      }
-      case Double -> {
-        double value = field.getDouble(object);
-        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, value);
-      }
-      case Int -> {
-        int value = field.getInt(object);
-        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
-      }
-      case Long -> {
-        long value = field.getLong(object);
-        CILOSTAZOLFrame.putInt64(frame, top - 1, value);
-      }
-      default -> {
-        StaticObject value = (StaticObject) field.getObject(object);
-        CILOSTAZOLFrame.putObject(frame, top - 1, value);
-      }
-    }
-  }
   // endregion
 
   // region OSR
@@ -1415,52 +1377,52 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           break;
 
           //  arithmetics
-          case ADD:
-          case DIV:
-          case MUL:
-          case REM:
-          case SUB:
-              doNumericBinary(
-                      frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, false);
-              break;
+        case ADD:
+        case DIV:
+        case MUL:
+        case REM:
+        case SUB:
+          doNumericBinary(
+              frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, false);
+          break;
 
-          case OR:
-          case AND:
-          case XOR:
-              doIntegerBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
-              break;
+        case OR:
+        case AND:
+        case XOR:
+          doIntegerBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
+          break;
 
-          case NEG:
-              doNeg(frame, topStack, getMethod().getOpCodeTypes()[pc]);
-              break;
-          case NOT:
-              doNot(frame, topStack, getMethod().getOpCodeTypes()[pc]);
-              break;
+        case NEG:
+          doNeg(frame, topStack, getMethod().getOpCodeTypes()[pc]);
+          break;
+        case NOT:
+          doNot(frame, topStack, getMethod().getOpCodeTypes()[pc]);
+          break;
 
-          case SHL:
-          case SHR:
-          case SHR_UN:
-              doShiftBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
-              break;
+        case SHL:
+        case SHR:
+        case SHR_UN:
+          doShiftBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
+          break;
 
-          case ADD_OVF:
-          case MUL_OVF:
-          case SUB_OVF:
-              doNumericBinary(
-                      frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], true, false);
-              break;
-          case ADD_OVF_UN:
-          case SUB_OVF_UN:
-          case MUL_OVF_UN:
-              doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], true, true);
-              break;
+        case ADD_OVF:
+        case MUL_OVF:
+        case SUB_OVF:
+          doNumericBinary(
+              frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], true, false);
+          break;
+        case ADD_OVF_UN:
+        case SUB_OVF_UN:
+        case MUL_OVF_UN:
+          doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], true, true);
+          break;
 
-          case DIV_UN:
-          case REM_UN:
-              doNumericBinary(
-                      frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, true);
-              break;
-          
+        case DIV_UN:
+        case REM_UN:
+          doNumericBinary(
+              frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, true);
+          break;
+
         case TRUFFLE_NODE:
           topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
           break;
@@ -1613,6 +1575,44 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     StaticField field = classMember.symbol.getAssignableStaticField(classMember.member);
     StaticObject object = classMember.symbol.getStaticInstance();
     loadValueFromField(frame, top + 1, field, object);
+  }
+
+  private void loadValueFromField(
+          VirtualFrame frame, int top, StaticField field, StaticObject object) {
+    switch (field.getKind()) {
+      case Boolean -> {
+        boolean value = field.getBoolean(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value ? 1 : 0);
+      }
+      case Char -> {
+        char value = field.getChar(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
+      }
+      case Short -> {
+        short value = field.getShort(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
+      }
+      case Float -> {
+        float value = field.getFloat(object);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, value);
+      }
+      case Double -> {
+        double value = field.getDouble(object);
+        CILOSTAZOLFrame.putNativeFloat(frame, top - 1, value);
+      }
+      case Int -> {
+        int value = field.getInt(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
+      }
+      case Long -> {
+        long value = field.getLong(object);
+        CILOSTAZOLFrame.putInt64(frame, top - 1, value);
+      }
+      default -> {
+        StaticObject value = (StaticObject) field.getObject(object);
+        CILOSTAZOLFrame.putObject(frame, top - 1, value);
+      }
+    }
   }
 
   void storeInstanceField(
