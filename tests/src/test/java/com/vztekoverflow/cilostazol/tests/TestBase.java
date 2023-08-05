@@ -3,6 +3,7 @@ package com.vztekoverflow.cilostazol.tests;
 import static com.vztekoverflow.cilostazol.launcher.CILOSTAZOLLauncher.LANGUAGE_ID;
 
 import com.vztekoverflow.cilostazol.CILOSTAZOLEngineOption;
+import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.launcher.CILOSTAZOLLauncher;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -35,7 +36,6 @@ public abstract class TestBase {
   @BeforeEach
   public void setup() {
     outputStream = new ByteArrayOutputStream();
-    context = setupContext().build();
   }
 
   /**
@@ -43,6 +43,15 @@ public abstract class TestBase {
    * #runTestFromFile(String)} or {@link #runTestFromDll(String)} tests already.
    */
   protected RunResult runTestFromCode(@NotNull @Language("cs") String sourceCode) {
+    return runTestFromCode(sourceCode, null);
+  }
+  protected RunResult runTestFromCode(@NotNull @Language("cs") String sourceCode, String[] arguments)
+  {
+    if (arguments != null)
+      context = setupContext().arguments(CILOSTAZOLLanguage.ID, arguments).build();
+    else
+      context = setupContext().build();
+
     // create random directory for the dummy project
     var randomName = java.util.UUID.randomUUID().toString();
     var directory = Paths.get(directoryCustomTest, randomName);
@@ -63,6 +72,7 @@ public abstract class TestBase {
    * if, while, etc.).
    */
   protected RunResult runTestFromFile(@NotNull String sourceFile) {
+    context = setupContext().build();
     // create random directory for the dummy project
     var randomName = java.util.UUID.randomUUID().toString();
     var directory = Paths.get(directoryCustomTest, randomName);
@@ -83,6 +93,7 @@ public abstract class TestBase {
    * if, while, etc.).
    */
   protected RunResult runTestFromDll(@NotNull String projectName) {
+    context = setupContext().build();
     var sourceFilePath = this.getDllPathFromProject(projectName).toFile();
 
     var retCode = context.eval(getSource(sourceFilePath)).asInt();

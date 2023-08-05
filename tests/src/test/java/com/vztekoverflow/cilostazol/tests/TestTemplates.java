@@ -83,6 +83,16 @@ return 42;
     assertEquals(42, result.exitCode());
   }
 
+  @Test
+  public void FromCodeWithArgs() {
+    var result = runTestFromCode("""
+return 42;
+""", new String[]{"myArg"});
+
+    assertEquals("", result.output());
+    assertEquals(42, result.exitCode());
+  }
+
   /**
    * Use this or {@link #runTestFromFile(String)} template for each major feature of the interpreter
    * (return, if, while, etc.)
