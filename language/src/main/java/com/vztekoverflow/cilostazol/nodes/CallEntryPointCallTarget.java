@@ -18,19 +18,21 @@ public final class CallEntryPointCallTarget implements CallTarget {
     if (shouldAddArgs) {
       var ctx = CILOSTAZOLContext.get(null);
       var arrayOfString = SymbolResolver.resolveArray(SymbolResolver.getString(ctx), 1, ctx);
-      arg = ctx.getAllocator().createNewReferenceArray(arrayOfString, ctx.getEnv().getApplicationArguments().length);
+      arg =
+          ctx.getAllocator()
+              .createNewReferenceArray(
+                  arrayOfString, ctx.getEnv().getApplicationArguments().length);
     } else {
       arg = null;
     }
   }
 
-  public void fillArguments()
-  {
+  public void fillArguments() {
     var ctx = CILOSTAZOLContext.get(null);
     int i = 0;
     for (var appArg : ctx.getEnv().getApplicationArguments()) {
       var javaArr = ctx.getArrayProperty().getObject(arg);
-      Array.set(javaArr, i ,ctx.getAllocator().createString(appArg));
+      Array.set(javaArr, i, ctx.getAllocator().createString(appArg));
       i++;
     }
   }

@@ -87,7 +87,7 @@ return 42;
   public void FromCodeWithArgs() {
     var result = runTestFromCode("""
 return 42;
-""", new String[]{"myArg"});
+""", new String[] {"myArg"});
 
     assertEquals("", result.output());
     assertEquals(42, result.exitCode());

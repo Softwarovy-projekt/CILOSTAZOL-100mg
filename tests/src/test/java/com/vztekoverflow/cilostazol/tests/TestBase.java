@@ -45,12 +45,12 @@ public abstract class TestBase {
   protected RunResult runTestFromCode(@NotNull @Language("cs") String sourceCode) {
     return runTestFromCode(sourceCode, null);
   }
-  protected RunResult runTestFromCode(@NotNull @Language("cs") String sourceCode, String[] arguments)
-  {
+
+  protected RunResult runTestFromCode(
+      @NotNull @Language("cs") String sourceCode, String[] arguments) {
     if (arguments != null)
       context = setupContext().arguments(CILOSTAZOLLanguage.ID, arguments).build();
-    else
-      context = setupContext().build();
+    else context = setupContext().build();
 
     // create random directory for the dummy project
     var randomName = java.util.UUID.randomUUID().toString();
