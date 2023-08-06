@@ -66,6 +66,11 @@ public final class AssemblyIdentity {
   public static AssemblyIdentity SystemRuntimeLib700() {
     return new AssemblyIdentity((short) 7, (short) 0, (short) 0, (short) 0, "System.Runtime");
   }
+
+  public static boolean isStandardLib(AssemblyIdentity identity) {
+    return identity.equalsVersionAgnostic(SystemRuntimeLib700())
+        || identity.equalsVersionAgnostic(SystemPrivateCoreLib700());
+  }
   // endregion
 
   /**

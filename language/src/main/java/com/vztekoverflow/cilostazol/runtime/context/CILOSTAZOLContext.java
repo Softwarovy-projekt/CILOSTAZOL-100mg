@@ -113,9 +113,7 @@ public class CILOSTAZOLContext {
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */
   public NamedTypeSymbol resolveType(String name, String namespace, AssemblyIdentity assembly) {
-    assembly = AssemblyForwarder.forwardedAssembly(assembly);
-    // Note: Assembly in cacheKey is different from what is came in as an argument due to lack of
-    // forwarding implementation
+
     var cacheKey = new TypeDefinitionCacheKey(name, namespace, assembly);
 
     return typeDefinitionCache.computeIfAbsent(
@@ -165,8 +163,6 @@ public class CILOSTAZOLContext {
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {
     // Loading assemblies is an expensive task which should be never compiled
     CompilerAsserts.neverPartOfCompilation();
-
-    assemblyIdentity = AssemblyForwarder.forwardedAssembly(assemblyIdentity);
 
     // Locate dlls in paths
     for (Path path : libraryPaths) {

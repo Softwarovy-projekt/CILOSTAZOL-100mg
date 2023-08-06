@@ -580,6 +580,21 @@ public class NamedTypeSymbol extends TypeSymbol {
   }
 
   public static class NamedTypeSymbolFactory {
+    public static NamedTypeSymbol create(CLIExportedTypeTableRow row, ModuleSymbol module) {
+      if (row.getImplementationTablePtr().getTableId() == CLITableConstants.CLI_TABLE_ASSEMBLY_REF
+          && (row.getFlags() & IS_TYPE_FORWARDER_FLAG_MASK)
+              != 0) // type is forwarded to difference assembly
+      {
+        var rowName = row.getTypeNameHeapPtr().read(module.getDefiningFile().getStringHeap());
+        var rowNamespace =
+            row.getTypeNamespaceHeapPtr().read(module.getDefiningFile().getStringHeap());
+        return NamedTypeSymbol.NamedTypeSymbolFactory.getTypeFromDifferentAssembly(
+            rowName, rowNamespace, row.getImplementationTablePtr(), module);
+      }
+
+      return null;
+    }
+
     public static NamedTypeSymbol create(CLITypeRefTableRow row, ModuleSymbol module) {
       var name = row.getTypeNameHeapPtr().read(module.getDefiningFile().getStringHeap());
       var namespace = row.getTypeNamespaceHeapPtr().read(module.getDefiningFile().getStringHeap());
