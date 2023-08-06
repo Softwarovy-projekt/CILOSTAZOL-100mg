@@ -16,8 +16,7 @@ public enum SystemType {
   Object;
 
   public static SystemType getTypeKind(String name, String namespace, AssemblyIdentity assembly) {
-    if (AssemblyIdentity.SystemPrivateCoreLib700().equalsVersionAgnostic(assembly)
-        && Objects.equals(namespace, "System")) {
+    if (AssemblyIdentity.isStandardLib(assembly) && Objects.equals(namespace, "System")) {
       return switch (name) {
         case "Boolean" -> Boolean;
         case "Byte", "SByte" -> Byte;

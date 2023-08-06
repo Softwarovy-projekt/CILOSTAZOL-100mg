@@ -34,7 +34,7 @@ public final class SymbolResolver {
     if (Boolean == null) {
       Boolean =
           (NamedTypeSymbol)
-              resolveType("Boolean", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Boolean", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Boolean;
   }
@@ -43,7 +43,7 @@ public final class SymbolResolver {
     if (Byte == null) {
       Byte =
           (NamedTypeSymbol)
-              resolveType("Byte", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Byte", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Byte;
   }
@@ -52,7 +52,7 @@ public final class SymbolResolver {
     if (SByte == null) {
       SByte =
           (NamedTypeSymbol)
-              resolveType("SByte", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("SByte", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return SByte;
   }
@@ -61,7 +61,7 @@ public final class SymbolResolver {
     if (Char == null) {
       Char =
           (NamedTypeSymbol)
-              resolveType("Char", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Char", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Char;
   }
@@ -70,7 +70,7 @@ public final class SymbolResolver {
     if (Double == null) {
       Double =
           (NamedTypeSymbol)
-              resolveType("Double", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Double", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Double;
   }
@@ -79,7 +79,7 @@ public final class SymbolResolver {
     if (Single == null) {
       Single =
           (NamedTypeSymbol)
-              resolveType("Single", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Single", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Single;
   }
@@ -88,7 +88,7 @@ public final class SymbolResolver {
     if (Int32 == null) {
       Int32 =
           (NamedTypeSymbol)
-              resolveType("Int32", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Int32", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Int32;
   }
@@ -97,7 +97,7 @@ public final class SymbolResolver {
     if (UInt32 == null) {
       UInt32 =
           (NamedTypeSymbol)
-              resolveType("UInt32", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("UInt32", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return UInt32;
   }
@@ -106,7 +106,7 @@ public final class SymbolResolver {
     if (Int64 == null) {
       Int64 =
           (NamedTypeSymbol)
-              resolveType("Int64", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Int64", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Int64;
   }
@@ -115,7 +115,7 @@ public final class SymbolResolver {
     if (UInt64 == null) {
       UInt64 =
           (NamedTypeSymbol)
-              resolveType("UInt64", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("UInt64", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return UInt64;
   }
@@ -124,7 +124,7 @@ public final class SymbolResolver {
     if (Int16 == null) {
       Int16 =
           (NamedTypeSymbol)
-              resolveType("Int16", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Int16", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Int16;
   }
@@ -133,7 +133,7 @@ public final class SymbolResolver {
     if (UInt16 == null) {
       UInt16 =
           (NamedTypeSymbol)
-              resolveType("UInt16", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("UInt16", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return UInt16;
   }
@@ -142,7 +142,7 @@ public final class SymbolResolver {
     if (Object == null) {
       Object =
           (NamedTypeSymbol)
-              resolveType("Object", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Object", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Object;
   }
@@ -151,7 +151,7 @@ public final class SymbolResolver {
     if (Void == null) {
       Void =
           (NamedTypeSymbol)
-              resolveType("Void", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("Void", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Void;
   }
@@ -160,7 +160,7 @@ public final class SymbolResolver {
     if (String == null) {
       String =
           (NamedTypeSymbol)
-              resolveType("String", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("String", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return String;
   }
@@ -169,7 +169,7 @@ public final class SymbolResolver {
     if (Array == null) {
       Array =
           (NamedTypeSymbol)
-              resolveType("String", "System", AssemblyIdentity.SystemPrivateCoreLib700(), ctx);
+              resolveType("String", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
     }
     return Array;
   }
