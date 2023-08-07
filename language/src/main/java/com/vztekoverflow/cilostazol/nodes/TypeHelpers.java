@@ -10,6 +10,7 @@ public final class TypeHelpers {
 
   public static int signExtend8Exact(long value) {
     if (value != (byte) value) {
+      // TODO: Throw a proper exception
       throw new ArithmeticException("Value overflows when casted to Int8");
     }
     return (byte) value;
@@ -22,6 +23,7 @@ public final class TypeHelpers {
 
   public static int signExtend16Exact(long value) {
     if (value != (short) value) {
+      // TODO: Throw a proper exception
       throw new ArithmeticException("Value overflows when casted to Int16");
     }
     return (short) value;
@@ -60,6 +62,7 @@ public final class TypeHelpers {
   public static int zeroExtend8Exact(long value) {
     long extendedValue = (value & 0xFFL);
     if (extendedValue != (int) extendedValue) {
+      // TODO: Throw a proper exception
       throw new ArithmeticException("Value overflows when casted to UInt8");
     }
     return (int) extendedValue;
@@ -73,6 +76,7 @@ public final class TypeHelpers {
   public static int zeroExtend16Exact(long value) {
     long extendedValue = (value & 0xFFFFL);
     if (extendedValue != (int) extendedValue) {
+      // TODO: Throw a proper exception
       throw new ArithmeticException("Value overflows when casted to UInt16");
     }
     return (int) extendedValue;
@@ -105,6 +109,7 @@ public final class TypeHelpers {
   public static long truncate32Exact(long value) {
     long truncatedValue = (value & 0xFFFFFFFFL);
     if (truncatedValue != (int) truncatedValue) {
+      // TODO: Throw a proper exception
       throw new ArithmeticException("Value overflows when casted to Int32");
     }
     return truncatedValue;

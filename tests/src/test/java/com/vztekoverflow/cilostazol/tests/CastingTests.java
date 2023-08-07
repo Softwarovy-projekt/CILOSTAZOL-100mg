@@ -1,7 +1,8 @@
 package com.vztekoverflow.cilostazol.tests;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
+import org.graalvm.polyglot.PolyglotException;
 import org.junit.jupiter.api.Test;
 
 public class CastingTests extends TestBase {
@@ -135,5 +136,86 @@ public class CastingTests extends TestBase {
                       """);
 
     assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void castClassInvalid() {
+    try {
+      runTestFromCode(
+          """
+                    object a = new object();
+                    string b = (string)a;
+
+                    return b == null ? 42 : 0;
+                    """);
+    } catch (PolyglotException e) {
+      assertTrue(e.getMessage().contains("InvalidCastException"));
+      return;
+    }
+
+    fail("Expected InvalidCastException");
+  }
+
+  @Test
+  public void castClassValid() {
+    var result =
+        runTestFromCode(
+            """
+                    A objB = new B();
+                    return ((B)objB).a;
+
+                    public class A
+                    {
+                        public int a = 42;
+                    }
+
+                    public class B : A {}
+                    """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void isInstance() {
+    var result =
+        runTestFromCode(
+            """
+                            TestClass obj = new TestClass();
+                            if (obj.b is int)
+                                return 42;
+
+                            return 41;
+
+                            public class TestClass
+                            {
+                                public int a;
+                                public object b;
+
+                                public TestClass()
+                                {
+                                    b = 42;
+                                }
+                            }
+                            """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void boxUnboxStruct() {
+    var result =
+        runTestFromCode(
+            """
+                            object obj = new TestStruct();
+                            int b = ((TestStruct)obj).a;
+                            return b;
+
+                            public struct TestStruct
+                            {
+                                public int a;
+                            }
+                            """);
+
+    assertEquals(0, result.exitCode());
   }
 }

@@ -280,6 +280,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case ISINST:
           checkIsInstance(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
+        case CASTCLASS:
+          castClass(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
+          break;
         case BOX:
           box(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
@@ -1533,6 +1536,26 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
   }
 
+  private void castClass(VirtualFrame frame, int slot, CLITablePtr typePtr) {
+    StaticObject object = CILOSTAZOLFrame.popObject(frame, slot);
+    if (object == StaticObject.NULL) {
+      CILOSTAZOLFrame.putObject(frame, slot, StaticObject.NULL);
+      return;
+    }
+
+    // TODO: The value can be a Nullable<T>, which is handled differently than T
+    var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var sourceType = object.getTypeSymbol();
+    if (sourceType.isAssignableFrom(targetType)) {
+      // Success: put object back on stack with a new type
+      CILOSTAZOLFrame.putObject(frame, slot, object);
+    } else {
+      // Failure: throw InvalidCastException
+      // TODO: Throw a proper exception
+      throw new InterpreterException("System.InvalidCastException");
+    }
+  }
+
   private void box(VirtualFrame frame, int slot, CLITablePtr typePtr) {
     var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
     if (!type.isValueType()) return;
@@ -1551,10 +1574,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     CILOSTAZOLFrame.putObject(frame, slot, valueReference);
   }
 
-  private StaticObject createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {
+  private void createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {
     StaticObject object = type.getContext().getAllocator().createNew(type);
     CILOSTAZOLFrame.setLocalObject(frame, dest, object);
-    return object;
   }
 
   private void initializeObject(VirtualFrame frame, int top, CLITablePtr typePtr) {

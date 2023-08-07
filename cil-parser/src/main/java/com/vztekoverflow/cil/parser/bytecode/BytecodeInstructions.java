@@ -465,6 +465,7 @@ public class BytecodeInstructions {
     def(UNBOX, "unbox", "otttt", 0);
     def(UNBOX_ANY, "unbox.any", "otttt", 0);
     def(ISINST, "isinst", "otttt", 0);
+    def(CASTCLASS, "castclass", "otttt", 0);
 
     def(CONV_I1, "conv.i1", "o", 0);
     def(CONV_I2, "conv.i2", "o", 0);

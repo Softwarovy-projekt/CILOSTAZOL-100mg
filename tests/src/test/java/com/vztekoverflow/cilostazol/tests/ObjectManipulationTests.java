@@ -385,48 +385,4 @@ public class ObjectManipulationTests extends TestBase {
 
     assertEquals(1, result.exitCode());
   }
-
-  @Test
-  public void isInstance() {
-    var result =
-        runTestFromCode(
-            """
-                    TestClass obj = new TestClass();
-                    if (obj.b is int)
-                        return 42;
-
-                    return 41;
-
-                    public class TestClass
-                    {
-                        public int a;
-                        public object b;
-
-                        public TestClass()
-                        {
-                            b = 42;
-                        }
-                    }
-                    """);
-
-    assertEquals(42, result.exitCode());
-  }
-
-  @Test
-  public void boxUnboxStruct() {
-    var result =
-        runTestFromCode(
-            """
-                    object obj = new TestStruct();
-                    int b = ((TestStruct)obj).a;
-                    return b;
-
-                    public struct TestStruct
-                    {
-                        public int a;
-                    }
-                    """);
-
-    assertEquals(0, result.exitCode());
-  }
 }
