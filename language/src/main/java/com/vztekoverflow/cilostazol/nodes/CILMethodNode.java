@@ -1815,13 +1815,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     switch (opcode) {
       case CONV_I1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend8(value));
       case CONV_I2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend16(value));
-      case CONV_I, CONV_U, CONV_I4 -> CILOSTAZOLFrame.putInt32(
-          frame, top, (int) TypeHelpers.truncate32(value));
+      case CONV_I4 -> CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.truncate32(value));
       case CONV_I8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
       case CONV_U1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8(value));
       case CONV_U2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend16(value));
-      case CONV_U4 -> CILOSTAZOLFrame.putInt64(frame, top, TypeHelpers.zeroExtend32(value));
+      case CONV_U4 -> CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.zeroExtend32(TypeHelpers.truncate32(value)));
       case CONV_U8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
+      case CONV_I, CONV_U -> CILOSTAZOLFrame.putNativeInt(frame, top, (int) TypeHelpers.truncate32(value));
       default -> {
         CompilerAsserts.neverPartOfCompilation();
         throw new InterpreterException("Invalid opcode for conversion");
@@ -1833,17 +1833,14 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       int opcode, VirtualFrame frame, int top, long value) {
     switch (opcode) {
       case CONV_OVF_I1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend8Exact(value));
-      case CONV_OVF_I2 -> CILOSTAZOLFrame.putInt32(
-          frame, top, TypeHelpers.signExtend16Exact(value));
-      case CONV_OVF_I, CONV_OVF_U, CONV_OVF_I4 -> CILOSTAZOLFrame.putInt32(
-          frame, top, (int) TypeHelpers.truncate32Exact(value));
+      case CONV_OVF_I2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend16Exact(value));
+      case CONV_OVF_I4 -> CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.truncate32Exact(value));
       case CONV_OVF_I8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
       case CONV_OVF_U1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8Exact(value));
-      case CONV_OVF_U2 -> CILOSTAZOLFrame.putInt32(
-          frame, top, TypeHelpers.zeroExtend16Exact(value));
-      case CONV_OVF_U4 -> CILOSTAZOLFrame.putInt64(
-          frame, top, TypeHelpers.zeroExtend32Exact(value));
+      case CONV_OVF_U2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend16Exact(value));
+      case CONV_OVF_U4 -> CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.zeroExtend32Exact(TypeHelpers.truncate32Exact(value)));
       case CONV_OVF_U8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
+      case CONV_OVF_I, CONV_OVF_U -> CILOSTAZOLFrame.putNativeInt(frame, top, (int) TypeHelpers.truncate32Exact(value));
       default -> {
         CompilerAsserts.neverPartOfCompilation();
         throw new InterpreterException("Invalid opcode for conversion");
