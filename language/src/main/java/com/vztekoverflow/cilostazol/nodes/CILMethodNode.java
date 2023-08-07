@@ -60,6 +60,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   public FrameDescriptor getFrameDescriptor() {
     return frameDescriptor;
   }
+  // endregion
 
   // region CILNodeBase
   @Override
@@ -67,7 +68,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     initializeFrame(frame);
     return execute(frame, 0, CILOSTAZOLFrame.getStartStackOffset(method));
   }
-  // endregion
 
   // region OSR
   @Override
@@ -79,12 +79,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   public Object getOSRMetadata() {
     throw new NotImplementedException();
   }
+  // endregion
 
   @Override
   public void setOSRMetadata(Object osrMetadata) {
     throw new NotImplementedException();
   }
-  // endregion
 
   private void initializeFrame(VirtualFrame frame) {
     // Init arguments
@@ -284,7 +284,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           box(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
         case UNBOX:
-          // TODO
+          unbox(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
         case UNBOX_ANY:
           // TODO
@@ -562,6 +562,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
           break;
 
+          // Conversion
         case CONV_I:
         case CONV_I1:
         case CONV_I2:
@@ -927,6 +928,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       default -> throw new InterpreterException();
     }
   }
+  // endregion
 
   private void doNeg(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
     switch (type) {
@@ -939,7 +941,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       default -> throw new InterpreterException();
     }
   }
-  // endregion
 
   // region array
   private void createArray(VirtualFrame frame, CLITablePtr token, int top) {
@@ -978,13 +979,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     Object javaArr = getMethod().getContext().getArrayProperty().getObject(arr);
     CILOSTAZOLFrame.putInt32(frame, top, Array.getLength(javaArr));
   }
+  // endregion
 
   private Object getJavaArrElem(VirtualFrame frame, int top) {
     var idx = CILOSTAZOLFrame.popInt32(frame, top);
     var arr = CILOSTAZOLFrame.popObject(frame, top - 1);
     return Array.get(getMethod().getContext().getArrayProperty().getObject(arr), idx);
   }
-  // endregion
 
   // region indirect
   private void loadIndirectByte(VirtualFrame frame, int top) {
@@ -1461,11 +1462,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       }
     }
   }
+  // endregion
 
   private void storeIndirectNative(VirtualFrame frame, int top) {
     storeIndirectInt(frame, top);
   }
-  // endregion
 
   // region other helpers
   private void pop(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
@@ -1490,6 +1491,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private void duplicateSlot(VirtualFrame frame, int top) {
     CILOSTAZOLFrame.copyStatic(frame, top, top + 1);
   }
+  // endregion
 
   private Object getReturnValue(VirtualFrame frame, int top) {
     if (getMethod().hasReturnValue()) {
@@ -1499,7 +1501,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     // return code 0;
     return 0;
   }
-  // endregion
 
   // region object
   private void copyObject(VirtualFrame frame, CLITablePtr typePtr, int sourceSlot, int destSlot) {
@@ -1537,68 +1538,17 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     if (!type.isValueType()) return;
 
     // TODO: Nullable<T> requires special handling
+    StaticObject object = getMethod().getContext().getAllocator().box(type, frame, slot);
+    CILOSTAZOLFrame.putObject(frame, slot, object);
+  }
 
-    // Find a field to store the data in
-    // TODO: See how to handle structs with multiple fields
-    // TODO: Consider using wrap methods for primitive types like Espresso does
-    FieldSymbol matchingField = null;
-    for (var field : type.getFields()) {
-      if (field.isStatic()) continue;
+  private void unbox(VirtualFrame frame, int slot, CLITablePtr typePtr) {
+    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    if (!type.isValueType()) return;
 
-      var fieldType = field.getType();
-      if (fieldType.equals(type)) {
-        matchingField = field;
-        break;
-      }
-    }
-
-    if (matchingField == null) {
-      throw new InterpreterException("Could not find matching field for value type");
-    }
-
-    switch (matchingField.getSystemType()) {
-      case Int -> {
-        var value = CILOSTAZOLFrame.popInt32(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setInt(boxedObject, value);
-      }
-      case Long -> {
-        var value = CILOSTAZOLFrame.popInt64(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setLong(boxedObject, value);
-      }
-      case Float -> {
-        var value = CILOSTAZOLFrame.popNativeFloat(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setFloat(boxedObject, (float) value);
-      }
-      case Double -> {
-        var value = CILOSTAZOLFrame.popNativeFloat(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setDouble(boxedObject, value);
-      }
-      case Short -> {
-        var value = CILOSTAZOLFrame.popInt32(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setShort(boxedObject, (short) value);
-      }
-      case Char -> {
-        var value = CILOSTAZOLFrame.popInt32(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setChar(boxedObject, (char) value);
-      }
-      case Boolean -> {
-        var value = CILOSTAZOLFrame.popInt32(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setBoolean(boxedObject, value != 0);
-      }
-      case Object -> {
-        var value = CILOSTAZOLFrame.popObject(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setObject(boxedObject, value);
-      }
-      default -> throw new InterpreterException("Unsupported field type");
-    }
+    StaticObject valueReference =
+        getMethod().getContext().getAllocator().unboxToReference(type, frame, method, slot);
+    CILOSTAZOLFrame.putObject(frame, slot, valueReference);
   }
 
   private StaticObject createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {

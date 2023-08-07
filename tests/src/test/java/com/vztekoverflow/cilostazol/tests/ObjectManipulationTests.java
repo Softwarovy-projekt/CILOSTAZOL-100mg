@@ -411,4 +411,22 @@ public class ObjectManipulationTests extends TestBase {
 
     assertEquals(42, result.exitCode());
   }
+
+  @Test
+  public void boxUnboxStruct() {
+    var result =
+        runTestFromCode(
+            """
+                    object obj = new TestStruct();
+                    int b = ((TestStruct)obj).a;
+                    return b;
+
+                    public struct TestStruct
+                    {
+                        public int a;
+                    }
+                    """);
+
+    assertEquals(0, result.exitCode());
+  }
 }

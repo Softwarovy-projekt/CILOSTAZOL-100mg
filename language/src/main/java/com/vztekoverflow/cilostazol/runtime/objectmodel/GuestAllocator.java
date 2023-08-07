@@ -3,6 +3,7 @@ package com.vztekoverflow.cilostazol.runtime.objectmodel;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.AllocationReporter;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
@@ -10,6 +11,7 @@ import com.vztekoverflow.cilostazol.exceptions.InstantiationError;
 import com.vztekoverflow.cilostazol.exceptions.InstantiationException;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NegativeArraySizeException;
+import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
@@ -101,6 +103,106 @@ public final class GuestAllocator {
   // TODO: This might take constructors into consideration
   public StaticObject createClass(NamedTypeSymbol typeSymbol) {
     return createNew(typeSymbol);
+  }
+
+  public StaticObject box(NamedTypeSymbol typeSymbol, VirtualFrame frame, int slot) {
+    StaticObject object = createNew(typeSymbol);
+    switch (typeSymbol.getSystemType()) {
+      case Boolean -> {
+        boolean value = CILOSTAZOLFrame.popInt32(frame, slot) != 0;
+        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setBoolean(object, value);
+      }
+      case Char -> {
+        char value = (char) CILOSTAZOLFrame.popInt32(frame, slot);
+        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setChar(object, value);
+      }
+      case Byte -> {
+        byte value = (byte) CILOSTAZOLFrame.popInt32(frame, slot);
+        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setByte(object, value);
+      }
+      case Int -> {
+        int value = CILOSTAZOLFrame.popInt32(frame, slot);
+        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setInt(object, value);
+      }
+      case Short -> {
+        short value = (short) CILOSTAZOLFrame.popInt32(frame, slot);
+        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setShort(object, value);
+      }
+      case Float -> {
+        float value = (float) CILOSTAZOLFrame.popNativeFloat(frame, slot);
+        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setFloat(object, value);
+      }
+      case Long -> {
+        long value = CILOSTAZOLFrame.popInt64(frame, slot);
+        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setLong(object, value);
+      }
+      case Double -> {
+        double value = CILOSTAZOLFrame.popNativeFloat(frame, slot);
+        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setDouble(object, value);
+      }
+      case Void -> throw new InterpreterException("Cannot box void");
+      case Object -> {
+        // Boxing a struct -> we don't need to change any values
+        object = CILOSTAZOLFrame.popObject(frame, slot);
+      }
+    }
+
+    return trackAllocation(object);
+  }
+
+  public StaticObject unboxToReference(
+      NamedTypeSymbol typeSymbol, VirtualFrame frame, MethodSymbol method, int slot) {
+    StaticObject boxedObject = CILOSTAZOLFrame.popObject(frame, slot);
+    // TODO: Check whether taking a field reference is valid for Nullable<T>
+    switch (typeSymbol.getSystemType()) {
+      case Boolean, Char, Byte, Int, Short, Float, Long, Double -> {
+        StaticField valueField = typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]);
+        return createFieldReference(
+            SymbolResolver.resolveReference(
+                ReferenceSymbol.ReferenceType.Field, typeSymbol.getContext()),
+            boxedObject,
+            valueField);
+      }
+      case Void -> throw new InterpreterException("Cannot unbox void");
+      case Object -> {
+        return getReferenceFromObject(frame, method, boxedObject);
+      }
+    }
+
+    throw new InterpreterException("Cannot unbox to reference");
+  }
+
+  private StaticObject getReferenceFromObject(
+      VirtualFrame frame, MethodSymbol method, StaticObject targetObject) {
+    for (int i = 0; i < CILOSTAZOLFrame.getStartArgsOffset(method); i++) {
+      try {
+        if (targetObject == CILOSTAZOLFrame.getLocalObject(frame, i)) {
+          return createStackReference(
+              SymbolResolver.resolveReference(
+                  ReferenceSymbol.ReferenceType.Local, method.getContext()),
+              frame,
+              i);
+        }
+      } catch (Exception ignored) {
+      }
+    }
+
+    for (int i = CILOSTAZOLFrame.getStartArgsOffset(method);
+        i < CILOSTAZOLFrame.getStartStackOffset(method);
+        i++) {
+      try {
+        if (targetObject == CILOSTAZOLFrame.getLocalObject(frame, i)) {
+          return createStackReference(
+              SymbolResolver.resolveReference(
+                  ReferenceSymbol.ReferenceType.Local, method.getContext()),
+              frame,
+              i);
+        }
+      } catch (Exception ignored) {
+      }
+    }
+
+    throw new InterpreterException("Could not find reference to object in given frame");
   }
 
   private StaticObject trackAllocation(NamedTypeSymbol typeSymbol, StaticObject obj) {
