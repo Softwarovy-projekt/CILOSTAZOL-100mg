@@ -141,10 +141,8 @@ public final class GuestAllocator {
         typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setDouble(object, value);
       }
       case Void -> throw new InterpreterException("Cannot box void");
-      case Object -> {
-        // Boxing a struct -> we don't need to change any values
-        object = CILOSTAZOLFrame.popObject(frame, slot);
-      }
+      case Object -> // Boxing a struct -> we don't need to change any values
+      object = CILOSTAZOLFrame.popObject(frame, slot);
     }
 
     return trackAllocation(object);

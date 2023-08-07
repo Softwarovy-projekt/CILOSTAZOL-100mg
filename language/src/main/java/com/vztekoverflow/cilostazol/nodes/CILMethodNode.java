@@ -290,7 +290,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           unbox(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
         case UNBOX_ANY:
-          // TODO
+          unboxAny(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
 
           // Branching
@@ -1572,6 +1572,72 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     StaticObject valueReference =
         getMethod().getContext().getAllocator().unboxToReference(type, frame, method, slot);
     CILOSTAZOLFrame.putObject(frame, slot, valueReference);
+  }
+
+  private void unboxAny(VirtualFrame frame, int slot, CLITablePtr typePtr) {
+    var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var object = CILOSTAZOLFrame.popObject(frame, slot);
+    var sourceType = (NamedTypeSymbol) object.getTypeSymbol();
+    if (!sourceType.isValueType()) {
+      // Reference types are handled like castclass
+      if (object == StaticObject.NULL) {
+        CILOSTAZOLFrame.putObject(frame, slot, StaticObject.NULL);
+        return;
+      }
+
+      // TODO: The value can be a Nullable<T>, which is handled differently than T
+      if (sourceType.isAssignableFrom(targetType)) {
+        CILOSTAZOLFrame.putObject(frame, slot, object);
+      } else {
+        // TODO: Throw a proper exception
+        throw new InterpreterException("System.InvalidCastException");
+      }
+    }
+
+    switch (targetType.getSystemType()) {
+      case Boolean -> {
+        boolean value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getBoolean(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value ? 1 : 0);
+      }
+      case Char -> {
+        char value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getChar(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value);
+      }
+      case Byte -> {
+        byte value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getByte(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value);
+      }
+      case Int -> {
+        int value = sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getInt(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value);
+      }
+      case Short -> {
+        short value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getShort(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value);
+      }
+      case Float -> {
+        float value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getFloat(object);
+        CILOSTAZOLFrame.putNativeFloat(frame, slot, value);
+      }
+      case Long -> {
+        long value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getLong(object);
+        CILOSTAZOLFrame.putInt64(frame, slot, value);
+      }
+      case Double -> {
+        double value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getDouble(object);
+        CILOSTAZOLFrame.putNativeFloat(frame, slot, value);
+      }
+      case Void -> throw new InterpreterException("Cannot unbox void");
+      case Object -> // Unboxing a struct -> we don't need to change any values
+      CILOSTAZOLFrame.putObject(frame, slot, object);
+    }
   }
 
   private void createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {

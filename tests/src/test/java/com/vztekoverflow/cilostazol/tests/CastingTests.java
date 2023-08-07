@@ -218,4 +218,24 @@ public class CastingTests extends TestBase {
 
     assertEquals(0, result.exitCode());
   }
+
+  @Test
+  public void boxUnboxPrimitives() {
+    var result =
+        runTestFromCode(
+            """
+                      object obj = 1;
+                      int b = (int)obj;
+                      obj = 1L;
+                      long c = (long)obj;
+                      obj = 1.0f;
+                      float d = (float)obj;
+                      obj = 1.0;
+                      double e = (double)obj;
+
+                      return b + (int)c + (int)d + (int)e;
+                      """);
+
+    assertEquals(4, result.exitCode());
+  }
 }
