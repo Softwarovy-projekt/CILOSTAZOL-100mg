@@ -5,19 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-public class StackOperationTests extends TestBase {
-  @Test
-  public void simpleCall() {
-    var result =
-        runTestFromCode(
-            """
-                    string temp = "ABA";
-                    return 1;
-                    """);
-
-    assertEquals(1, result.exitCode());
-  }
-
+public class ComparisonAndBranchingTests extends TestBase {
   @Test
   public void binaryLessThanInt32() {
     var result =

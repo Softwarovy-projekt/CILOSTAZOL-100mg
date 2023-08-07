@@ -60,6 +60,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   public FrameDescriptor getFrameDescriptor() {
     return frameDescriptor;
   }
+  // endregion
 
   // region CILNodeBase
   @Override
@@ -67,7 +68,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     initializeFrame(frame);
     return execute(frame, 0, CILOSTAZOLFrame.getStartStackOffset(method));
   }
-  // endregion
 
   // region OSR
   @Override
@@ -79,12 +79,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   public Object getOSRMetadata() {
     throw new NotImplementedException();
   }
+  // endregion
 
   @Override
   public void setOSRMetadata(Object osrMetadata) {
     throw new NotImplementedException();
   }
-  // endregion
 
   private void initializeFrame(VirtualFrame frame) {
     // Init arguments
@@ -280,14 +280,17 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case ISINST:
           checkIsInstance(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
+        case CASTCLASS:
+          castClass(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
+          break;
         case BOX:
           box(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
         case UNBOX:
-          // TODO
+          unbox(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
         case UNBOX_ANY:
-          // TODO
+          unboxAny(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
 
           // Branching
@@ -562,23 +565,72 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
           break;
 
+          // Conversion
         case CONV_I:
         case CONV_I1:
         case CONV_I2:
         case CONV_I4:
         case CONV_I8:
-          convertToInteger(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc], true);
+          convertFromSignedToInteger(
+              curOpcode,
+              frame,
+              topStack - 1,
+              getIntegerValueForConversion(
+                  frame, topStack - 1, getMethod().getOpCodeTypes()[pc], true));
           break;
         case CONV_U:
         case CONV_U1:
         case CONV_U2:
         case CONV_U4:
         case CONV_U8:
-          convertToInteger(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc], false);
+          convertFromSignedToInteger(
+              curOpcode,
+              frame,
+              topStack - 1,
+              getIntegerValueForConversion(
+                  frame, topStack - 1, getMethod().getOpCodeTypes()[pc], false));
           break;
 
         case CONV_R4:
         case CONV_R8:
+        case CONV_R_UN:
+          convertToFloat(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc]);
+          break;
+
+        case CONV_OVF_I1:
+        case CONV_OVF_I2:
+        case CONV_OVF_I4:
+        case CONV_OVF_I8:
+        case CONV_OVF_I:
+          convertFromSignedToIntegerAndCheckOverflow(
+              curOpcode,
+              frame,
+              topStack - 1,
+              getIntegerValueForConversion(
+                  frame, topStack - 1, getMethod().getOpCodeTypes()[pc], true));
+          break;
+
+        case CONV_OVF_U1:
+        case CONV_OVF_U2:
+        case CONV_OVF_U4:
+        case CONV_OVF_U8:
+        case CONV_OVF_U:
+        case CONV_OVF_I1_UN:
+        case CONV_OVF_I2_UN:
+        case CONV_OVF_I4_UN:
+        case CONV_OVF_I8_UN:
+        case CONV_OVF_I_UN:
+        case CONV_OVF_U1_UN:
+        case CONV_OVF_U2_UN:
+        case CONV_OVF_U4_UN:
+        case CONV_OVF_U8_UN:
+        case CONV_OVF_U_UN:
+          convertFromSignedToIntegerAndCheckOverflow(
+              curOpcode,
+              frame,
+              topStack - 1,
+              getIntegerValueForConversion(
+                  frame, topStack - 1, getMethod().getOpCodeTypes()[pc], false));
           break;
 
           //  arithmetics
@@ -879,6 +931,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       default -> throw new InterpreterException();
     }
   }
+  // endregion
 
   private void doNeg(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
     switch (type) {
@@ -891,7 +944,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       default -> throw new InterpreterException();
     }
   }
-  // endregion
 
   // region array
   private void createArray(VirtualFrame frame, CLITablePtr token, int top) {
@@ -930,13 +982,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     Object javaArr = getMethod().getContext().getArrayProperty().getObject(arr);
     CILOSTAZOLFrame.putInt32(frame, top, Array.getLength(javaArr));
   }
+  // endregion
 
   private Object getJavaArrElem(VirtualFrame frame, int top) {
     var idx = CILOSTAZOLFrame.popInt32(frame, top);
     var arr = CILOSTAZOLFrame.popObject(frame, top - 1);
     return Array.get(getMethod().getContext().getArrayProperty().getObject(arr), idx);
   }
-  // endregion
 
   // region indirect
   private void loadIndirectByte(VirtualFrame frame, int top) {
@@ -1413,11 +1465,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       }
     }
   }
+  // endregion
 
   private void storeIndirectNative(VirtualFrame frame, int top) {
     storeIndirectInt(frame, top);
   }
-  // endregion
 
   // region other helpers
   private void pop(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
@@ -1442,6 +1494,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private void duplicateSlot(VirtualFrame frame, int top) {
     CILOSTAZOLFrame.copyStatic(frame, top, top + 1);
   }
+  // endregion
 
   private Object getReturnValue(VirtualFrame frame, int top) {
     if (getMethod().hasReturnValue()) {
@@ -1451,7 +1504,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     // return code 0;
     return 0;
   }
-  // endregion
 
   // region object
   private void copyObject(VirtualFrame frame, CLITablePtr typePtr, int sourceSlot, int destSlot) {
@@ -1484,79 +1536,113 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
   }
 
+  private void castClass(VirtualFrame frame, int slot, CLITablePtr typePtr) {
+    StaticObject object = CILOSTAZOLFrame.popObject(frame, slot);
+    if (object == StaticObject.NULL) {
+      CILOSTAZOLFrame.putObject(frame, slot, StaticObject.NULL);
+      return;
+    }
+
+    // TODO: The value can be a Nullable<T>, which is handled differently than T
+    var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var sourceType = object.getTypeSymbol();
+    if (sourceType.isAssignableFrom(targetType)) {
+      // Success: put object back on stack with a new type
+      CILOSTAZOLFrame.putObject(frame, slot, object);
+    } else {
+      // Failure: throw InvalidCastException
+      // TODO: Throw a proper exception
+      throw new InterpreterException("System.InvalidCastException");
+    }
+  }
+
   private void box(VirtualFrame frame, int slot, CLITablePtr typePtr) {
     var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
     if (!type.isValueType()) return;
 
     // TODO: Nullable<T> requires special handling
+    StaticObject object = getMethod().getContext().getAllocator().box(type, frame, slot);
+    CILOSTAZOLFrame.putObject(frame, slot, object);
+  }
 
-    // Find a field to store the data in
-    // TODO: See how to handle structs with multiple fields
-    // TODO: Consider using wrap methods for primitive types like Espresso does
-    FieldSymbol matchingField = null;
-    for (var field : type.getFields()) {
-      if (field.isStatic()) continue;
+  private void unbox(VirtualFrame frame, int slot, CLITablePtr typePtr) {
+    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    if (!type.isValueType()) return;
 
-      var fieldType = field.getType();
-      if (fieldType.equals(type)) {
-        matchingField = field;
-        break;
+    StaticObject valueReference =
+        getMethod().getContext().getAllocator().unboxToReference(type, frame, method, slot);
+    CILOSTAZOLFrame.putObject(frame, slot, valueReference);
+  }
+
+  private void unboxAny(VirtualFrame frame, int slot, CLITablePtr typePtr) {
+    var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var object = CILOSTAZOLFrame.popObject(frame, slot);
+    var sourceType = (NamedTypeSymbol) object.getTypeSymbol();
+    if (!sourceType.isValueType()) {
+      // Reference types are handled like castclass
+      if (object == StaticObject.NULL) {
+        CILOSTAZOLFrame.putObject(frame, slot, StaticObject.NULL);
+        return;
+      }
+
+      // TODO: The value can be a Nullable<T>, which is handled differently than T
+      if (sourceType.isAssignableFrom(targetType)) {
+        CILOSTAZOLFrame.putObject(frame, slot, object);
+      } else {
+        // TODO: Throw a proper exception
+        throw new InterpreterException("System.InvalidCastException");
       }
     }
 
-    if (matchingField == null) {
-      throw new InterpreterException("Could not find matching field for value type");
-    }
-
-    switch (matchingField.getSystemType()) {
-      case Int -> {
-        var value = CILOSTAZOLFrame.popInt32(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setInt(boxedObject, value);
-      }
-      case Long -> {
-        var value = CILOSTAZOLFrame.popInt64(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setLong(boxedObject, value);
-      }
-      case Float -> {
-        var value = CILOSTAZOLFrame.popNativeFloat(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setFloat(boxedObject, (float) value);
-      }
-      case Double -> {
-        var value = CILOSTAZOLFrame.popNativeFloat(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setDouble(boxedObject, value);
-      }
-      case Short -> {
-        var value = CILOSTAZOLFrame.popInt32(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setShort(boxedObject, (short) value);
+    switch (targetType.getSystemType()) {
+      case Boolean -> {
+        boolean value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getBoolean(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value ? 1 : 0);
       }
       case Char -> {
-        var value = CILOSTAZOLFrame.popInt32(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setChar(boxedObject, (char) value);
+        char value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getChar(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value);
       }
-      case Boolean -> {
-        var value = CILOSTAZOLFrame.popInt32(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setBoolean(boxedObject, value != 0);
+      case Byte -> {
+        byte value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getByte(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value);
       }
-      case Object -> {
-        var value = CILOSTAZOLFrame.popObject(frame, slot);
-        StaticObject boxedObject = createNewObjectOnStack(frame, type, slot);
-        type.getAssignableInstanceField(matchingField).setObject(boxedObject, value);
+      case Int -> {
+        int value = sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getInt(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value);
       }
-      default -> throw new InterpreterException("Unsupported field type");
+      case Short -> {
+        short value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getShort(object);
+        CILOSTAZOLFrame.putInt32(frame, slot, value);
+      }
+      case Float -> {
+        float value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getFloat(object);
+        CILOSTAZOLFrame.putNativeFloat(frame, slot, value);
+      }
+      case Long -> {
+        long value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getLong(object);
+        CILOSTAZOLFrame.putInt64(frame, slot, value);
+      }
+      case Double -> {
+        double value =
+            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getDouble(object);
+        CILOSTAZOLFrame.putNativeFloat(frame, slot, value);
+      }
+      case Void -> throw new InterpreterException("Cannot unbox void");
+      case Object -> // Unboxing a struct -> we don't need to change any values
+      CILOSTAZOLFrame.putObject(frame, slot, object);
     }
   }
 
-  private StaticObject createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {
+  private void createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {
     StaticObject object = type.getContext().getAllocator().createNew(type);
     CILOSTAZOLFrame.setLocalObject(frame, dest, object);
-    return object;
   }
 
   private void initializeObject(VirtualFrame frame, int top, CLITablePtr typePtr) {
@@ -1812,55 +1898,86 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   // endregion
 
   // region Conversion
-  private void convertToInteger(
-      int opcode,
-      VirtualFrame frame,
-      int top,
-      StaticOpCodeAnalyser.OpCodeType type,
-      boolean signed) {
-    long value =
+  private void convertFromSignedToInteger(int opcode, VirtualFrame frame, int top, long value) {
+    switch (opcode) {
+      case CONV_I1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend8(value));
+      case CONV_I2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend16(value));
+      case CONV_I4 -> CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.truncate32(value));
+      case CONV_I8, CONV_U8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
+      case CONV_U1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8(value));
+      case CONV_U2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend16(value));
+      case CONV_U4 -> CILOSTAZOLFrame.putInt32(
+          frame, top, (int) TypeHelpers.zeroExtend32(TypeHelpers.truncate32(value)));
+      case CONV_I, CONV_U -> CILOSTAZOLFrame.putNativeInt(
+          frame, top, (int) TypeHelpers.truncate32(value));
+      default -> {
+        CompilerAsserts.neverPartOfCompilation();
+        throw new InterpreterException("Invalid opcode for conversion");
+      }
+    }
+  }
+
+  private void convertFromSignedToIntegerAndCheckOverflow(
+      int opcode, VirtualFrame frame, int top, long value) {
+    switch (opcode) {
+      case CONV_OVF_I1, CONV_OVF_I1_UN -> CILOSTAZOLFrame.putInt32(
+          frame, top, TypeHelpers.signExtend8Exact(value));
+      case CONV_OVF_I2, CONV_OVF_I2_UN -> CILOSTAZOLFrame.putInt32(
+          frame, top, TypeHelpers.signExtend16Exact(value));
+      case CONV_OVF_I4, CONV_OVF_I4_UN -> CILOSTAZOLFrame.putInt32(
+          frame, top, (int) TypeHelpers.truncate32Exact(value));
+      case CONV_OVF_I8, CONV_OVF_I8_UN, CONV_OVF_U8, CONV_OVF_U8_UN -> CILOSTAZOLFrame.putInt64(
+          frame, top, value);
+      case CONV_OVF_U1, CONV_OVF_U1_UN -> CILOSTAZOLFrame.putInt32(
+          frame, top, TypeHelpers.zeroExtend8Exact(value));
+      case CONV_OVF_U2, CONV_OVF_U2_UN -> CILOSTAZOLFrame.putInt32(
+          frame, top, TypeHelpers.zeroExtend16Exact(value));
+      case CONV_OVF_U4, CONV_OVF_U4_UN -> CILOSTAZOLFrame.putInt32(
+          frame, top, (int) TypeHelpers.zeroExtend32Exact(TypeHelpers.truncate32Exact(value)));
+      case CONV_OVF_I, CONV_OVF_I_UN -> CILOSTAZOLFrame.putNativeInt(
+          frame, top, (int) TypeHelpers.truncate32Exact(value));
+      case CONV_OVF_U, CONV_OVF_U_UN -> CILOSTAZOLFrame.putNativeInt(
+          frame, top, (int) TypeHelpers.zeroExtend32Exact(TypeHelpers.truncate32Exact(value)));
+      default -> {
+        CompilerAsserts.neverPartOfCompilation();
+        throw new InterpreterException("Invalid opcode for conversion");
+      }
+    }
+  }
+
+  private long getIntegerValueForConversion(
+      VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type, boolean signed) {
+    return switch (type) {
+      case Int32 -> signed
+          ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popInt32(frame, top))
+          : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popInt32(frame, top));
+      case NativeInt -> signed
+          ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popNativeInt(frame, top))
+          : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popNativeInt(frame, top));
+      case Int64 -> CILOSTAZOLFrame.popInt64(frame, top);
+      case NativeFloat -> (long) CILOSTAZOLFrame.popNativeFloat(frame, top);
+      default -> throw new InterpreterException("Invalid type for conversion: " + type);
+    };
+  }
+
+  private void convertToFloat(
+      int opcode, VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
+    double value =
         switch (type) {
-          case Int32 -> signed
-              ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popInt32(frame, top))
-              : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popInt32(frame, top));
+          case Int32 -> CILOSTAZOLFrame.popInt32(frame, top);
           case Int64 -> CILOSTAZOLFrame.popInt64(frame, top);
-          case NativeFloat -> (long) CILOSTAZOLFrame.popNativeFloat(frame, top);
+          case NativeInt -> CILOSTAZOLFrame.popNativeInt(frame, top);
+          case NativeFloat -> CILOSTAZOLFrame.popNativeFloat(frame, top);
           default -> throw new InterpreterException("Invalid type for conversion: " + type);
         };
 
     switch (opcode) {
-      case CONV_I1:
-        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend8(value));
-        break;
-      case CONV_I2:
-        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend16(value));
-        break;
-      case CONV_I4:
-        CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.truncate32(value));
-        break;
-      case CONV_I8:
-        CILOSTAZOLFrame.putInt64(frame, top, value);
-        break;
-      case CONV_U1:
-        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8(value));
-        break;
-      case CONV_U2:
-        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend16(value));
-        break;
-      case CONV_U4:
-        CILOSTAZOLFrame.putInt64(frame, top, TypeHelpers.zeroExtend32(value));
-        break;
-      case CONV_U8:
-        CILOSTAZOLFrame.putInt64(frame, top, value);
-        break;
-      case CONV_U:
-      case CONV_I:
-        // TODO
-        CompilerAsserts.neverPartOfCompilation();
-        throw new InterpreterException("CONV_U/I not implemented");
-      default:
+      case CONV_R4 -> CILOSTAZOLFrame.putNativeFloat(frame, top, (float) value);
+      case CONV_R8 -> CILOSTAZOLFrame.putNativeFloat(frame, top, value);
+      default -> {
         CompilerAsserts.neverPartOfCompilation();
         throw new InterpreterException("Invalid opcode for conversion");
+      }
     }
   }
   // endregion
@@ -1900,14 +2017,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   /**
    * Do a binary comparison of values on the evaluation stack and return the result as a boolean.
-   *
-   * <p>Possible operands: - int32 -> maps to Java int; - int64 -> maps to Java long; - native int
-   * -> unsupported; - float (internal representation that can be implementation-dependent) -> maps
-   * to Java double; - object reference -> maps to Java Object; - managed pointer -> unsupported
-   *
-   * <p>Possible combinations: - int32, int32; - int64, int64; - float, float; - object reference,
-   * object reference (only for beq[.s], bne.un[.s], ceq)
-   *
    * @return the comparison result as a boolean
    */
   private boolean binaryCompare(
