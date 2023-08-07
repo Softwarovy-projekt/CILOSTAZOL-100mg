@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-public class ObjectManipulationTests extends TestBase {
+public class ObjectModelTests extends TestBase {
   @Test
   public void createObject() {
     var result =

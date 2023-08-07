@@ -36,14 +36,13 @@ public class MethodSymbol extends Symbol {
   protected final ExceptionHandlerSymbol[] exceptionHandlers;
   protected final byte[] cil;
   protected final byte[] originalCil;
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private StaticOpCodeAnalyser.OpCodeType[] opCodeTypes = null;
   // body
   protected final int maxStack;
   protected final MethodHeaderFlags methodHeaderFlags;
-
   @CompilerDirectives.CompilationFinal protected RootNode node;
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private StaticOpCodeAnalyser.OpCodeType[] opCodeTypes = null;
 
   protected MethodSymbol(
       String name,
@@ -251,15 +250,14 @@ public class MethodSymbol extends Symbol {
       final byte[] cil;
       final ExceptionHandlerSymbol[] handlers;
 
-      // Method header parsing
-      if (!flags.hasFlag(MethodFlags.Flag.ABSTRACT)) {
-        int rva = mDef.getRVA();
-        if (rva == 0) {
-          // TODO: Remove this workaround, see if this only happens with System.Object::GetType
-          rva = mDef.getRVA(8);
-        }
-        final ByteSequenceBuffer buf = file.getBuffer(rva);
+      int rva = mDef.getRVA();
+      if (rva == 0)
+        System.err.println(
+            "Warning: Method " + name + " has no RVA (likely tagged as extern), skipping.");
 
+      // Method header parsing
+      if (rva != 0 && !flags.hasFlag(MethodFlags.Flag.ABSTRACT)) {
+        final ByteSequenceBuffer buf = file.getBuffer(rva);
         final byte firstByte = buf.getByte();
         final MethodHeaderFlags pom = new MethodHeaderFlags(firstByte);
         if (pom.hasFlag(MethodHeaderFlags.Flag.CORILMETHOD_TINYFORMAT)) {
