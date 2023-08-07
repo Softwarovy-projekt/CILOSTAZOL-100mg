@@ -565,20 +565,56 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case CONV_I2:
         case CONV_I4:
         case CONV_I8:
-          convertToInteger(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc], true);
+          convertToInteger(
+              curOpcode,
+              frame,
+              topStack - 1,
+              getIntegerValueForConversion(
+                  frame, topStack - 1, getMethod().getOpCodeTypes()[pc], true));
           break;
         case CONV_U:
         case CONV_U1:
         case CONV_U2:
         case CONV_U4:
         case CONV_U8:
-          convertToInteger(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc], false);
+          convertToInteger(
+              curOpcode,
+              frame,
+              topStack - 1,
+              getIntegerValueForConversion(
+                  frame, topStack - 1, getMethod().getOpCodeTypes()[pc], false));
           break;
 
         case CONV_R4:
         case CONV_R8:
         case CONV_R_UN:
           convertToFloat(curOpcode, frame, topStack - 1, getMethod().getOpCodeTypes()[pc]);
+          break;
+
+        case CONV_OVF_I1:
+        case CONV_OVF_I2:
+        case CONV_OVF_I4:
+        case CONV_OVF_I8:
+        case CONV_OVF_I:
+          convertToIntegerAndCheckOverflow(
+              curOpcode,
+              frame,
+              topStack - 1,
+              getIntegerValueForConversion(
+                  frame, topStack - 1, getMethod().getOpCodeTypes()[pc], true));
+          break;
+
+        case CONV_OVF_U1:
+        case CONV_OVF_U2:
+        case CONV_OVF_U4:
+        case CONV_OVF_U8:
+        case CONV_OVF_U:
+          convertToIntegerAndCheckOverflow(
+              curOpcode,
+              frame,
+              topStack - 1,
+              getIntegerValueForConversion(
+                  frame, topStack - 1, getMethod().getOpCodeTypes()[pc], false));
           break;
 
           //  arithmetics
@@ -1775,54 +1811,59 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   // endregion
 
   // region Conversion
-  private void convertToInteger(
-      int opcode,
-      VirtualFrame frame,
-      int top,
-      StaticOpCodeAnalyser.OpCodeType type,
-      boolean signed) {
-    long value =
-        switch (type) {
-          case Int32 -> signed
-              ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popInt32(frame, top))
-              : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popInt32(frame, top));
-          case Int64 -> CILOSTAZOLFrame.popInt64(frame, top);
-          case NativeInt -> CILOSTAZOLFrame.popNativeInt(frame, top);
-          case NativeFloat -> (long) CILOSTAZOLFrame.popNativeFloat(frame, top);
-          default -> throw new InterpreterException("Invalid type for conversion: " + type);
-        };
-
+  private void convertToInteger(int opcode, VirtualFrame frame, int top, long value) {
     switch (opcode) {
-      case CONV_I1:
-        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend8(value));
-        break;
-      case CONV_I2:
-        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend16(value));
-        break;
-      case CONV_I:
-      case CONV_U:
-      case CONV_I4:
-        CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.truncate32(value));
-        break;
-      case CONV_I8:
-        CILOSTAZOLFrame.putInt64(frame, top, value);
-        break;
-      case CONV_U1:
-        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8(value));
-        break;
-      case CONV_U2:
-        CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend16(value));
-        break;
-      case CONV_U4:
-        CILOSTAZOLFrame.putInt64(frame, top, TypeHelpers.zeroExtend32(value));
-        break;
-      case CONV_U8:
-        CILOSTAZOLFrame.putInt64(frame, top, value);
-        break;
-      default:
+      case CONV_I1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend8(value));
+      case CONV_I2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend16(value));
+      case CONV_I, CONV_U, CONV_I4 -> CILOSTAZOLFrame.putInt32(
+          frame, top, (int) TypeHelpers.truncate32(value));
+      case CONV_I8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
+      case CONV_U1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8(value));
+      case CONV_U2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend16(value));
+      case CONV_U4 -> CILOSTAZOLFrame.putInt64(frame, top, TypeHelpers.zeroExtend32(value));
+      case CONV_U8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
+      default -> {
         CompilerAsserts.neverPartOfCompilation();
         throw new InterpreterException("Invalid opcode for conversion");
+      }
     }
+  }
+
+  private void convertToIntegerAndCheckOverflow(
+      int opcode, VirtualFrame frame, int top, long value) {
+    switch (opcode) {
+      case CONV_OVF_I1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.signExtend8Exact(value));
+      case CONV_OVF_I2 -> CILOSTAZOLFrame.putInt32(
+          frame, top, TypeHelpers.signExtend16Exact(value));
+      case CONV_OVF_I, CONV_OVF_U, CONV_OVF_I4 -> CILOSTAZOLFrame.putInt32(
+          frame, top, (int) TypeHelpers.truncate32Exact(value));
+      case CONV_OVF_I8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
+      case CONV_OVF_U1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8Exact(value));
+      case CONV_OVF_U2 -> CILOSTAZOLFrame.putInt32(
+          frame, top, TypeHelpers.zeroExtend16Exact(value));
+      case CONV_OVF_U4 -> CILOSTAZOLFrame.putInt64(
+          frame, top, TypeHelpers.zeroExtend32Exact(value));
+      case CONV_OVF_U8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
+      default -> {
+        CompilerAsserts.neverPartOfCompilation();
+        throw new InterpreterException("Invalid opcode for conversion");
+      }
+    }
+  }
+
+  private long getIntegerValueForConversion(
+      VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type, boolean signed) {
+    return switch (type) {
+      case Int32 -> signed
+          ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popInt32(frame, top))
+          : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popInt32(frame, top));
+      case NativeInt -> signed
+          ? TypeHelpers.signExtend32(CILOSTAZOLFrame.popNativeInt(frame, top))
+          : TypeHelpers.zeroExtend32(CILOSTAZOLFrame.popNativeInt(frame, top));
+      case Int64 -> CILOSTAZOLFrame.popInt64(frame, top);
+      case NativeFloat -> (long) CILOSTAZOLFrame.popNativeFloat(frame, top);
+      default -> throw new InterpreterException("Invalid type for conversion: " + type);
+    };
   }
 
   private void convertToFloat(
@@ -1882,14 +1923,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   /**
    * Do a binary comparison of values on the evaluation stack and return the result as a boolean.
-   *
-   * <p>Possible operands: - int32 -> maps to Java int; - int64 -> maps to Java long; - native int
-   * -> unsupported; - float (internal representation that can be implementation-dependent) -> maps
-   * to Java double; - object reference -> maps to Java Object; - managed pointer -> unsupported
-   *
-   * <p>Possible combinations: - int32, int32; - int64, int64; - float, float; - object reference,
-   * object reference (only for beq[.s], bne.un[.s], ceq)
-   *
    * @return the comparison result as a boolean
    */
   private boolean binaryCompare(
