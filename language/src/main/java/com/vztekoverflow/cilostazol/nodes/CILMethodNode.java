@@ -1906,7 +1906,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case CONV_I8, CONV_U8 -> CILOSTAZOLFrame.putInt64(frame, top, value);
       case CONV_U1 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend8(value));
       case CONV_U2 -> CILOSTAZOLFrame.putInt32(frame, top, TypeHelpers.zeroExtend16(value));
-      case CONV_U4 -> CILOSTAZOLFrame.putInt32(frame, top, (int) TypeHelpers.zeroExtend32(TypeHelpers.truncate32(value)));
+      case CONV_U4 -> CILOSTAZOLFrame.putInt32(
+          frame, top, (int) TypeHelpers.zeroExtend32(TypeHelpers.truncate32(value)));
       case CONV_I, CONV_U -> CILOSTAZOLFrame.putNativeInt(
           frame, top, (int) TypeHelpers.truncate32(value));
       default -> {
