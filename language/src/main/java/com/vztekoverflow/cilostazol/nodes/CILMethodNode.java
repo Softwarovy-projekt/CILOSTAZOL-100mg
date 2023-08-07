@@ -237,8 +237,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           loadStaticField(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
         case LDFLDA:
+          loadFieldInstanceFieldRef(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
         case LDSFLDA:
-          // TODO: Requires references to fields
+          loadFieldStaticFieldRef(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
 
           // Storing fields
@@ -1620,6 +1622,43 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
     // Initialize reference type
     CILOSTAZOLFrame.setLocalObject(frame, dest, StaticObject.NULL);
+  }
+
+  private void loadFieldInstanceFieldRef(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
+    final var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
+    final var field = classMember.symbol.getAssignableInstanceField(classMember.member);
+    final var object =
+        (StaticObject)
+            CILOSTAZOLFrame.popObjectFromPossibleReference(
+                frame, top - 1, getMethod().getContext());
+    CILOSTAZOLFrame.putObject(
+        frame,
+        top - 1,
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createFieldReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Field, getMethod().getContext()),
+                object,
+                field));
+  }
+
+  private void loadFieldStaticFieldRef(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
+    final var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
+    final var field = classMember.symbol.getAssignableStaticField(classMember.member);
+    final var object = classMember.symbol.getStaticInstance();
+    CILOSTAZOLFrame.putObject(
+        frame,
+        top,
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createFieldReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Field, getMethod().getContext()),
+                object,
+                field));
   }
 
   private void loadInstanceField(

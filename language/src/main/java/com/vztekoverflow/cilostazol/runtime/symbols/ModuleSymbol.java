@@ -46,6 +46,16 @@ public final class ModuleSymbol extends Symbol {
       }
     }
 
+    // search exported types
+    for (var row : definingFile.getTableHeads().getExportedTypeTableHead()) {
+      var rowName = row.getTypeNameHeapPtr().read(definingFile.getStringHeap());
+      var rowNamespace = row.getTypeNamespaceHeapPtr().read(definingFile.getStringHeap());
+
+      if (rowName.equals(name) && rowNamespace.equals(namespace)) {
+        return NamedTypeSymbol.NamedTypeSymbolFactory.create(row, this);
+      }
+    }
+
     return null;
   }
 
