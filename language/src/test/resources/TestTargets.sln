@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrimitiveTypesTest", "TypeP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubstitutionTest", "TypeParsingTestTargets\SubstitutionTest\SubstitutionTest.csproj", "{D01C1378-9DDE-4D29-AD2F-76E9DB953788}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BranchOperationsTest", "StaticAnalysisTestTargets\BranchOperationsTest\BranchOperationsTest.csproj", "{C963214E-6CCC-4F05-834A-02E1A201DEA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,5 +98,9 @@ Global
 		{D01C1378-9DDE-4D29-AD2F-76E9DB953788}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D01C1378-9DDE-4D29-AD2F-76E9DB953788}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D01C1378-9DDE-4D29-AD2F-76E9DB953788}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C963214E-6CCC-4F05-834A-02E1A201DEA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C963214E-6CCC-4F05-834A-02E1A201DEA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C963214E-6CCC-4F05-834A-02E1A201DEA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C963214E-6CCC-4F05-834A-02E1A201DEA8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
