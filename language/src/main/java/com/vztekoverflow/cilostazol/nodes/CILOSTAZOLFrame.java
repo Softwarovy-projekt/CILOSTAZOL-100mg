@@ -330,7 +330,6 @@ public final class CILOSTAZOLFrame {
     assert sourceSlot >= 0 && destSlot >= 0;
     frame.copyStatic(sourceSlot, destSlot);
   }
-  // endregion
 
   // region stack types
   public enum StackType {
@@ -341,4 +340,5 @@ public final class CILOSTAZOLFrame {
     NativeInt,
     ManagedPointer,
   }
+  // endregion
 }

@@ -1,6 +1,7 @@
 package com.vztekoverflow.cilostazol.runtime.objectmodel;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.symbols.FieldSymbol;
@@ -25,7 +26,9 @@ public final class LinkedFieldLayout {
       NamedTypeSymbol parserTypeSymbol,
       NamedTypeSymbol superClass,
       Map<FieldSymbol, Integer> instanceFieldMapping,
-      Map<FieldSymbol, Integer> staticFieldMapping) {
+      Map<FieldSymbol, Integer> staticFieldMapping,
+      VirtualFrame frame,
+      int topStack) {
     StaticShape.Builder instanceBuilder = StaticShape.newBuilder(description.getLanguage());
     StaticShape.Builder staticBuilder = StaticShape.newBuilder(description.getLanguage());
 
@@ -62,7 +65,7 @@ public final class LinkedFieldLayout {
       instanceShape =
           instanceBuilder.build(StaticObject.class, StaticObject.StaticObjectFactory.class);
     } else {
-      instanceShape = instanceBuilder.build(superClass.getShape(false));
+      instanceShape = instanceBuilder.build(superClass.getShape(frame, topStack, false));
     }
     staticShape = staticBuilder.build(StaticObject.class, StaticObject.StaticObjectFactory.class);
     fieldTableLength = nextInstanceFieldSlot;

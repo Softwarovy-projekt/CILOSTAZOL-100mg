@@ -34,7 +34,8 @@ public class NEWOBJNode extends NodeizedNodeBase {
     Object[] args = getMethodArgsFromStack(frame);
 
     // Then, create the object as arg0
-    StaticObject object = CILOSTAZOLContext.get(this).getAllocator().createNew(type);
+    StaticObject object =
+        CILOSTAZOLContext.get(this).getAllocator().createNew(type, frame, topStack);
     args[0] = object;
 
     // Finally, call the constructor and push the result to the stack
