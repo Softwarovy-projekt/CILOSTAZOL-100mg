@@ -1,5 +1,7 @@
 package com.vztekoverflow.cil.parser.bytecode;
 
+import static com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions.SWITCH;
+
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
@@ -52,6 +54,9 @@ public class BytecodeBuffer {
     if (opcode > 0xFF) {
       return position + BytecodeInstructions.getLength(opcode) + 1;
     } else {
+      if (opcode == SWITCH)
+        //position + uint + N*int + 1
+        return position + (int)(getImmUInt(position) + 1)* 4 + 1;
       return position + BytecodeInstructions.getLength(opcode);
     }
   }
