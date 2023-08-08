@@ -30,12 +30,12 @@ public class StaticOpCodeAnalyser {
   }
 
   private static OpCodeType[] getOpcodeTypes(
-          byte[] cil,
-          int maxStack,
-          TypeSymbol[] parameters,
-          LocalSymbol[] locals,
-          ReturnSymbol returnType,
-          ModuleSymbol module) {
+      byte[] cil,
+      int maxStack,
+      TypeSymbol[] parameters,
+      LocalSymbol[] locals,
+      ReturnSymbol returnType,
+      ModuleSymbol module) {
     var bytecodeBuffer = new BytecodeBuffer(cil);
     OpCodeType[] types = new OpCodeType[cil.length];
     boolean[] visited = new boolean[cil.length];
@@ -47,12 +47,28 @@ public class StaticOpCodeAnalyser {
     while (!visitStack.isEmpty()) {
       pc = visitStack.pop();
       var nextPc = bytecodeBuffer.nextInstruction(pc);
-      if (nextPc < cil.length && !visited[nextPc])//!visited can be removed as a safety measure to traverse all the opcodes
-        visitStack.add(nextPc);
+      if (nextPc < cil.length
+          && !visited[
+              nextPc]) // !visited can be removed as a safety measure to traverse all the opcodes
+      visitStack.add(nextPc);
 
       int curOpcode = bytecodeBuffer.getOpcode(pc);
       if (!visited[pc])
-        topStack = resolveOpCode(parameters, locals, returnType, module, bytecodeBuffer, types, visited, visitStack, stack, topStack, pc, nextPc,  curOpcode);
+        topStack =
+            resolveOpCode(
+                parameters,
+                locals,
+                returnType,
+                module,
+                bytecodeBuffer,
+                types,
+                visited,
+                visitStack,
+                stack,
+                topStack,
+                pc,
+                nextPc,
+                curOpcode);
 
       topStack += BytecodeInstructions.getStackEffect(curOpcode);
       visited[pc] = true;
@@ -61,7 +77,20 @@ public class StaticOpCodeAnalyser {
     return types;
   }
 
-  private static int resolveOpCode(TypeSymbol[] parameters, LocalSymbol[] locals, ReturnSymbol returnType, ModuleSymbol module, BytecodeBuffer bytecodeBuffer, OpCodeType[] types, boolean[] visited, Stack<Integer> visitStack, StackType[] stack, int topStack, int pc, int nextPc, int curOpcode) {
+  private static int resolveOpCode(
+      TypeSymbol[] parameters,
+      LocalSymbol[] locals,
+      ReturnSymbol returnType,
+      ModuleSymbol module,
+      BytecodeBuffer bytecodeBuffer,
+      OpCodeType[] types,
+      boolean[] visited,
+      Stack<Integer> visitStack,
+      StackType[] stack,
+      int topStack,
+      int pc,
+      int nextPc,
+      int curOpcode) {
     switch (curOpcode) {
       case NOP:
       case BREAK:
@@ -165,13 +194,14 @@ public class StaticOpCodeAnalyser {
       case CALLI:
         // TODO: after implementing functionality of this opcode
         break;
-      case RET:{
-        if (returnType.getType().getSystemType() != SystemType.Void){
-          clear(stack, topStack);
-          topStack--;
+      case RET:
+        {
+          if (returnType.getType().getSystemType() != SystemType.Void) {
+            clear(stack, topStack);
+            topStack--;
+          }
+          break;
         }
-        break;
-      }
       case BR:
         handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc);
         break;
@@ -433,8 +463,7 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack, Int32); // native usnigned int
         break;
       case LDELEMA:
-        setTypeByStack(
-                types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, ManagedPointer);
         break;
@@ -453,34 +482,29 @@ public class StaticOpCodeAnalyser {
       case LDELEM_U1:
       case LDELEM_U2:
       case LDELEM_U4:
-        setTypeByStack(
-                types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, Int32);
         break;
       case LDELEM_I8:
         // case LDELEM_U8: //same opcode as LDELEM_I8
-        setTypeByStack(
-                types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, Int64);
         break;
       case LDELEM_I:
-        setTypeByStack(
-                types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, NativeInt);
         break;
       case LDELEM_R4:
       case LDELEM_R8:
-        setTypeByStack(
-                types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, NativeFloat);
         break;
       case LDELEM_REF:
-        setTypeByStack(
-                types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, Object);
         break;
@@ -494,7 +518,7 @@ public class StaticOpCodeAnalyser {
       case STELEM_REF:
       case STELEM_I:
         setTypeByStack(
-                types, stack, topStack - 1, pc, curOpcode); // native int or int32 for the index
+            types, stack, topStack - 1, pc, curOpcode); // native int or int32 for the index
         clear(stack, topStack);
         clear(stack, topStack - 1);
         clear(stack, topStack - 2);
@@ -545,18 +569,26 @@ public class StaticOpCodeAnalyser {
     return topStack;
   }
 
-  private static void handleOpCodeJump(BytecodeBuffer bytecodeBuffer, boolean[] visited, Stack<Integer> visitStack, int pc, int nextPc) {
+  private static void handleOpCodeJump(
+      BytecodeBuffer bytecodeBuffer,
+      boolean[] visited,
+      Stack<Integer> visitStack,
+      int pc,
+      int nextPc) {
     var offset = bytecodeBuffer.getImmInt(pc);
     var target = nextPc + offset;
-    if(!visited[target])
-      visitStack.push(target);
+    if (!visited[target]) visitStack.push(target);
   }
 
-  private static void handleOpCodeJumpShort(BytecodeBuffer bytecodeBuffer, boolean[] visited, Stack<Integer> visitStack, int pc, int nextPc) {
+  private static void handleOpCodeJumpShort(
+      BytecodeBuffer bytecodeBuffer,
+      boolean[] visited,
+      Stack<Integer> visitStack,
+      int pc,
+      int nextPc) {
     var offset = bytecodeBuffer.getImmByte(pc);
     var target = nextPc + offset;
-    if(!visited[target])
-      visitStack.push(target);
+    if (!visited[target]) visitStack.push(target);
   }
 
   private static void handleLdsflda(

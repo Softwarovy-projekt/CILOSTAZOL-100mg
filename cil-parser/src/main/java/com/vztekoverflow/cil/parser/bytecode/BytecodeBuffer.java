@@ -55,8 +55,8 @@ public class BytecodeBuffer {
       return position + BytecodeInstructions.getLength(opcode) + 1;
     } else {
       if (opcode == SWITCH)
-        //position + uint + N*int + 1
-        return position + (int)(getImmUInt(position) + 1)* 4 + 1;
+        // position + uint + N*int + 1
+        return position + (int) (getImmUInt(position) + 1) * 4 + 1;
       return position + BytecodeInstructions.getLength(opcode);
     }
   }
