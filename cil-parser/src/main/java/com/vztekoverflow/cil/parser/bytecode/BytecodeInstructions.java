@@ -217,6 +217,7 @@ public class BytecodeInstructions {
   public static final int CLT = 0xFE04;
   public static final int CLT_UN = 0xFE05;
   public static final int INITOBJ = 0xFE15;
+  public static final int SIZEOF = 0xFE1C;
 
   // Custom truffle instructions start here
   // Allowed by III.1.2.1:
@@ -480,6 +481,8 @@ public class BytecodeInstructions {
     def(CONV_I, "conv.i", "o", 0);
     def(CONV_U, "conv.u", "o", 0);
     def(CONV_R_UN, "conv.r.un", "o", 0);
+
+    def(SIZEOF, "sizeof", "otttt", 1);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }

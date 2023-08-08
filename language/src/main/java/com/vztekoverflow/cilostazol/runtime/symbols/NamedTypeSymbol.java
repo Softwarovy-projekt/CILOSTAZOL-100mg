@@ -81,6 +81,8 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private StaticField[] staticFields;
+
+  @CompilerDirectives.CompilationFinal private int sizeInBytes = -1;
   // endregion
 
   protected NamedTypeSymbol(
@@ -356,6 +358,14 @@ public class NamedTypeSymbol extends TypeSymbol {
     return staticFields;
   }
 
+  public int getSize(VirtualFrame frame, int topStack) {
+    if (sizeInBytes == -1) {
+      createShapes(frame, topStack);
+    }
+
+    return sizeInBytes;
+  }
+
   private void createShapes(VirtualFrame frame, int topStack) {
     CompilerDirectives.transferToInterpreterAndInvalidate();
 
@@ -372,6 +382,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     staticShape = layout.staticShape;
     instanceFields = layout.instanceFields;
     staticFields = layout.staticFields;
+    sizeInBytes = calculateSizeInBytes(frame, topStack);
     initializeStaticInstance(frame, topStack);
   }
 
@@ -392,6 +403,21 @@ public class NamedTypeSymbol extends TypeSymbol {
   private void callStaticConstructor(VirtualFrame frame, int topStack, MethodSymbol constructor) {
     var callNode = new CALLNode(constructor, topStack);
     callNode.execute(frame);
+  }
+
+  private int calculateSizeInBytes(VirtualFrame frame, int topStack) {
+    if (!isValueType()) {
+      // TODO: By default, 4B references are used. This can be changed via
+      // `-H:±UseCompressedReferences`
+      return 4;
+    }
+
+    int sizeInBytes = 0;
+    for (var field : getFields()) {
+      sizeInBytes += ((NamedTypeSymbol) field.getType()).getSize(frame, topStack);
+    }
+
+    return sizeInBytes;
   }
   // endregion
 
