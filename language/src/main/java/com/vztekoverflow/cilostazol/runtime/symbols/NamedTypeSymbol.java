@@ -1,6 +1,8 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
@@ -13,6 +15,7 @@ import com.vztekoverflow.cilostazol.exceptions.InvalidCLIException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
+import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
@@ -217,27 +220,28 @@ public class NamedTypeSymbol extends TypeSymbol {
     return lazyFields;
   }
 
-  public StaticField getAssignableInstanceField(FieldSymbol field) {
+  public StaticField getAssignableInstanceField(
+      FieldSymbol field, VirtualFrame frame, int topStack) {
     if (instanceShape == null) {
-      createShapes();
+      createShapes(frame, topStack);
     }
 
     assert !field.isStatic();
     return instanceFields[instanceFieldIndexMapping.get(field)];
   }
 
-  public StaticField getAssignableStaticField(FieldSymbol field) {
+  public StaticField getAssignableStaticField(FieldSymbol field, VirtualFrame frame, int topStack) {
     if (staticShape == null) {
-      createShapes();
+      createShapes(frame, topStack);
     }
 
     assert field.isStatic();
     return staticFields[staticFieldIndexMapping.get(field)];
   }
 
-  public StaticObject getStaticInstance() {
+  public StaticObject getStaticInstance(VirtualFrame frame, int topStack) {
     if (staticInstance == null) {
-      createShapes();
+      createShapes(frame, topStack);
     }
 
     return staticInstance;
@@ -327,31 +331,32 @@ public class NamedTypeSymbol extends TypeSymbol {
   // endregion
 
   // region SOM shapes
-  public StaticShape<StaticObject.StaticObjectFactory> getShape(boolean isStatic) {
+  public StaticShape<StaticObject.StaticObjectFactory> getShape(
+      VirtualFrame frame, int topStack, boolean isStatic) {
     if (isStatic && staticShape == null || !isStatic && instanceShape == null) {
-      createShapes();
+      createShapes(frame, topStack);
     }
 
     return isStatic ? staticShape : instanceShape;
   }
 
-  public StaticField[] getInstanceFields() {
+  public StaticField[] getInstanceFields(VirtualFrame frame, int topStack) {
     if (instanceShape == null) {
-      createShapes();
+      createShapes(frame, topStack);
     }
 
     return instanceFields;
   }
 
-  public StaticField[] getStaticFields() {
+  public StaticField[] getStaticFields(VirtualFrame frame, int topStack) {
     if (staticFields == null) {
-      createShapes();
+      createShapes(frame, topStack);
     }
 
     return staticFields;
   }
 
-  private void createShapes() {
+  private void createShapes(VirtualFrame frame, int topStack) {
     CompilerDirectives.transferToInterpreterAndInvalidate();
 
     LinkedFieldLayout layout =
@@ -360,16 +365,33 @@ public class NamedTypeSymbol extends TypeSymbol {
             this,
             getDirectBaseClass(),
             instanceFieldIndexMapping,
-            staticFieldIndexMapping);
+            staticFieldIndexMapping,
+            frame,
+            topStack);
     instanceShape = layout.instanceShape;
     staticShape = layout.staticShape;
     instanceFields = layout.instanceFields;
     staticFields = layout.staticFields;
-    staticInstance = staticShape.getFactory().create(this);
+    initializeStaticInstance(frame, topStack);
   }
 
-  public void safelyInitialize() {
-    // TODO
+  @ExplodeLoop
+  private void initializeStaticInstance(VirtualFrame frame, int topStack) {
+    staticInstance = staticShape.getFactory().create(this);
+    if (frame == null) {
+      return;
+    }
+
+    var classMember =
+        SymbolResolver.resolveMethod(this, ".cctor", new TypeSymbol[0], new TypeSymbol[0], 0);
+    if (classMember != null) {
+      callStaticConstructor(frame, topStack, classMember.member);
+    }
+  }
+
+  private void callStaticConstructor(VirtualFrame frame, int topStack, MethodSymbol constructor) {
+    var callNode = new CALLNode(constructor, topStack);
+    callNode.execute(frame);
   }
   // endregion
 

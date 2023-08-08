@@ -71,6 +71,43 @@ public class ObjectModelTests extends TestBase {
   }
 
   @Test
+  public void accessStaticFieldWithStaticConstructor() {
+    var result =
+        runTestFromCode(
+            """
+                    return TestClass.a;
+
+                    public class TestClass
+                    {
+                        public static int a;
+
+                        static TestClass()
+                        {
+                            a = 42;
+                        }
+                    }
+                    """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void accessStaticFieldAfterInitialization() {
+    var result =
+        runTestFromCode(
+            """
+                            return TestClass.a;
+
+                            public class TestClass
+                            {
+                                public static int a = 42;
+                            }
+                            """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
   public void initClass() {
     var result =
         runTestFromCode(
@@ -384,5 +421,25 @@ public class ObjectModelTests extends TestBase {
                         """);
 
     assertEquals(1, result.exitCode());
+  }
+
+  @Test
+  public void parentFieldAccess() {
+    var result =
+        runTestFromCode(
+            """
+                    TestStruct2 obj = new TestStruct2();
+                    obj.a = 42;
+                    return obj.a;
+
+                    public class TestStruct
+                    {
+                        public int a;
+                    }
+
+                    public class TestStruct2 : TestStruct { }
+                    """);
+
+    assertEquals(42, result.exitCode());
   }
 }

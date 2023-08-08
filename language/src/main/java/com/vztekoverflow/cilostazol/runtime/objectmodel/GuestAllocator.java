@@ -41,17 +41,19 @@ public final class GuestAllocator {
     }
   }
 
-  private static void initInstanceFields(StaticObject obj, NamedTypeSymbol typeSymbol) {
+  private static void initInstanceFields(
+      StaticObject obj, NamedTypeSymbol typeSymbol, VirtualFrame frame, int topStack) {
     if (CompilerDirectives.isPartialEvaluationConstant(typeSymbol)) {
-      initLoop(obj, typeSymbol);
+      initLoop(obj, typeSymbol, frame, topStack);
     } else {
-      initLoopNoExplode(obj, typeSymbol);
+      initLoopNoExplode(obj, typeSymbol, frame, topStack);
     }
   }
 
   @ExplodeLoop
-  private static void initLoop(StaticObject obj, NamedTypeSymbol typeSymbol) {
-    for (StaticField f : typeSymbol.getInstanceFields()) {
+  private static void initLoop(
+      StaticObject obj, NamedTypeSymbol typeSymbol, VirtualFrame frame, int topStack) {
+    for (StaticField f : typeSymbol.getInstanceFields(frame, topStack)) {
       assert !f.isStatic();
       if (f.getKind() == SystemType.Object) {
         f.setObject(obj, StaticObject.NULL);
@@ -59,8 +61,9 @@ public final class GuestAllocator {
     }
   }
 
-  private static void initLoopNoExplode(StaticObject obj, NamedTypeSymbol typeSymbol) {
-    for (StaticField f : typeSymbol.getInstanceFields()) {
+  private static void initLoopNoExplode(
+      StaticObject obj, NamedTypeSymbol typeSymbol, VirtualFrame frame, int topStack) {
+    for (StaticField f : typeSymbol.getInstanceFields(frame, topStack)) {
       assert !f.isStatic();
       if (f.getKind() == SystemType.Object) {
         f.setObject(obj, StaticObject.NULL);
@@ -92,53 +95,64 @@ public final class GuestAllocator {
    *     initialization loop can be exploded. This is expected to be the case when executing the
    *     {@code NEW} bytecode, but may not be the case always.
    */
-  public StaticObject createNew(NamedTypeSymbol typeSymbol) {
+  public StaticObject createNew(NamedTypeSymbol typeSymbol, VirtualFrame frame, int topStack) {
     assert AllocationChecks.canAllocateNewReference(typeSymbol);
-    typeSymbol.safelyInitialize();
-    StaticObject newObj = typeSymbol.getShape(false).getFactory().create(typeSymbol);
-    initInstanceFields(newObj, typeSymbol);
+    StaticObject newObj =
+        typeSymbol.getShape(frame, topStack, false).getFactory().create(typeSymbol);
+    initInstanceFields(newObj, typeSymbol, frame, topStack);
     return trackAllocation(typeSymbol, newObj);
   }
 
-  // TODO: This might take constructors into consideration
-  public StaticObject createClass(NamedTypeSymbol typeSymbol) {
-    return createNew(typeSymbol);
-  }
-
   public StaticObject box(NamedTypeSymbol typeSymbol, VirtualFrame frame, int slot) {
-    StaticObject object = createNew(typeSymbol);
+    StaticObject object = createNew(typeSymbol, frame, slot + 1);
     switch (typeSymbol.getSystemType()) {
       case Boolean -> {
         boolean value = CILOSTAZOLFrame.popInt32(frame, slot) != 0;
-        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setBoolean(object, value);
+        typeSymbol
+            .getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1)
+            .setBoolean(object, value);
       }
       case Char -> {
         char value = (char) CILOSTAZOLFrame.popInt32(frame, slot);
-        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setChar(object, value);
+        typeSymbol
+            .getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1)
+            .setChar(object, value);
       }
       case Byte -> {
         byte value = (byte) CILOSTAZOLFrame.popInt32(frame, slot);
-        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setByte(object, value);
+        typeSymbol
+            .getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1)
+            .setByte(object, value);
       }
       case Int -> {
         int value = CILOSTAZOLFrame.popInt32(frame, slot);
-        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setInt(object, value);
+        typeSymbol
+            .getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1)
+            .setInt(object, value);
       }
       case Short -> {
         short value = (short) CILOSTAZOLFrame.popInt32(frame, slot);
-        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setShort(object, value);
+        typeSymbol
+            .getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1)
+            .setShort(object, value);
       }
       case Float -> {
         float value = (float) CILOSTAZOLFrame.popNativeFloat(frame, slot);
-        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setFloat(object, value);
+        typeSymbol
+            .getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1)
+            .setFloat(object, value);
       }
       case Long -> {
         long value = CILOSTAZOLFrame.popInt64(frame, slot);
-        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setLong(object, value);
+        typeSymbol
+            .getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1)
+            .setLong(object, value);
       }
       case Double -> {
         double value = CILOSTAZOLFrame.popNativeFloat(frame, slot);
-        typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]).setDouble(object, value);
+        typeSymbol
+            .getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1)
+            .setDouble(object, value);
       }
       case Void -> throw new InterpreterException("Cannot box void");
       case Object -> // Boxing a struct -> we don't need to change any values
@@ -154,7 +168,8 @@ public final class GuestAllocator {
     // TODO: Check whether taking a field reference is valid for Nullable<T>
     switch (typeSymbol.getSystemType()) {
       case Boolean, Char, Byte, Int, Short, Float, Long, Double -> {
-        StaticField valueField = typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0]);
+        StaticField valueField =
+            typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1);
         return createFieldReference(
             SymbolResolver.resolveReference(
                 ReferenceSymbol.ReferenceType.Field, typeSymbol.getContext()),
@@ -221,33 +236,15 @@ public final class GuestAllocator {
     var elementType = (NamedTypeSymbol) arrayType.getElementType();
     Object arr;
     switch (elementType.getSystemType()) {
-      case Boolean -> {
-        arr = new boolean[length];
-      }
-      case Char -> {
-        arr = new char[length];
-      }
-      case Byte -> {
-        arr = new byte[length];
-      }
-      case Short -> {
-        arr = new short[length];
-      }
-      case Int -> {
-        arr = new int[length];
-      }
-      case Float -> {
-        arr = new float[length];
-      }
-      case Long -> {
-        arr = new long[length];
-      }
-      case Double -> {
-        arr = new double[length];
-      }
-      default -> {
-        throw new InterpreterException();
-      }
+      case Boolean -> arr = new boolean[length];
+      case Char -> arr = new char[length];
+      case Byte -> arr = new byte[length];
+      case Short -> arr = new short[length];
+      case Int -> arr = new int[length];
+      case Float -> arr = new float[length];
+      case Long -> arr = new long[length];
+      case Double -> arr = new double[length];
+      default -> throw new InterpreterException();
     }
 
     return wrapArrayAs(arrayType, arr);
@@ -306,7 +303,7 @@ public final class GuestAllocator {
   // endregion
 
   // region string creation
-  public StaticObject createString(String value) {
+  public StaticObject createString(String value, VirtualFrame frame, int topStack) {
     return stringCache.computeIfAbsent(
         value,
         k -> {
@@ -319,9 +316,9 @@ public final class GuestAllocator {
           final var charArray = createNewPrimitiveArray(charArrayType, stringChar.length);
           ctx.getArrayProperty().setObject(charArray, stringChar);
 
-          final var result = createNew(SymbolResolver.getString(ctx));
-          stringType.getInstanceFields()[0].setInt(result, stringChar.length);
-          stringType.getInstanceFields()[1].setObject(result, charArray);
+          final var result = createNew(SymbolResolver.getString(ctx), frame, topStack);
+          stringType.getInstanceFields(frame, topStack)[0].setInt(result, stringChar.length);
+          stringType.getInstanceFields(frame, topStack)[1].setObject(result, charArray);
           return result;
         });
   }

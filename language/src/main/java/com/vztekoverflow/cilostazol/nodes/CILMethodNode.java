@@ -245,8 +245,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           // Storing fields
         case STFLD:
-          storeInstanceField(
-              frame, topStack, bytecodeBuffer.getImmToken(pc), getMethod().getOpCodeTypes()[pc]);
+          storeInstanceField(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
         case STSFLD:
           storeStaticField(frame, topStack, bytecodeBuffer.getImmToken(pc));
@@ -1488,7 +1487,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     CLIUSHeapPtr ptr = new CLIUSHeapPtr(token.getRowNo());
     String value = ptr.readString(method.getModule().getDefiningFile().getUSHeap());
     CILOSTAZOLFrame.putObject(
-        frame, top, getMethod().getContext().getAllocator().createString(value));
+        frame, top, getMethod().getContext().getAllocator().createString(value, frame, top));
   }
 
   private void duplicateSlot(VirtualFrame frame, int top) {
@@ -1597,41 +1596,58 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     switch (targetType.getSystemType()) {
       case Boolean -> {
         boolean value =
-            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getBoolean(object);
+            sourceType
+                .getAssignableInstanceField(sourceType.getFields()[0], frame, slot + 1)
+                .getBoolean(object);
         CILOSTAZOLFrame.putInt32(frame, slot, value ? 1 : 0);
       }
       case Char -> {
         char value =
-            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getChar(object);
+            sourceType
+                .getAssignableInstanceField(sourceType.getFields()[0], frame, slot + 1)
+                .getChar(object);
         CILOSTAZOLFrame.putInt32(frame, slot, value);
       }
       case Byte -> {
         byte value =
-            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getByte(object);
+            sourceType
+                .getAssignableInstanceField(sourceType.getFields()[0], frame, slot + 1)
+                .getByte(object);
         CILOSTAZOLFrame.putInt32(frame, slot, value);
       }
       case Int -> {
-        int value = sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getInt(object);
+        int value =
+            sourceType
+                .getAssignableInstanceField(sourceType.getFields()[0], frame, slot + 1)
+                .getInt(object);
         CILOSTAZOLFrame.putInt32(frame, slot, value);
       }
       case Short -> {
         short value =
-            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getShort(object);
+            sourceType
+                .getAssignableInstanceField(sourceType.getFields()[0], frame, slot + 1)
+                .getShort(object);
         CILOSTAZOLFrame.putInt32(frame, slot, value);
       }
       case Float -> {
         float value =
-            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getFloat(object);
+            sourceType
+                .getAssignableInstanceField(sourceType.getFields()[0], frame, slot + 1)
+                .getFloat(object);
         CILOSTAZOLFrame.putNativeFloat(frame, slot, value);
       }
       case Long -> {
         long value =
-            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getLong(object);
+            sourceType
+                .getAssignableInstanceField(sourceType.getFields()[0], frame, slot + 1)
+                .getLong(object);
         CILOSTAZOLFrame.putInt64(frame, slot, value);
       }
       case Double -> {
         double value =
-            sourceType.getAssignableInstanceField(sourceType.getFields()[0]).getDouble(object);
+            sourceType
+                .getAssignableInstanceField(sourceType.getFields()[0], frame, slot + 1)
+                .getDouble(object);
         CILOSTAZOLFrame.putNativeFloat(frame, slot, value);
       }
       case Void -> throw new InterpreterException("Cannot unbox void");
@@ -1640,8 +1656,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
   }
 
-  private void createNewObjectOnStack(VirtualFrame frame, NamedTypeSymbol type, int dest) {
-    StaticObject object = type.getContext().getAllocator().createNew(type);
+  private void createNewObjectOnStack(
+      VirtualFrame frame, NamedTypeSymbol type, int dest, int topStack) {
+    StaticObject object = type.getContext().getAllocator().createNew(type, frame, topStack);
     CILOSTAZOLFrame.setLocalObject(frame, dest, object);
   }
 
@@ -1654,7 +1671,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
     if (type.isValueType()) {
       // Initialize value type
-      createNewObjectOnStack(frame, type, dest);
+      createNewObjectOnStack(frame, type, dest, top);
       return;
     }
 
@@ -1664,7 +1681,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void loadFieldInstanceFieldRef(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     final var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    final var field = classMember.symbol.getAssignableInstanceField(classMember.member);
+    final var field = classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     final var object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
@@ -1684,8 +1701,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void loadFieldStaticFieldRef(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     final var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    final var field = classMember.symbol.getAssignableStaticField(classMember.member);
-    final var object = classMember.symbol.getStaticInstance();
+    final var field = classMember.symbol.getAssignableStaticField(classMember.member, frame, top);
+    final var object = classMember.symbol.getStaticInstance(frame, top);
     CILOSTAZOLFrame.putObject(
         frame,
         top,
@@ -1702,7 +1719,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private void loadInstanceField(
       VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field = classMember.symbol.getAssignableInstanceField(classMember.member);
+    StaticField field =
+        classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     StaticObject object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
@@ -1712,8 +1730,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void loadStaticField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field = classMember.symbol.getAssignableStaticField(classMember.member);
-    StaticObject object = classMember.symbol.getStaticInstance();
+    StaticField field = classMember.symbol.getAssignableStaticField(classMember.member, frame, top);
+    StaticObject object = classMember.symbol.getStaticInstance(frame, top);
     loadValueFromField(frame, top + 1, field, object);
   }
 
@@ -1755,10 +1773,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
   }
 
-  void storeInstanceField(
-      VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
+  void storeInstanceField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field = classMember.symbol.getAssignableInstanceField(classMember.member);
+    StaticField field =
+        classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     StaticObject object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
@@ -1768,8 +1786,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void storeStaticField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field = classMember.symbol.getAssignableStaticField(classMember.member);
-    StaticObject object = classMember.symbol.getStaticInstance();
+    StaticField field = classMember.symbol.getAssignableStaticField(classMember.member, frame, top);
+    StaticObject object = classMember.symbol.getStaticInstance(frame, top);
     assignValueToField(frame, top, field, object);
   }
 

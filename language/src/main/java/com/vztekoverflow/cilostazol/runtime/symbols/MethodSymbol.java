@@ -251,9 +251,14 @@ public class MethodSymbol extends Symbol {
       final ExceptionHandlerSymbol[] handlers;
 
       int rva = mDef.getRVA();
-      if (rva == 0)
+      if (rva == 0) {
         System.err.println(
-            "Warning: Method " + name + " has no RVA (likely tagged as extern), skipping.");
+            "Warning: Method "
+                + definingType.getName()
+                + "::"
+                + name
+                + " has no RVA (likely tagged as extern), skipping.");
+      }
 
       // Method header parsing
       if (rva != 0 && !flags.hasFlag(MethodFlags.Flag.ABSTRACT)) {
@@ -329,7 +334,7 @@ public class MethodSymbol extends Symbol {
       CLIParamTableRow paramRow =
           file.getTableHeads().getParamTableHead().skip(mDef.getParamListTablePtr());
       for (int i = 0; i < params.length; i++) {
-        params[paramRow.getSequence() - 1] = paramRow;
+        params[i] = paramRow;
         paramRow = paramRow.next();
       }
 

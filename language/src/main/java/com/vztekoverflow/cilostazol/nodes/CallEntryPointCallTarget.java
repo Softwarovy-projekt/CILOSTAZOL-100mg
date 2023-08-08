@@ -32,7 +32,7 @@ public final class CallEntryPointCallTarget implements CallTarget {
     int i = 0;
     for (var appArg : ctx.getEnv().getApplicationArguments()) {
       var javaArr = ctx.getArrayProperty().getObject(arg);
-      Array.set(javaArr, i, ctx.getAllocator().createString(appArg));
+      Array.set(javaArr, i, ctx.getAllocator().createString(appArg, null, 0));
       i++;
     }
   }

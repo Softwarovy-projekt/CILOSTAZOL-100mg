@@ -45,11 +45,12 @@ public class PRINTNode extends NodeizedNodeBase {
   private StringBuilder getStringFromFrame(VirtualFrame frame) {
     var stringObject = CILOSTAZOLFrame.getLocalObject(frame, argumentTop);
     var namedTypeSymbol = (NamedTypeSymbol) stringObject.getTypeSymbol();
-    var length = namedTypeSymbol.getInstanceFields()[0].getInt(stringObject);
+    var length = namedTypeSymbol.getInstanceFields(frame, originalTop)[0].getInt(stringObject);
     var charArray =
         CILOSTAZOLContext.get(null)
             .getArrayProperty()
-            .getObject(namedTypeSymbol.getInstanceFields()[1].getObject(stringObject));
+            .getObject(
+                namedTypeSymbol.getInstanceFields(frame, originalTop)[1].getObject(stringObject));
 
     StringBuilder result = new StringBuilder();
     for (int i = 0; i < length; i++) {
