@@ -375,8 +375,13 @@ public class NamedTypeSymbol extends TypeSymbol {
     initializeStaticInstance(frame, topStack);
   }
 
+  @ExplodeLoop
   private void initializeStaticInstance(VirtualFrame frame, int topStack) {
     staticInstance = staticShape.getFactory().create(this);
+    if (frame == null) {
+      return;
+    }
+
     for (MethodSymbol method : getMethods()) {
       if (method.getName().equals(".cctor")) {
         callStaticConstructor(frame, topStack, method);
@@ -385,7 +390,6 @@ public class NamedTypeSymbol extends TypeSymbol {
     }
   }
 
-  @ExplodeLoop
   private void callStaticConstructor(VirtualFrame frame, int topStack, MethodSymbol constructor) {
     var callNode = new CALLNode(constructor, topStack);
     callNode.execute(frame);

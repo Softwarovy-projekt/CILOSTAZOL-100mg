@@ -251,13 +251,14 @@ public class MethodSymbol extends Symbol {
       final ExceptionHandlerSymbol[] handlers;
 
       int rva = mDef.getRVA();
-      if (rva == 0)
+      if (rva == 0) {
         System.err.println(
             "Warning: Method "
                 + definingType.getName()
                 + "::"
                 + name
                 + " has no RVA (likely tagged as extern), skipping.");
+      }
 
       // Method header parsing
       if (rva != 0 && !flags.hasFlag(MethodFlags.Flag.ABSTRACT)) {
