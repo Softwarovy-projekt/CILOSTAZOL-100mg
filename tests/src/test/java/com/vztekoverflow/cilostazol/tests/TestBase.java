@@ -160,7 +160,7 @@ public abstract class TestBase {
     return directoryToBeDeleted.delete();
   }
 
-  /** Can NOT be parallelized! */
+  /** Can be parallelized */
   private Path compileCode(@Language("cs") String code, Path dummyDirectory) {
     // create dummy directory
     createDirectory(dummyDirectory);
@@ -224,7 +224,7 @@ public abstract class TestBase {
     }
   }
 
-  /** Can NOT be parallelized! */
+  /** Can be parallelized! */
   private Path compileFile(String sourceFilePath, Path directory) {
     // read content of the file
     @Language("cs")
