@@ -381,17 +381,25 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           break;
 
         case SWITCH:
-          // TODO: - find out the how to trigger this instruction from C#
-          break;
-
+          {
+            var numCases = bytecodeBuffer.getImmUInt(pc);
+            var stackValue = (long) CILOSTAZOLFrame.popInt32(frame, topStack - 1);
+            if (stackValue >= 0 && stackValue <= numCases) {
+              var caseOffset = pc + 4 + ((int) stackValue * 4);
+              nextpc += bytecodeBuffer.getImmInt(caseOffset);
+            }
+            // else fall through
+            break;
+          }
         case RET:
           return getReturnValue(frame, topStack - 1);
 
         case CALL:
-          var methodToken = bytecodeBuffer.getImmToken(pc);
-          topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALL);
-          break;
-
+          {
+            var methodToken = bytecodeBuffer.getImmToken(pc);
+            topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALL);
+            break;
+          }
           // Store indirect
         case STIND_I1:
           storeIndirectByte(frame, topStack);
