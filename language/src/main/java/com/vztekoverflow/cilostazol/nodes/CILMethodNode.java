@@ -824,8 +824,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       boolean unsigned) {
     switch (type) {
       case Int32 -> {
-        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 1);
         CILOSTAZOLFrame.putInt32(
             frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
       }
