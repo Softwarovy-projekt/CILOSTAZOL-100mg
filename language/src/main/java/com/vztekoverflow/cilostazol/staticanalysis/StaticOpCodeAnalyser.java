@@ -11,8 +11,10 @@ import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InvalidCLIException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
+import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
+import java.util.Stack;
 
 public class StaticOpCodeAnalyser {
 
@@ -23,6 +25,7 @@ public class StaticOpCodeAnalyser {
         method.getMaxStack() + method.getParameterCountIncludingInstance(),
         method.getParameterTypesIncludingInstance(),
         method.getLocals(),
+        method.getReturnType(),
         method.getModule());
   }
 
@@ -31,473 +34,561 @@ public class StaticOpCodeAnalyser {
       int maxStack,
       TypeSymbol[] parameters,
       LocalSymbol[] locals,
+      ReturnSymbol returnType,
       ModuleSymbol module) {
     var bytecodeBuffer = new BytecodeBuffer(cil);
     OpCodeType[] types = new OpCodeType[cil.length];
+    boolean[] visited = new boolean[cil.length];
+    Stack<Integer> visitStack = new Stack<>();
     var stack = new StackType[maxStack];
     var topStack = 0;
     int pc = 0;
-    while (pc < cil.length) {
+    visitStack.push(0);
+    while (!visitStack.isEmpty()) {
+      pc = visitStack.pop();
+      var nextPc = bytecodeBuffer.nextInstruction(pc);
+      if (nextPc < cil.length
+          && !visited[
+              nextPc]) // !visited can be removed as a safety measure to traverse all the opcodes
+      visitStack.add(nextPc);
+
       int curOpcode = bytecodeBuffer.getOpcode(pc);
-      int nextpc = bytecodeBuffer.nextInstruction(pc);
-      switch (curOpcode) {
-        case NOP:
-        case BREAK:
-          break;
-
-        case STLOC_0:
-        case STLOC_1:
-        case STLOC_2:
-        case STLOC_3:
-        case STLOC_S:
-          // case STLOC: //we do not track this opcode
-        case STARG_S:
-          // case STARG: //we do not track this opcode
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          clear(stack, topStack);
-          break;
-
-        case LDARG_0:
-        case LDARG_1:
-        case LDARG_2:
-        case LDARG_3:
-          handleArg(parameters, stack, topStack, curOpcode - LDARG_0);
-          break;
-
-        case LDARG_S:
-          // case LDARG: //we do not track this opcode
-          handleArg(parameters, stack, topStack, bytecodeBuffer.getImmUByte(pc));
-          break;
-
-        case LDARGA_S:
-          // case LDARGA: //we do not track this opcode
-          push(stack, topStack, StackType.ManagedPointer);
-          break;
-
-        case LDLOC_0:
-        case LDLOC_1:
-        case LDLOC_2:
-        case LDLOC_3:
-          handleLoc(locals, stack, topStack, curOpcode - LDLOC_0);
-          break;
-
-        case LDLOC_S:
-          // case LDLOC: //we do not track this opcode
-          handleLoc(locals, stack, topStack, bytecodeBuffer.getImmUByte(pc));
-          break;
-
-        case LDLOCA_S:
-          // case LDLOCA: //we do not track this opcode
-          push(stack, topStack, StackType.ManagedPointer);
-          break;
-
-        case LDNULL:
-          push(stack, topStack, StackType.Object);
-          break;
-
-        case LDC_I4_M1:
-        case LDC_I4_0:
-        case LDC_I4_1:
-        case LDC_I4_2:
-        case LDC_I4_3:
-        case LDC_I4_4:
-        case LDC_I4_5:
-        case LDC_I4_6:
-        case LDC_I4_7:
-        case LDC_I4_8:
-        case LDC_I4_S:
-        case LDC_I4:
-          push(stack, topStack, Int32);
-          break;
-        case LDC_I8:
-          push(stack, topStack, Int64);
-          break;
-        case LDC_R4:
-        case LDC_R8:
-          push(stack, topStack, StackType.NativeFloat);
-          break;
-        case DUP:
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          push(stack, topStack, stack[topStack - 1]);
-          break;
-        case POP:
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          clear(stack, topStack);
-          break;
-        case JMP:
-          break;
-        case CALL:
-          {
-            var methodPtr = bytecodeBuffer.getImmToken(pc);
-            var method = SymbolResolver.resolveMethod(methodPtr, module).member;
-            topStack = handleMethod(method, stack, topStack);
-            break;
-          }
-        case CALLVIRT:
-          {
-            var methodPtr = bytecodeBuffer.getImmToken(pc);
-            var method = SymbolResolver.resolveMethod(methodPtr, module).member;
-            topStack = handleMethod(method, stack, topStack);
-            break;
-          }
-        case CALLI:
-          // TODO: after implementing functionality of this opcode
-          break;
-        case RET:
-        case BR:
-        case BR_S:
-          break;
-        case BRFALSE_S:
-        case BRTRUE_S:
-        case BRFALSE:
-        case BRTRUE:
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          clear(stack, topStack);
-          break;
-        case BEQ_S:
-        case BGE_S:
-        case BGT_S:
-        case BLE_S:
-        case BLT_S:
-        case BNE_UN_S:
-        case BGE_UN_S:
-        case BGT_UN_S:
-        case BLE_UN_S:
-        case BLT_UN_S:
-        case BEQ:
-        case BGE:
-        case BGT:
-        case BLE:
-        case BLT:
-        case BNE_UN:
-        case BGE_UN:
-        case BGT_UN:
-        case BLE_UN:
-        case BLT_UN:
-          handleBinaryComparison(types, stack, topStack, pc, curOpcode);
-          break;
-          // Same as BRFALSE
-          //        case BRNULL: break;
-          //        case BRZERO: break;
-          //        case BRINST: break;
-          //        case BRTRUE: break;
-        case SWITCH:
-          // is UInt32 by default
-          break;
-        case LDIND_I1:
-        case LDIND_U1:
-        case LDIND_I2:
-        case LDIND_U2:
-        case LDIND_I4:
-        case LDIND_U4:
-          replace(stack, topStack, Int32);
-          break;
-        case LDIND_I8:
-          // case LDIND_U8: //we do not track this opcode
-          replace(stack, topStack, Int64);
-          break;
-        case LDIND_I:
-          replace(stack, topStack, NativeInt);
-          break;
-        case LDIND_R4:
-        case LDIND_R8:
-          replace(stack, topStack, NativeFloat);
-          break;
-        case LDIND_REF:
-          replace(stack, topStack, Object);
-          break;
-        case STIND_REF:
-        case STIND_I1:
-        case STIND_I2:
-        case STIND_I4:
-        case STIND_I8:
-        case STIND_R4:
-        case STIND_R8:
-        case STIND_I:
-          clear(stack, topStack);
-          clear(stack, topStack - 1);
-          break;
-        case ADD:
-        case SUB:
-        case MUL:
-        case DIV:
-        case REM:
-          handleBinaryNumericOperations(types, stack, topStack, pc, curOpcode);
-          break;
-        case ADD_OVF:
-        case ADD_OVF_UN:
-        case MUL_OVF:
-        case MUL_OVF_UN:
-        case SUB_OVF:
-        case SUB_OVF_UN:
-          handleOverflowArithmeticOperations(types, stack, topStack, pc, curOpcode);
-          break;
-        case AND:
-        case DIV_UN:
-        case REM_UN:
-        case OR:
-        case XOR:
-          handleIntegerOperations(types, stack, topStack, pc, curOpcode);
-          break;
-        case SHL:
-        case SHR:
-        case SHR_UN:
-          handleShiftOperations(types, stack, topStack, pc, curOpcode);
-          break;
-        case NEG:
-        case NOT:
-          handleUnaryNumericOperations(types, stack, topStack, pc, curOpcode);
-          break;
-        case CONV_I1:
-        case CONV_I2:
-        case CONV_I4:
-        case CONV_U2:
-        case CONV_U1:
-        case CONV_U4:
-        case CONV_OVF_I1:
-        case CONV_OVF_U1:
-        case CONV_OVF_I2:
-        case CONV_OVF_U2:
-        case CONV_OVF_I4:
-        case CONV_OVF_U4:
-        case CONV_OVF_I1_UN:
-        case CONV_OVF_I2_UN:
-        case CONV_OVF_I4_UN:
-        case CONV_OVF_U1_UN:
-        case CONV_OVF_U2_UN:
-        case CONV_OVF_U4_UN:
-          checkRestrictedConversionOperations(stack, topStack, curOpcode);
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          replace(stack, topStack, Int32);
-          break;
-        case CONV_I8:
-        case CONV_U8:
-        case CONV_OVF_I8:
-        case CONV_OVF_U8:
-        case CONV_OVF_I8_UN:
-        case CONV_OVF_U8_UN:
-          // is not restricted to any type
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          replace(stack, topStack, Int64);
-          break;
-        case CONV_R4:
-        case CONV_R_UN:
-        case CONV_R8:
-          checkRestrictedConversionOperations(stack, topStack, curOpcode);
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          replace(stack, topStack, NativeFloat);
-          break;
-        case CONV_I:
-        case CONV_U:
-        case CONV_OVF_I:
-        case CONV_OVF_U:
-        case CONV_OVF_I_UN:
-        case CONV_OVF_U_UN:
-          // is not restricted to any type
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          replace(stack, topStack, NativeInt);
-          break;
-        case CPOBJ:
-          handleCopyObject(types, stack, topStack, pc);
-          break;
-        case LDOBJ:
-          {
-            var typePtr = bytecodeBuffer.getImmToken(pc);
-            setTypeByStack(types, stack, topStack, pc, curOpcode);
-            var type = SymbolResolver.resolveType(typePtr, module);
-            replace(stack, topStack, type.getStackTypeKind());
-            break;
-          }
-        case LDSTR:
-          push(stack, topStack, Object);
-          break;
-        case NEWOBJ:
-          {
-            var ctorPtr = bytecodeBuffer.getImmToken(pc);
-            topStack = handleCtor(ctorPtr, stack, topStack, module);
-            break;
-          }
-        case CASTCLASS:
-          // Obj cast to Obj
-          break;
-        case ISINST:
-          // Obj to Obj
-          break;
-        case UNBOX:
-          replace(stack, topStack, ManagedPointer);
-          break;
-        case UNBOX_ANY:
-          {
-            var objPtr = bytecodeBuffer.getImmToken(pc);
-            var objType = SymbolResolver.resolveType(objPtr, module);
-            replace(stack, topStack, objType.getStackTypeKind());
-            break;
-          }
-        case BOX:
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          replace(stack, topStack, Object);
-          break;
-        case THROW:
-          clear(stack, topStack);
-          break;
-        case LDFLD:
-          {
-            var fieldPtr = bytecodeBuffer.getImmToken(pc);
-            var field = SymbolResolver.resolveField(fieldPtr, module).member;
-            replace(stack, topStack, field.getType().getStackTypeKind());
-            break;
-          }
-        case LDSFLD:
-          {
-            var fieldPtr = bytecodeBuffer.getImmToken(pc);
-            var field = SymbolResolver.resolveField(fieldPtr, module).member;
-            push(stack, topStack, field.getType().getStackTypeKind());
-            break;
-          }
-        case LDFLDA:
-          handleLdflda(stack, topStack, pc);
-          break;
-        case LDSFLDA:
-          {
-            var fieldPtr = bytecodeBuffer.getImmToken(pc);
-            var field = SymbolResolver.resolveField(fieldPtr, module).member;
-            handleLdsflda((NamedTypeSymbol) field.getType(), stack, topStack, pc);
-            break;
-          }
-        case STFLD:
-          setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or managed pointer
-          clear(stack, topStack);
-          clear(stack, topStack - 1);
-          break;
-        case STSFLD:
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          clear(stack, topStack);
-          break;
-        case STOBJ:
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          clear(stack, topStack);
-          clear(stack, topStack - 1);
-          break;
-        case NEWARR:
-          setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the size
-          replace(stack, topStack, Object);
-          break;
-        case LDLEN:
-          replace(stack, topStack, Int32); // native usnigned int
-          break;
-        case LDELEMA:
-          setTypeByStack(
-              types, stack, topStack, pc, curOpcode); // native int or int32 for the index
-          clear(stack, topStack);
-          replace(stack, topStack - 1, ManagedPointer);
-          break;
-        case LDELEM:
-          {
-            var elemTypePtr = bytecodeBuffer.getImmToken(pc);
-            var elemType = SymbolResolver.resolveType(elemTypePtr, module);
-            setTypeByStack(types, stack, topStack, pc, curOpcode);
-            clear(stack, topStack);
-            replace(stack, topStack - 1, elemType.getStackTypeKind());
-            break;
-          }
-        case LDELEM_I1:
-        case LDELEM_I2:
-        case LDELEM_I4:
-        case LDELEM_U1:
-        case LDELEM_U2:
-        case LDELEM_U4:
-          setTypeByStack(
-              types, stack, topStack, pc, curOpcode); // native int or int32 for the index
-          clear(stack, topStack);
-          replace(stack, topStack - 1, Int32);
-          break;
-        case LDELEM_I8:
-          // case LDELEM_U8: //same opcode as LDELEM_I8
-          setTypeByStack(
-              types, stack, topStack, pc, curOpcode); // native int or int32 for the index
-          clear(stack, topStack);
-          replace(stack, topStack - 1, Int64);
-          break;
-        case LDELEM_I:
-          setTypeByStack(
-              types, stack, topStack, pc, curOpcode); // native int or int32 for the index
-          clear(stack, topStack);
-          replace(stack, topStack - 1, NativeInt);
-          break;
-        case LDELEM_R4:
-        case LDELEM_R8:
-          setTypeByStack(
-              types, stack, topStack, pc, curOpcode); // native int or int32 for the index
-          clear(stack, topStack);
-          replace(stack, topStack - 1, NativeFloat);
-          break;
-        case LDELEM_REF:
-          setTypeByStack(
-              types, stack, topStack, pc, curOpcode); // native int or int32 for the index
-          clear(stack, topStack);
-          replace(stack, topStack - 1, Object);
-          break;
-        case STELEM:
-        case STELEM_I1:
-        case STELEM_I2:
-        case STELEM_I4:
-        case STELEM_I8:
-        case STELEM_R4:
-        case STELEM_R8:
-        case STELEM_REF:
-        case STELEM_I:
-          setTypeByStack(
-              types, stack, topStack - 1, pc, curOpcode); // native int or int32 for the index
-          clear(stack, topStack);
-          clear(stack, topStack - 1);
-          clear(stack, topStack - 2);
-          break;
-        case REFANYVAL:
-          {
-            var typePtr = bytecodeBuffer.getImmToken(pc);
-            var type = SymbolResolver.resolveType(typePtr, module);
-            types[pc] = getUnaryOpCodeType(type.getStackTypeKind(), curOpcode);
-            replace(stack, topStack, ManagedPointer);
-            break;
-          }
-        case CKFINITE:
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          break;
-        case MKREFANY:
-          replace(stack, topStack, ManagedPointer); // typed reference is a managed pointer:
-          // https://dotnet.github.io/dotNext/features/core/ref.html
-          break;
-        case ENDFAULT:
-          // case ENDFINALLY: same opcode as ENDFAULT
-        case LEAVE:
-        case LEAVE_S:
-          // Nothing
-          break;
-        case CEQ:
-        case CGT:
-        case CGT_UN:
-        case CLT:
-        case CLT_UN:
-          handleBinaryComparison(types, stack, topStack, pc, curOpcode);
-          replace(stack, topStack - 1, Int32); // 1st operand cleared inside handleBinaryComparison
-          break;
-        case INITOBJ:
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
-          clear(stack, topStack);
-          break;
-        case TRUFFLE_NODE:
-          // TODO
-          break;
-        default:
-          ThrowNotSupportedException();
-          break;
-      }
+      if (!visited[pc])
+        topStack =
+            resolveOpCode(
+                parameters,
+                locals,
+                returnType,
+                module,
+                bytecodeBuffer,
+                types,
+                visited,
+                visitStack,
+                stack,
+                topStack,
+                pc,
+                nextPc,
+                curOpcode);
 
       topStack += BytecodeInstructions.getStackEffect(curOpcode);
-      pc = nextpc;
+      visited[pc] = true;
     }
 
     return types;
+  }
+
+  private static int resolveOpCode(
+      TypeSymbol[] parameters,
+      LocalSymbol[] locals,
+      ReturnSymbol returnType,
+      ModuleSymbol module,
+      BytecodeBuffer bytecodeBuffer,
+      OpCodeType[] types,
+      boolean[] visited,
+      Stack<Integer> visitStack,
+      StackType[] stack,
+      int topStack,
+      int pc,
+      int nextPc,
+      int curOpcode) {
+    switch (curOpcode) {
+      case NOP:
+      case BREAK:
+        break;
+
+      case STLOC_0:
+      case STLOC_1:
+      case STLOC_2:
+      case STLOC_3:
+      case STLOC_S:
+        // case STLOC: //we do not track this opcode
+      case STARG_S:
+        // case STARG: //we do not track this opcode
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        clear(stack, topStack);
+        break;
+
+      case LDARG_0:
+      case LDARG_1:
+      case LDARG_2:
+      case LDARG_3:
+        handleArg(parameters, stack, topStack, curOpcode - LDARG_0);
+        break;
+
+      case LDARG_S:
+        // case LDARG: //we do not track this opcode
+        handleArg(parameters, stack, topStack, bytecodeBuffer.getImmUByte(pc));
+        break;
+
+      case LDARGA_S:
+        // case LDARGA: //we do not track this opcode
+        push(stack, topStack, StackType.ManagedPointer);
+        break;
+
+      case LDLOC_0:
+      case LDLOC_1:
+      case LDLOC_2:
+      case LDLOC_3:
+        handleLoc(locals, stack, topStack, curOpcode - LDLOC_0);
+        break;
+
+      case LDLOC_S:
+        // case LDLOC: //we do not track this opcode
+        handleLoc(locals, stack, topStack, bytecodeBuffer.getImmUByte(pc));
+        break;
+
+      case LDLOCA_S:
+        // case LDLOCA: //we do not track this opcode
+        push(stack, topStack, StackType.ManagedPointer);
+        break;
+
+      case LDNULL:
+        push(stack, topStack, StackType.Object);
+        break;
+
+      case LDC_I4_M1:
+      case LDC_I4_0:
+      case LDC_I4_1:
+      case LDC_I4_2:
+      case LDC_I4_3:
+      case LDC_I4_4:
+      case LDC_I4_5:
+      case LDC_I4_6:
+      case LDC_I4_7:
+      case LDC_I4_8:
+      case LDC_I4_S:
+      case LDC_I4:
+        push(stack, topStack, Int32);
+        break;
+      case LDC_I8:
+        push(stack, topStack, Int64);
+        break;
+      case LDC_R4:
+      case LDC_R8:
+        push(stack, topStack, StackType.NativeFloat);
+        break;
+      case DUP:
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        push(stack, topStack, stack[topStack - 1]);
+        break;
+      case POP:
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        clear(stack, topStack);
+        break;
+      case JMP:
+        break;
+      case CALL:
+        {
+          var methodPtr = bytecodeBuffer.getImmToken(pc);
+          var method = SymbolResolver.resolveMethod(methodPtr, module).member;
+          topStack = handleMethod(method, stack, topStack);
+          break;
+        }
+      case CALLVIRT:
+        {
+          var methodPtr = bytecodeBuffer.getImmToken(pc);
+          var method = SymbolResolver.resolveMethod(methodPtr, module).member;
+          topStack = handleMethod(method, stack, topStack);
+          break;
+        }
+      case CALLI:
+        // TODO: after implementing functionality of this opcode
+        break;
+      case RET:
+        {
+          if (returnType.getType().getSystemType() != SystemType.Void) {
+            clear(stack, topStack);
+            topStack--;
+          }
+          break;
+        }
+      case BR:
+        handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc);
+        break;
+      case BR_S:
+        handleOpCodeJumpShort(bytecodeBuffer, visited, visitStack, pc, nextPc);
+        break;
+      case BRFALSE_S:
+      case BRTRUE_S:
+        handleOpCodeJumpShort(bytecodeBuffer, visited, visitStack, pc, nextPc);
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        clear(stack, topStack);
+        break;
+      case BRFALSE:
+      case BRTRUE:
+        handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc);
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        clear(stack, topStack);
+        break;
+      case BEQ_S:
+      case BGE_S:
+      case BGT_S:
+      case BLE_S:
+      case BLT_S:
+      case BNE_UN_S:
+      case BGE_UN_S:
+      case BGT_UN_S:
+      case BLE_UN_S:
+      case BLT_UN_S:
+        handleOpCodeJumpShort(bytecodeBuffer, visited, visitStack, pc, nextPc);
+        handleBinaryComparison(types, stack, topStack, pc, curOpcode);
+        break;
+      case BEQ:
+      case BGE:
+      case BGT:
+      case BLE:
+      case BLT:
+      case BNE_UN:
+      case BGE_UN:
+      case BGT_UN:
+      case BLE_UN:
+      case BLT_UN:
+        handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc);
+        handleBinaryComparison(types, stack, topStack, pc, curOpcode);
+        break;
+        // Same as BRFALSE
+        //        case BRNULL: break;
+        //        case BRZERO: break;
+        //        case BRINST: break;
+        //        case BRTRUE: break;
+      case SWITCH:
+        {
+          var numCases = bytecodeBuffer.getImmUInt(pc);
+          for (var i = 0; i < numCases; i++) {
+            var caseOffset = pc + 4 + i * 4;
+            handleOpCodeJump(bytecodeBuffer, visited, visitStack, caseOffset, nextPc);
+          }
+          // is UInt32 by default
+          break;
+        }
+      case LDIND_I1:
+      case LDIND_U1:
+      case LDIND_I2:
+      case LDIND_U2:
+      case LDIND_I4:
+      case LDIND_U4:
+        replace(stack, topStack, Int32);
+        break;
+      case LDIND_I8:
+        // case LDIND_U8: //we do not track this opcode
+        replace(stack, topStack, Int64);
+        break;
+      case LDIND_I:
+        replace(stack, topStack, NativeInt);
+        break;
+      case LDIND_R4:
+      case LDIND_R8:
+        replace(stack, topStack, NativeFloat);
+        break;
+      case LDIND_REF:
+        replace(stack, topStack, Object);
+        break;
+      case STIND_REF:
+      case STIND_I1:
+      case STIND_I2:
+      case STIND_I4:
+      case STIND_I8:
+      case STIND_R4:
+      case STIND_R8:
+      case STIND_I:
+        clear(stack, topStack);
+        clear(stack, topStack - 1);
+        break;
+      case ADD:
+      case SUB:
+      case MUL:
+      case DIV:
+      case REM:
+        handleBinaryNumericOperations(types, stack, topStack, pc, curOpcode);
+        break;
+      case ADD_OVF:
+      case ADD_OVF_UN:
+      case MUL_OVF:
+      case MUL_OVF_UN:
+      case SUB_OVF:
+      case SUB_OVF_UN:
+        handleOverflowArithmeticOperations(types, stack, topStack, pc, curOpcode);
+        break;
+      case AND:
+      case DIV_UN:
+      case REM_UN:
+      case OR:
+      case XOR:
+        handleIntegerOperations(types, stack, topStack, pc, curOpcode);
+        break;
+      case SHL:
+      case SHR:
+      case SHR_UN:
+        handleShiftOperations(types, stack, topStack, pc, curOpcode);
+        break;
+      case NEG:
+      case NOT:
+        handleUnaryNumericOperations(types, stack, topStack, pc, curOpcode);
+        break;
+      case CONV_I1:
+      case CONV_I2:
+      case CONV_I4:
+      case CONV_U2:
+      case CONV_U1:
+      case CONV_U4:
+      case CONV_OVF_I1:
+      case CONV_OVF_U1:
+      case CONV_OVF_I2:
+      case CONV_OVF_U2:
+      case CONV_OVF_I4:
+      case CONV_OVF_U4:
+      case CONV_OVF_I1_UN:
+      case CONV_OVF_I2_UN:
+      case CONV_OVF_I4_UN:
+      case CONV_OVF_U1_UN:
+      case CONV_OVF_U2_UN:
+      case CONV_OVF_U4_UN:
+        checkRestrictedConversionOperations(stack, topStack, curOpcode);
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        replace(stack, topStack, Int32);
+        break;
+      case CONV_I8:
+      case CONV_U8:
+      case CONV_OVF_I8:
+      case CONV_OVF_U8:
+      case CONV_OVF_I8_UN:
+      case CONV_OVF_U8_UN:
+        // is not restricted to any type
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        replace(stack, topStack, Int64);
+        break;
+      case CONV_R4:
+      case CONV_R_UN:
+      case CONV_R8:
+        checkRestrictedConversionOperations(stack, topStack, curOpcode);
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        replace(stack, topStack, NativeFloat);
+        break;
+      case CONV_I:
+      case CONV_U:
+      case CONV_OVF_I:
+      case CONV_OVF_U:
+      case CONV_OVF_I_UN:
+      case CONV_OVF_U_UN:
+        // is not restricted to any type
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        replace(stack, topStack, NativeInt);
+        break;
+      case CPOBJ:
+        handleCopyObject(types, stack, topStack, pc);
+        break;
+      case LDOBJ:
+        {
+          var typePtr = bytecodeBuffer.getImmToken(pc);
+          setTypeByStack(types, stack, topStack, pc, curOpcode);
+          var type = SymbolResolver.resolveType(typePtr, module);
+          replace(stack, topStack, type.getStackTypeKind());
+          break;
+        }
+      case LDSTR:
+        push(stack, topStack, Object);
+        break;
+      case NEWOBJ:
+        {
+          var ctorPtr = bytecodeBuffer.getImmToken(pc);
+          topStack = handleCtor(ctorPtr, stack, topStack, module);
+          break;
+        }
+      case CASTCLASS:
+        // Obj cast to Obj
+        break;
+      case ISINST:
+        // Obj to Obj
+        break;
+      case UNBOX:
+        replace(stack, topStack, ManagedPointer);
+        break;
+      case UNBOX_ANY:
+        {
+          var objPtr = bytecodeBuffer.getImmToken(pc);
+          var objType = SymbolResolver.resolveType(objPtr, module);
+          replace(stack, topStack, objType.getStackTypeKind());
+          break;
+        }
+      case BOX:
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        replace(stack, topStack, Object);
+        break;
+      case THROW:
+        clear(stack, topStack);
+        break;
+      case LDFLD:
+        {
+          var fieldPtr = bytecodeBuffer.getImmToken(pc);
+          var field = SymbolResolver.resolveField(fieldPtr, module).member;
+          replace(stack, topStack, field.getType().getStackTypeKind());
+          break;
+        }
+      case LDSFLD:
+        {
+          var fieldPtr = bytecodeBuffer.getImmToken(pc);
+          var field = SymbolResolver.resolveField(fieldPtr, module).member;
+          push(stack, topStack, field.getType().getStackTypeKind());
+          break;
+        }
+      case LDFLDA:
+        handleLdflda(stack, topStack, pc);
+        break;
+      case LDSFLDA:
+        {
+          var fieldPtr = bytecodeBuffer.getImmToken(pc);
+          var field = SymbolResolver.resolveField(fieldPtr, module).member;
+          handleLdsflda((NamedTypeSymbol) field.getType(), stack, topStack, pc);
+          break;
+        }
+      case STFLD:
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or managed pointer
+        clear(stack, topStack);
+        clear(stack, topStack - 1);
+        break;
+      case STSFLD:
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        clear(stack, topStack);
+        break;
+      case STOBJ:
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        clear(stack, topStack);
+        clear(stack, topStack - 1);
+        break;
+      case NEWARR:
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the size
+        replace(stack, topStack, Object);
+        break;
+      case LDLEN:
+        replace(stack, topStack, Int32); // native usnigned int
+        break;
+      case LDELEMA:
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        clear(stack, topStack);
+        replace(stack, topStack - 1, ManagedPointer);
+        break;
+      case LDELEM:
+        {
+          var elemTypePtr = bytecodeBuffer.getImmToken(pc);
+          var elemType = SymbolResolver.resolveType(elemTypePtr, module);
+          setTypeByStack(types, stack, topStack, pc, curOpcode);
+          clear(stack, topStack);
+          replace(stack, topStack - 1, elemType.getStackTypeKind());
+          break;
+        }
+      case LDELEM_I1:
+      case LDELEM_I2:
+      case LDELEM_I4:
+      case LDELEM_U1:
+      case LDELEM_U2:
+      case LDELEM_U4:
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        clear(stack, topStack);
+        replace(stack, topStack - 1, Int32);
+        break;
+      case LDELEM_I8:
+        // case LDELEM_U8: //same opcode as LDELEM_I8
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        clear(stack, topStack);
+        replace(stack, topStack - 1, Int64);
+        break;
+      case LDELEM_I:
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        clear(stack, topStack);
+        replace(stack, topStack - 1, NativeInt);
+        break;
+      case LDELEM_R4:
+      case LDELEM_R8:
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        clear(stack, topStack);
+        replace(stack, topStack - 1, NativeFloat);
+        break;
+      case LDELEM_REF:
+        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        clear(stack, topStack);
+        replace(stack, topStack - 1, Object);
+        break;
+      case STELEM:
+      case STELEM_I1:
+      case STELEM_I2:
+      case STELEM_I4:
+      case STELEM_I8:
+      case STELEM_R4:
+      case STELEM_R8:
+      case STELEM_REF:
+      case STELEM_I:
+        setTypeByStack(
+            types, stack, topStack - 1, pc, curOpcode); // native int or int32 for the index
+        clear(stack, topStack);
+        clear(stack, topStack - 1);
+        clear(stack, topStack - 2);
+        break;
+      case REFANYVAL:
+        {
+          var typePtr = bytecodeBuffer.getImmToken(pc);
+          var type = SymbolResolver.resolveType(typePtr, module);
+          types[pc] = getUnaryOpCodeType(type.getStackTypeKind(), curOpcode);
+          replace(stack, topStack, ManagedPointer);
+          break;
+        }
+      case CKFINITE:
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        break;
+      case MKREFANY:
+        replace(stack, topStack, ManagedPointer); // typed reference is a managed pointer:
+        // https://dotnet.github.io/dotNext/features/core/ref.html
+        break;
+      case ENDFAULT:
+        // case ENDFINALLY: same opcode as ENDFAULT
+      case LEAVE_S:
+        handleOpCodeJumpShort(bytecodeBuffer, visited, visitStack, pc, nextPc);
+        break;
+      case LEAVE:
+        handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc);
+        // Nothing
+        break;
+      case CEQ:
+      case CGT:
+      case CGT_UN:
+      case CLT:
+      case CLT_UN:
+        handleBinaryComparison(types, stack, topStack, pc, curOpcode);
+        replace(stack, topStack - 1, Int32); // 1st operand cleared inside handleBinaryComparison
+        break;
+      case INITOBJ:
+        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        clear(stack, topStack);
+        break;
+      case TRUFFLE_NODE:
+        // TODO
+        break;
+      default:
+        ThrowNotSupportedException();
+        break;
+    }
+    return topStack;
+  }
+
+  private static void handleOpCodeJump(
+      BytecodeBuffer bytecodeBuffer,
+      boolean[] visited,
+      Stack<Integer> visitStack,
+      int pc,
+      int nextPc) {
+    var offset = bytecodeBuffer.getImmInt(pc);
+    var target = nextPc + offset;
+    if (!visited[target]) visitStack.push(target);
+  }
+
+  private static void handleOpCodeJumpShort(
+      BytecodeBuffer bytecodeBuffer,
+      boolean[] visited,
+      Stack<Integer> visitStack,
+      int pc,
+      int nextPc) {
+    var offset = bytecodeBuffer.getImmByte(pc);
+    var target = nextPc + offset;
+    if (!visited[target]) visitStack.push(target);
   }
 
   private static void handleLdsflda(
