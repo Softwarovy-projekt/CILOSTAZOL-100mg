@@ -439,7 +439,6 @@ public final class SymbolResolver {
         MethodRefSig.parse(
             new SignatureReader(
                 row.getSignatureHeapPtr().read(module.getDefiningFile().getBlobHeap())));
-    var retType = resolveType(sig.getRetType().getTypeSig(), methodTypeArgs, typeTypeArgs, module);
     var paramTypes = new TypeSymbol[sig.getParams().length];
     for (int i = 0; i < paramTypes.length; i++) {
       paramTypes[i] =
@@ -453,7 +452,6 @@ public final class SymbolResolver {
             ? ((NamedTypeSymbol) type).getTypeArguments()
             : new TypeSymbol[0],
         paramTypes,
-        retType,
         sig.getGenParamCount());
   }
 
@@ -486,7 +484,6 @@ public final class SymbolResolver {
       String methodName,
       TypeSymbol[] typeArgs,
       TypeSymbol[] parameterTypes,
-      TypeSymbol returnType,
       int genParams) {
     // Note: CSharp prohibits overloading on return type, so we can ignore return type
     // TODO: resolving virtual methods

@@ -382,11 +382,10 @@ public class NamedTypeSymbol extends TypeSymbol {
       return;
     }
 
-    for (MethodSymbol method : getMethods()) {
-      if (method.getName().equals(".cctor")) {
-        callStaticConstructor(frame, topStack, method);
-        break;
-      }
+    var classMember =
+        SymbolResolver.resolveMethod(this, ".cctor", new TypeSymbol[0], new TypeSymbol[0], 0);
+    if (classMember != null) {
+      callStaticConstructor(frame, topStack, classMember.member);
     }
   }
 

@@ -334,7 +334,7 @@ public class MethodSymbol extends Symbol {
       CLIParamTableRow paramRow =
           file.getTableHeads().getParamTableHead().skip(mDef.getParamListTablePtr());
       for (int i = 0; i < params.length; i++) {
-        params[paramRow.getSequence() - 1] = paramRow;
+        params[i] = paramRow;
         paramRow = paramRow.next();
       }
 
