@@ -45,6 +45,13 @@ public final class ArrayTypeSymbol extends TypeSymbol {
   }
 
   @Override
+  protected int getHierarchyDepth() {
+    // System.Array
+    // System.Object
+    return 2;
+  }
+
+  @Override
   public boolean isArray() {
     return true;
   }

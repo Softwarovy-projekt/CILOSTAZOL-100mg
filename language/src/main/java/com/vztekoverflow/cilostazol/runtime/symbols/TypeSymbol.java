@@ -67,10 +67,18 @@ public abstract class TypeSymbol extends Symbol {
   public boolean isAssignableFrom(TypeSymbol other) {
     if (this == other) return true;
 
-    if (this.isArray()) {
-      if (other.isArray()) {
-        return false;
+    // Partition I: 8.7.1 Assignment compatibility for signature types
+    if (this.isArray() && other.isArray()) {
+      ArrayTypeSymbol thisArray = (ArrayTypeSymbol) this;
+      ArrayTypeSymbol otherArray = (ArrayTypeSymbol) other;
+      if (thisArray.getRank() == otherArray.getRank()) {
+        return thisArray.getElementType().isAssignableFrom(otherArray.getElementType());
       }
+      return false;
+    }
+    // Both array case handled above
+    if (this.isArray() || other.isArray()) {
+      return false;
     }
 
     if (this.isInterface()) {
