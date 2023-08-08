@@ -21,7 +21,7 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
       int c = a + b;
     }
      */
-    MethodSymbol method = getMethodSymbol("LoadTwoInt32_Add_SaveToInt32");
+    MethodSymbol method = getMethodSymbol("LoadTwoInt32_Add_SaveToInt32", "BinaryOperationsTest");
     /*
       IL_0000: nop
       IL_0001: ldc.i4.1
@@ -56,7 +56,7 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
         int c = a + b;
     }
      */
-    MethodSymbol method = getMethodSymbol("LoadTwoByte_Add_SaveToInt32");
+    MethodSymbol method = getMethodSymbol("LoadTwoByte_Add_SaveToInt32", "BinaryOperationsTest");
     /*
         IL_0000: nop
         IL_0001: ldc.i4.1
@@ -91,7 +91,7 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
         long c = a + b;
     }
     */
-    MethodSymbol method = getMethodSymbol("LoadByteAndLong_Add_SaveToLong");
+    MethodSymbol method = getMethodSymbol("LoadByteAndLong_Add_SaveToLong", "BinaryOperationsTest");
     /*
         IL_0000: nop
         IL_0001: ldc.i4.1
@@ -124,8 +124,135 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
     assertEquals(StaticOpCodeAnalyser.OpCodeType.Int64, opCodeTypes[10]);
   }
 
-  private MethodSymbol getMethodSymbol(String methodName) {
-    final String projectName = "BinaryOperationsTest";
+  @Test
+  public void BrFalse() {
+    /*
+    public int brfalse(){
+        int a = 1;
+        if (a < 100)
+            return 42;
+        return 10;
+    }
+    */
+    MethodSymbol method = getMethodSymbol("BrFalse", "BranchOperationsTest");
+    /*
+        //IL_0000: nop
+        //IL_0001: ldc.i4.1
+        //IL_0002: stloc.0
+        //IL_0003: ldloc.0
+        //IL_0004: ldc.i4.s 100
+        //IL_0006: clt
+        //IL_0008: stloc.1
+        // sequence point: hidden
+        //IL_0009: ldloc.1
+        //IL_000a: brfalse.s IL_0011
+
+        IL_000c: ldc.i4.s 42
+        IL_000e: stloc.2
+        IL_000f: br.s IL_0016
+
+        IL_0011: ldc.i4.s 10
+        IL_0013: stloc.2
+        IL_0014: br.s IL_0016
+
+        IL_0016: ldloc.2
+        IL_0017: ret
+    */
+    var opCodeTypes = method.getOpCodeTypes();
+
+    assertEquals(24, opCodeTypes.length);
+    assertEquals(
+        6,
+        Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
+
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[2]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[6]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[8]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[10]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[14]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[19]);
+  }
+
+  @Test
+  public void Switch() {
+    /*
+    public int Switch(){
+        byte a = 1;
+        switch (a)
+        {
+            case 1:
+                return 42;
+            case 2:
+                return 52;
+            case 3:
+                return 64;
+            case 5:
+                return 20;
+            default:
+                return 10;
+        }
+    }
+    */
+    MethodSymbol method = getMethodSymbol("Switch", "BranchOperationsTest");
+    /*
+        IL_0000: nop
+        IL_0001: ldc.i4.1
+        IL_0002: stloc.0
+        IL_0003: ldloc.0
+        IL_0004: stloc.2
+        // sequence point: hidden
+        IL_0005: ldloc.2
+        IL_0006: stloc.1
+        // sequence point: hidden
+        IL_0007: ldloc.1
+        IL_0008: ldc.i4.1
+        IL_0009: sub
+        IL_000a: switch (IL_0025, IL_002a, IL_002f, IL_0039, IL_0034)
+
+        IL_0023: br.s IL_0039
+
+        IL_0025: ldc.i4.s 42
+        IL_0027: stloc.3
+        IL_0028: br.s IL_003e
+
+        IL_002a: ldc.i4.s 52
+        IL_002c: stloc.3
+        IL_002d: br.s IL_003e
+
+        IL_002f: ldc.i4.s 64
+        IL_0031: stloc.3
+        IL_0032: br.s IL_003e
+
+        IL_0034: ldc.i4.s 20
+        IL_0036: stloc.3
+        IL_0037: br.s IL_003e
+
+        IL_0039: ldc.i4.s 10
+        IL_003b: stloc.3
+        IL_003c: br.s IL_003e
+
+        IL_003e: ldloc.3
+        IL_003f: ret
+    */
+    var opCodeTypes = method.getOpCodeTypes();
+
+    assertEquals(64, opCodeTypes.length);
+    assertEquals(
+        9,
+        Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
+
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[2]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[4]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[6]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[9]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[39]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[44]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[49]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[54]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[59]);
+  }
+
+  private MethodSymbol getMethodSymbol(String methodName, String projectName) {
     final CILOSTAZOLContext ctx = init(getDllPath(projectName));
     final AssemblyIdentity assemblyID = getAssemblyID(projectName);
 
