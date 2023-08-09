@@ -292,7 +292,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           unboxAny(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
         case SIZEOF:
-          getSize(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
+          getSize(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
 
           // Branching

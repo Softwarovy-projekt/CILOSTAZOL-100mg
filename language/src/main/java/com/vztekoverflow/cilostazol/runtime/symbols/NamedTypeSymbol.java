@@ -82,7 +82,7 @@ public class NamedTypeSymbol extends TypeSymbol {
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private StaticField[] staticFields;
 
-  @CompilerDirectives.CompilationFinal private int sizeInBytes = -1;
+  @CompilerDirectives.CompilationFinal private int sizeInBytes;
   // endregion
 
   protected NamedTypeSymbol(
@@ -123,6 +123,7 @@ public class NamedTypeSymbol extends TypeSymbol {
     this.typeParameters = typeParameters;
     this.definingRow = definingRow;
     this.map = map;
+    this.sizeInBytes = tryGetSizeInBytes();
   }
 
   // region Getters
@@ -392,7 +393,6 @@ public class NamedTypeSymbol extends TypeSymbol {
     if (frame == null) {
       return;
     }
-
     var classMember =
         SymbolResolver.resolveMethod(this, ".cctor", new TypeSymbol[0], new TypeSymbol[0], 0);
     if (classMember != null) {
@@ -418,6 +418,21 @@ public class NamedTypeSymbol extends TypeSymbol {
     }
 
     return sizeInBytes;
+  }
+
+  private int tryGetSizeInBytes() {
+    return switch (getSystemType()) {
+      case Boolean -> 1;
+      case Char -> 2;
+      case Byte -> 1;
+      case Int -> 4;
+      case Short -> 2;
+      case Float -> 4;
+      case Long -> 8;
+      case Double -> 8;
+      case Void -> 0;
+      case Object -> -1;
+    };
   }
   // endregion
 
