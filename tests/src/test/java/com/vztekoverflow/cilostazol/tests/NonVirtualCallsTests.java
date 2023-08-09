@@ -196,4 +196,27 @@ public class NonVirtualCallsTests extends TestBase {
     assertEquals(0, launcher.exitCode());
     assertEquals(String.format("Hello World!%s", System.lineSeparator()), launcher.output());
   }
+
+  @Test
+  public void printArgumentsFromMain() {
+    var launcher =
+        runTestFromCode(
+            """
+                  using System;
+                  namespace CustomTest
+                  {
+                    public class Program
+                    {
+                        public static void Main(string[] args)
+                        {
+                            Console.WriteLine(args[0]);
+                        }
+                    }
+                  }
+                    """,
+            new String[] {"Hello World!"});
+
+    assertEquals(0, launcher.exitCode());
+    assertEquals(String.format("Hello World!%s", System.lineSeparator()), launcher.output());
+  }
 }

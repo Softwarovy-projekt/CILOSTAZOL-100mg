@@ -2,8 +2,11 @@ package com.vztekoverflow.cilostazol.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Disabled;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ComparisonAndBranchingTests extends TestBase {
   @Test
@@ -462,25 +465,35 @@ public class ComparisonAndBranchingTests extends TestBase {
     assertEquals(1, result.exitCode());
   }
 
-  @Test
-  @Disabled("Broken static analysis")
-  public void switchStatement() {
+  private static Stream<Arguments> switchParameters() {
+    return Stream.of(
+        Arguments.of("int a = 1;", 10),
+        Arguments.of("int a = 2;", 20),
+        Arguments.of("int a = 3;", 30),
+        Arguments.of("int a = 0;", 40) // default
+        );
+  }
+
+  @ParameterizedTest
+  @MethodSource("switchParameters")
+  public void switchStatement(String input, int expected) {
     var result =
         runTestFromCode(
-            """
-                            int a = 1;
-                            switch (a)
-                            {
-                                case 1:
-                                    return 10;
-                                case 2:
-                                    return 20;
-                                default:
-                                    return 30;
-                            }
-                            """);
-
-    assertEquals(10, result.exitCode());
+            input
+                + """
+            switch (a)
+            {
+                case 1:
+                    return 10;
+                case 2:
+                    return 20;
+                case 3:
+                    return 30;
+                default:
+                    return 40;
+            }
+            """);
+    assertEquals(expected, result.exitCode());
   }
 
   // TODO: Test reference comparison once new object creation is implemented
