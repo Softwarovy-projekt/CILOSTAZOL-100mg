@@ -448,12 +448,15 @@ public class ObjectModelTests extends TestBase {
     var result =
         runTestFromCode(
             """
-                    TestStruct obj = default;
-                    return sizeof(obj);
+                    unsafe
+                    {
+                        return sizeof(TestClass);
+                    }
 
-                    public struct TestStruct
+                    public class TestClass
                     {
                         public int a;
+                        public object b;
                     }
                     """);
 
