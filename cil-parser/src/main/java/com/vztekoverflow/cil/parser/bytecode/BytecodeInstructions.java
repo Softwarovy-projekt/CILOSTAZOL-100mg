@@ -482,7 +482,7 @@ public class BytecodeInstructions {
     def(CONV_U, "conv.u", "o", 0);
     def(CONV_R_UN, "conv.r.un", "o", 0);
 
-    def(SIZEOF, "sizeof", "otttt", 1);
+    defPrefixed(SIZEOF, "sizeof", "otttt", 1);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }
