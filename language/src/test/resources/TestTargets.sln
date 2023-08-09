@@ -2,12 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinaryOperationsTest", "StaticAnalysisTestTargets\BinaryOperationsTest\BinaryOperationsTest.csproj", "{93E46E87-5885-4753-8AE1-F12CAC80759E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrimitiveFieldsTest", "StaticObjectModelTestTargets\PrimitiveFieldsTest\PrimitiveFieldsTest.csproj", "{5B2E2705-126E-4C29-B149-CB976F527F25}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReferenceFieldsTest", "StaticObjectModelTestTargets\ReferenceFieldsTest\ReferenceFieldsTest.csproj", "{B8E0E75F-8B17-425D-8ED8-F0F7D9027849}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfUsageFieldsTest", "StaticObjectModelTestTargets\SelfUsageFieldsTest\SelfUsageFieldsTest.csproj", "{C71D655B-041B-4E1B-90FC-06332085DE7A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentParsingGeneral", "TypeParsingTestTargets\ComponentParsingGeneral\ComponentParsingGeneral.csproj", "{69436400-379F-41F2-BB9E-18DD700B0906}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExtendsTest", "TypeParsingTestTargets\ExtendsTest\ExtendsTest.csproj", "{2D516D59-1A46-47A0-845F-FFC3D4AC12A5}"
