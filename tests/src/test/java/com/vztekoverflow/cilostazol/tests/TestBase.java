@@ -147,7 +147,8 @@ public abstract class TestBase {
    * running tests.
    */
   private Path getDllPathFromProject(String projectName) {
-    return Paths.get(directoryDllTests, projectName, "bin", projectName + ".dll");
+    return Paths.get(
+        directoryDllTests, projectName, "bin", configuration, dotnetVersion, projectName + ".dll");
   }
 
   boolean deleteDirectory(File directoryToBeDeleted) {
