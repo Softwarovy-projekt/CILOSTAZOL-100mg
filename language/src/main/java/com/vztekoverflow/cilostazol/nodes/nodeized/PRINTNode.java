@@ -19,12 +19,14 @@ public class PRINTNode extends NodeizedNodeBase {
   private final int argumentTop;
 
   private final int originalTop;
+  private final boolean addNewLine;
 
-  public PRINTNode(int top) {
+  public PRINTNode(int top, boolean addNewLine) {
     // -1 because we mock Console.WriteLine(String) and the argument
     // is a local variable that is last on local stack
     this.argumentTop = top - 1;
     this.originalTop = top;
+    this.addNewLine = addNewLine;
   }
 
   @Override
@@ -32,7 +34,10 @@ public class PRINTNode extends NodeizedNodeBase {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(this).getEnv();
 
     StringBuilder result = getStringFromFrame(frame);
-    print(env.out(), result.toString());
+    if (addNewLine) {
+      result.append(System.lineSeparator());
+    }
+    println(env.out(), result.toString());
 
     //    var type = taggedFrame[argumentTop];
     //    CILOSTAZOLFrame.pop(frame, originalTop, type);
@@ -60,9 +65,9 @@ public class PRINTNode extends NodeizedNodeBase {
   }
 
   @CompilerDirectives.TruffleBoundary
-  private static void print(OutputStream out, String value) {
+  private void println(OutputStream out, String value) {
     try (var p = new PrintStream(out)) {
-      p.println(value);
+      p.print(value);
     }
   }
 }
