@@ -216,6 +216,7 @@ public class BytecodeInstructions {
   public static final int CGT_UN = 0xFE03;
   public static final int CLT = 0xFE04;
   public static final int CLT_UN = 0xFE05;
+  public static final int STARG = 0xFE0B;
   public static final int INITOBJ = 0xFE15;
   public static final int SIZEOF = 0xFE1C;
 
@@ -483,6 +484,7 @@ public class BytecodeInstructions {
     def(CONV_R_UN, "conv.r.un", "o", 0);
 
     defPrefixed(SIZEOF, "sizeof", "otttt", 1);
+    defPrefixed(STARG, "starg", "oii", -1);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }

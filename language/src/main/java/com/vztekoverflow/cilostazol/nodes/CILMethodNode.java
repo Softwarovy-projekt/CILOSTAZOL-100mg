@@ -111,7 +111,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           pop(frame, topStack, getMethod().getOpCodeTypes()[pc]);
           break;
         case DUP:
-          duplicateSlot(frame, topStack - 1);
+          duplicateSlot(frame, topStack);
           break;
 
           // Loading on top of the stack
@@ -227,6 +227,19 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                       bytecodeBuffer.getImmUByte(pc)
                           + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
           break;
+
+          // Storing args
+        case STARG_S:
+          CILOSTAZOLFrame.moveValueStatic(
+              frame,
+              topStack - 1,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUByte(pc));
+          break;
+        case STARG:
+          CILOSTAZOLFrame.moveValueStatic(
+              frame,
+              topStack - 1,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUShort(pc));
 
           // Loading fields
         case LDFLD:
@@ -1502,7 +1515,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void duplicateSlot(VirtualFrame frame, int top) {
-    CILOSTAZOLFrame.copyStatic(frame, top, top + 1);
+    CILOSTAZOLFrame.copyStatic(frame, top - 1, top);
   }
   // endregion
 

@@ -331,6 +331,12 @@ public final class CILOSTAZOLFrame {
     frame.copyStatic(sourceSlot, destSlot);
   }
 
+  public static void moveValueStatic(Frame frame, int sourceSlot, int destSlot) {
+    assert sourceSlot >= 0 && destSlot >= 0;
+    frame.copyStatic(sourceSlot, destSlot);
+    frame.clearStatic(sourceSlot);
+  }
+
   // region stack types
   public enum StackType {
     Object,
