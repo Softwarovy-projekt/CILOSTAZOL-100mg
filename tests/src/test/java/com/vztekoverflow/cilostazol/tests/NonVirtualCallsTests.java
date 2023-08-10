@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled("WIP. missing comparison of strings")
 public class NonVirtualCallsTests extends TestBase {
   @Test
   public void simpleStaticCall() {
@@ -113,7 +112,7 @@ public class NonVirtualCallsTests extends TestBase {
         runTestFromCode(
             """
                     var obj = new TestClass();
-                    return (int) obj?.Foo(41);
+                    return (int) obj?.Foo(42);
 
                     public class TestClass
                     {
