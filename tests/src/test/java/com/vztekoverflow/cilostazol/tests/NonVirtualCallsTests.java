@@ -218,4 +218,75 @@ public class NonVirtualCallsTests extends TestBase {
     assertEquals(0, launcher.exitCode());
     assertEquals(String.format("Hello World!%s", System.lineSeparator()), launcher.output());
   }
+
+  @Test
+  public void OverwrittenMethodFromAbstractPredecessorCall() {
+    var result =
+        runTestFromCode(
+            """
+                    using System;
+                    namespace CallsTests;
+
+                    public class Program
+                    {
+                        public static int Main()
+                        {
+                            return new B().Foo();
+                        }
+                    }
+
+                    public abstract class A{
+                        public int Foo()
+                        {
+                            Console.Write("A.Foo");
+                            return 42;
+                        }
+                    }
+
+                    public class B : A{
+                        public int Foo(){
+                            Console.Write("B.Foo");
+                            return 52;
+                        }
+                    }
+
+                    """);
+    assertEquals(52, result.exitCode());
+    assertEquals("B.Foo", result.output());
+  }
+
+  @Test
+  public void CastedOverwrittenMethodFromAbstractPredecessorCall() {
+    var result =
+        runTestFromCode(
+            """
+                    namespace CallsTests;
+
+                    public class Program
+                    {
+                        public static int Main()
+                        {
+                            return ((A)new B()).Foo();
+                        }
+                    }
+
+                    public abstract class A{
+                        public int Foo()
+                        {
+                            Console.Write("A.Foo");
+                            return 42;
+                        }
+                    }
+
+                    public class B : A{
+                        public int Foo(){
+                            Console.Write("B.Foo");
+                            return 52;
+                        }
+                    }
+
+                    """);
+    assertEquals(42, result.exitCode());
+    assertEquals("A.Foo", result.output());
+  }
 }

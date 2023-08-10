@@ -17,10 +17,7 @@ import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
-import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
-import com.vztekoverflow.cilostazol.nodes.nodeized.NEWOBJNode;
-import com.vztekoverflow.cilostazol.nodes.nodeized.NodeizedNodeBase;
-import com.vztekoverflow.cilostazol.nodes.nodeized.PRINTNode;
+import com.vztekoverflow.cilostazol.nodes.nodeized.*;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
@@ -29,6 +26,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Fla
 import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import org.jetbrains.annotations.NotNull;
 
 public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private final MethodSymbol method;
@@ -401,6 +399,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           {
             var methodToken = bytecodeBuffer.getImmToken(pc);
             topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALL);
+            break;
+          }
+        case CALLVIRT:
+          {
+            var methodToken = bytecodeBuffer.getImmToken(pc);
+            topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALLVIRT);
             break;
           }
           // Store indirect
@@ -1903,6 +1907,20 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 getMethod().getModule());
         node = getCheckedCALLNode(method.member, top);
       }
+      case CALLVIRT -> {
+        // This is not very efficient, but it's the easiest way to get one of the correct methods
+        var method =
+            SymbolResolver.resolveMethod(
+                token,
+                getMethod().getTypeArguments(),
+                getMethod().getDefiningType().getTypeArguments(),
+                getMethod().getModule());
+        var instance =
+            CILOSTAZOLFrame.getLocalObject(frame, top - 1 - method.member.getParameters().length);
+        // get the actuall mehtod
+        var virtualMethod = getVirtualMethodOnInstance(method, instance);
+        node = getCheckedCALLNode(virtualMethod, top);
+      }
       default -> {
         CompilerDirectives.transferToInterpreterAndInvalidate();
         throw new InterpreterException();
@@ -1922,15 +1940,41 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     return nodes[index].execute(frame);
   }
 
+  @NotNull
+  private static MethodSymbol getVirtualMethodOnInstance(
+      SymbolResolver.ClassMember<MethodSymbol> method, StaticObject instance) {
+    var candidateMethod =
+        Arrays.stream(((NamedTypeSymbol) instance.getTypeSymbol()).getMethods())
+            .filter(m -> m.getName().equals(method.member.getName()))
+            .findFirst();
+    if (!candidateMethod.isEmpty()) {
+      return candidateMethod.get();
+    }
+    // iterate predecessors
+    var superClasses = instance.getTypeSymbol().getSuperClasses();
+    for (int i = superClasses.length - 1; i >= 0; i--) {
+      var superClass = superClasses[i];
+      candidateMethod =
+          Arrays.stream(superClass.getMethods())
+              .filter(instanceMethods -> instanceMethods.canOverride(method.member))
+              .findFirst();
+      if (candidateMethod.isPresent()) {
+        return candidateMethod.get();
+      }
+    }
+
+    throw new InterpreterException("Method not found");
+  }
+
   private NodeizedNodeBase getCheckedCALLNode(MethodSymbol method, int top) {
     if (method.getMethodFlags().hasFlag(Flag.UNMANAGED_EXPORT)) {
       // Either native support must be supported or some workaround must be implemented
       throw new NotImplementedException();
     }
-    if (method.getName().equals("WriteLine")
+    if ((method.getName().equals("WriteLine") || method.getName().equals("Write"))
         && method.getDefiningType().getName().equals("Console")
         && method.getDefiningType().getNamespace().equals("System")) {
-      return new PRINTNode(top);
+      return new PRINTNode(top, method.getName().equals("WriteLine"));
     }
 
     return new CALLNode(method, top);
@@ -2065,6 +2109,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   /**
    * Do a binary comparison of values on the evaluation stack and return the result as a boolean.
+   *
    * @return the comparison result as a boolean
    */
   private boolean binaryCompare(

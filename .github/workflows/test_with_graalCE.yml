@@ -42,7 +42,7 @@ jobs:
 
       - name: Build Interpreter test targets
         working-directory: ./tests/src/test/resources/BasicTests
-        run: ./build.sh
+        run: ./build_solution.sh
 
       - name: test
         run: mvn test

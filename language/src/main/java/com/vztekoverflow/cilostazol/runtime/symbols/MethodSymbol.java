@@ -165,6 +165,10 @@ public class MethodSymbol extends Symbol {
     return paramTypes;
   }
 
+  public TypeSymbol[] getParameterTypes() {
+    return Arrays.stream(parameters).map(ParameterSymbol::getType).toArray(TypeSymbol[]::new);
+  }
+
   public String toString() {
     return returnSymbol.toString()
         + " "
@@ -221,6 +225,21 @@ public class MethodSymbol extends Symbol {
         && getReturnType().equals(other.getReturnType())
         && getDefiningType().equals(other.getDefiningType())
         && Arrays.equals(getTypeParameters(), other.getTypeParameters());
+  }
+
+  /**
+   * An override method must have the same signature as the overridden base method. override methods
+   * support covariant return types. In particular, the return type of an override method can derive
+   * from the return type of the corresponding base method.
+   *
+   * <p><a
+   * href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/override">Docs</a>
+   */
+  public boolean canOverride(MethodSymbol other) {
+    return getName().equals(other.getName())
+        && Arrays.equals(getTypeParameters(), other.getTypeParameters())
+        && Arrays.equals(getParameterTypes(), other.getParameterTypes())
+        && getReturnType().getType().isCovariantTo(other.getReturnType().getType());
   }
 
   public static class MethodSymbolFactory {

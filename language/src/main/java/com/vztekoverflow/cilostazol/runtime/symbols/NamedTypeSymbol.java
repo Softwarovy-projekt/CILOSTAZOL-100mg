@@ -291,6 +291,11 @@ public class NamedTypeSymbol extends TypeSymbol {
     return getSemantics() == NamedTypeSymbolSemantics.Interface;
   }
 
+  @Override
+  public boolean isArray() {
+    return false;
+  }
+
   public boolean isClass() {
     return !isInterface();
   }

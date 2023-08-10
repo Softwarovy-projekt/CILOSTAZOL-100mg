@@ -4,6 +4,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIGenericParamConstraintTableRow;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIGenericParamTableRow;
+import com.vztekoverflow.cilostazol.exceptions.InvalidOperationException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import java.util.ArrayList;
@@ -44,6 +45,31 @@ public final class TypeParameterSymbol extends TypeSymbol {
 
   public int getOrdinal() {
     return ordinal;
+  }
+
+  @Override
+  protected int getHierarchyDepth() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
+  public boolean isInterface() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
+  public boolean isArray() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
+  public NamedTypeSymbol[] getInterfaces() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
+  public NamedTypeSymbol[] getSuperClasses() {
+    throw new InvalidOperationException();
   }
 
   public static class TypeParameterSymbolFactory {
