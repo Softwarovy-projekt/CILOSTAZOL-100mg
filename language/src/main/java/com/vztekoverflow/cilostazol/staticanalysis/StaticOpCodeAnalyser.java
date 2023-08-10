@@ -49,8 +49,9 @@ public class StaticOpCodeAnalyser {
       var nextPc = bytecodeBuffer.nextInstruction(pc);
       if (nextPc < cil.length
           && !visited[
-              nextPc]) // !visited can be removed as a safety measure to traverse all the opcodes
-      visitStack.add(nextPc);
+              nextPc]) { // !visited can be removed as a safety measure to traverse all the opcodes
+        visitStack.add(nextPc);
+      }
 
       int curOpcode = bytecodeBuffer.getOpcode(pc);
       if (!visited[pc])
@@ -1069,11 +1070,12 @@ public class StaticOpCodeAnalyser {
   }
 
   private static void clear(StackType[] stack, int topStack) {
+    assert topStack > 0;
     stack[topStack - 1] = null;
   }
 
   private static void replace(StackType[] stack, int topStack, StackType stackType) {
-    stack[topStack - 1] = stackType;
+    stack[topStack - 1 < 0 ? 0 : topStack - 1] = stackType;
   }
 
   private static void push(StackType[] stack, int topStack, StackType stackType) {

@@ -312,7 +312,7 @@ public class BytecodeInstructions {
     def(LDC_R8, "ldc.r8", "oiiiiiiii", 1);
     def(LDC_I4_S, "ldc.i4.s", "oi", 1);
 
-    def(LDSTR, "ldstr", "otttt", 0);
+    def(LDSTR, "ldstr", "otttt", 1);
 
     def(LDLOC_0, "ldloc.0", "o", 1);
     def(LDLOC_1, "ldloc.1", "o", 1);
