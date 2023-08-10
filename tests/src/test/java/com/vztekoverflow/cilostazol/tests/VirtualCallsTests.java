@@ -2,10 +2,13 @@ package com.vztekoverflow.cilostazol.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class VirtualCallsTests extends TestBase {
   @Test
+  @Disabled(
+      "Its purpose is to rapidly develop tests while being able to see CIL next to in thanks to the Rider IDE.")
   public void simpleVirtCallDll() {
     var result = runTestFromDll("CallsTests");
 
@@ -18,24 +21,24 @@ public class VirtualCallsTests extends TestBase {
     var result =
         runTestFromCode(
             """
-          using System;
-          namespace CustomTest
-          {
-              public class Program
-              {
-                  public static int Main()
-                  {
-                      return new A().Foo();
-                  }
-              }
+                    using System;
+                    namespace CustomTest
+                    {
+                        public class Program
+                        {
+                            public static int Main()
+                            {
+                                return new A().Foo();
+                            }
+                        }
 
-              public class A{
-                  public virtual int Foo(){
-                      return 42;
-                  }
-              }
-          }
-            """);
+                        public class A{
+                            public virtual int Foo(){
+                                return 42;
+                            }
+                        }
+                    }
+                      """);
 
     assertEquals(42, result.exitCode());
   }
@@ -543,7 +546,7 @@ public class VirtualCallsTests extends TestBase {
                     public int Get() => 52;
                 }
 """);
-    assertEquals(42, result.exitCode());
+    assertEquals(52, result.exitCode());
     assertEquals("B.Foo", result.output());
   }
 

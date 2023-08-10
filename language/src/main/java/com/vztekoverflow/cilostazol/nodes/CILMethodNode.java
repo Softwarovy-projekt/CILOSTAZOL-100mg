@@ -1615,6 +1615,20 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       }
     }
 
+    try {
+      unboxValueType(frame, slot, targetType, sourceType, object);
+    } catch (Exception e) {
+      // TODO: Throw a proper exception
+      throw new InterpreterException("System.InvalidCastException");
+    }
+  }
+
+  private void unboxValueType(
+      VirtualFrame frame,
+      int slot,
+      NamedTypeSymbol targetType,
+      NamedTypeSymbol sourceType,
+      StaticObject object) {
     switch (targetType.getSystemType()) {
       case Boolean -> {
         boolean value =
