@@ -1894,7 +1894,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         node = getCheckedCALLNode(method.member, top);
       }
       case CALLVIRT -> {
-        //This is not very efficient, but it's the easiest way to get one of the correct methods
+        // This is not very efficient, but it's the easiest way to get one of the correct methods
         var method =
             SymbolResolver.resolveMethod(
                 token,
@@ -1903,9 +1903,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 getMethod().getModule());
         var instance =
             CILOSTAZOLFrame.getLocalObject(frame, top - 1 - method.member.getParameters().length);
-        //get the actuall mehtod
-        var virtualMethod =
-                getVirtualMethodOnInstance(method, instance);
+        // get the actuall mehtod
+        var virtualMethod = getVirtualMethodOnInstance(method, instance);
         node = getCheckedCALLNode(virtualMethod, top);
       }
       default -> {
@@ -1928,21 +1927,24 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   @NotNull
-  private static MethodSymbol getVirtualMethodOnInstance(SymbolResolver.ClassMember<MethodSymbol> method, StaticObject instance) {
-    var candidateMethod = Arrays.stream(((NamedTypeSymbol) instance.getTypeSymbol()).getMethods())
+  private static MethodSymbol getVirtualMethodOnInstance(
+      SymbolResolver.ClassMember<MethodSymbol> method, StaticObject instance) {
+    var candidateMethod =
+        Arrays.stream(((NamedTypeSymbol) instance.getTypeSymbol()).getMethods())
             .filter(m -> m.getName().equals(method.member.getName()))
             .findFirst();
-    if (!candidateMethod.isEmpty()){
+    if (!candidateMethod.isEmpty()) {
       return candidateMethod.get();
     }
-    //iterate predecessors
+    // iterate predecessors
     var superClasses = instance.getTypeSymbol().getSuperClasses();
-    for (int i = superClasses.length - 1; i >=0; i--) {
+    for (int i = superClasses.length - 1; i >= 0; i--) {
       var superClass = superClasses[i];
-      candidateMethod = Arrays.stream(superClass.getMethods())
+      candidateMethod =
+          Arrays.stream(superClass.getMethods())
               .filter(instanceMethods -> instanceMethods.canOverride(method.member))
               .findFirst();
-      if (candidateMethod.isPresent()){
+      if (candidateMethod.isPresent()) {
         return candidateMethod.get();
       }
     }
