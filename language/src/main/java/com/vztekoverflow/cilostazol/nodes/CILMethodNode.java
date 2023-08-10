@@ -711,7 +711,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   @CompilerDirectives.TruffleBoundary
   private static void LogUnsupportedOpcode(int curOpcode) {
-    System.out.println(CILOSTAZOLBundle.message("cilostazol.exception.not.supported.OpCode", curOpcode));
+    System.out.println(
+        CILOSTAZOLBundle.message("cilostazol.exception.not.supported.OpCode", curOpcode));
   }
 
   // region arithmetics
