@@ -20,24 +20,24 @@ public class VirtualCallsTests extends TestBase {
     var result =
         runTestFromCode(
             """
-          using System;
-          namespace CustomTest
-          {
-              public class Program
-              {
-                  public static int Main()
-                  {
-                      return new A().Foo();
-                  }
-              }
+                    using System;
+                    namespace CustomTest
+                    {
+                        public class Program
+                        {
+                            public static int Main()
+                            {
+                                return new A().Foo();
+                            }
+                        }
 
-              public class A{
-                  public virtual int Foo(){
-                      return 42;
-                  }
-              }
-          }
-            """);
+                        public class A{
+                            public virtual int Foo(){
+                                return 42;
+                            }
+                        }
+                    }
+                      """);
 
     assertEquals(42, result.exitCode());
   }
