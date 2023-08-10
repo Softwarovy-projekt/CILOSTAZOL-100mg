@@ -291,6 +291,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case UNBOX_ANY:
           unboxAny(frame, topStack - 1, bytecodeBuffer.getImmToken(pc));
           break;
+        case SIZEOF:
+          getSize(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
 
           // Branching
         case BEQ:
@@ -1662,6 +1665,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Object -> // Unboxing a struct -> we don't need to change any values
       CILOSTAZOLFrame.putObject(frame, slot, object);
     }
+  }
+
+  private void getSize(VirtualFrame frame, int slot, CLITablePtr typePtr) {
+    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    CILOSTAZOLFrame.putInt32(frame, slot, type.getSize(frame, slot));
   }
 
   private void createNewObjectOnStack(

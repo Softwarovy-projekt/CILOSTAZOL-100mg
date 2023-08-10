@@ -559,6 +559,9 @@ public class StaticOpCodeAnalyser {
         setTypeByStack(types, stack, topStack, pc, curOpcode);
         clear(stack, topStack);
         break;
+      case SIZEOF:
+        push(stack, topStack, Int32);
+        break;
       case TRUFFLE_NODE:
         // TODO
         break;

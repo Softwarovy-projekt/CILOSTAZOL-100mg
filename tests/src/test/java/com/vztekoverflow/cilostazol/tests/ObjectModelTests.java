@@ -442,4 +442,57 @@ public class ObjectModelTests extends TestBase {
 
     assertEquals(42, result.exitCode());
   }
+
+  @Test
+  public void sizeOfClassTest() {
+    var result =
+        runTestFromCode(
+            """
+                    unsafe
+                    {
+                        return sizeof(TestClass);
+                    }
+
+                    public class TestClass
+                    {
+                        public int a;
+                        public object b;
+                    }
+                    """);
+
+    assertEquals(4, result.exitCode());
+  }
+
+  @Test
+  public void sizeOfStructTest() {
+    var result =
+        runTestFromCode(
+            """
+                    unsafe
+                    {
+                      return sizeof(TestStruct);
+                    }
+
+                    public struct TestStruct
+                    {
+                        public int a;
+                        public object b;
+                    }
+                    """);
+
+    assertEquals(8, result.exitCode());
+  }
+
+  @Test
+  public void sizeOfPrimitivesTest() {
+    var result =
+        runTestFromCode(
+            """
+                    return sizeof(int) + sizeof(long) + sizeof(float)
+                      + sizeof(double) + sizeof(char) + sizeof(bool);
+
+                    """);
+
+    assertEquals(4 + 8 + 4 + 8 + 2 + 1, result.exitCode());
+  }
 }
