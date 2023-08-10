@@ -12,12 +12,12 @@ import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeSpecTableRow;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
-import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
+import java.util.Arrays;
 
 public abstract class TypeSymbol extends Symbol {
   protected final ModuleSymbol definingModule;
@@ -109,30 +109,30 @@ public abstract class TypeSymbol extends Symbol {
     return fastLookup(this, interfaces) >= 0;
   }
 
-  protected int getHierarchyDepth() {
-    throw new NotImplementedException();
-  }
+  protected abstract int getHierarchyDepth();
   // endregion
 
   public ModuleSymbol getDefiningModule() {
     return definingModule;
   }
 
-  public boolean isInterface() {
-    return false;
+  public abstract boolean isInterface();
+  //  {
+  //    return false;
+  //  }
+
+  public abstract boolean isArray();
+  //  {
+  //    return false;
+  //  }
+
+  public boolean isCovariantTo(TypeSymbol other) {
+    return this.equals(other) || Arrays.asList(getSuperClasses()).contains(other);
   }
 
-  public boolean isArray() {
-    return false;
-  }
+  public abstract NamedTypeSymbol[] getInterfaces();
 
-  public NamedTypeSymbol[] getInterfaces() {
-    throw new NotImplementedException();
-  }
-
-  public NamedTypeSymbol[] getSuperClasses() {
-    throw new NotImplementedException();
-  }
+  public abstract NamedTypeSymbol[] getSuperClasses();
 
   public SystemType getSystemType() {
     return systemType;

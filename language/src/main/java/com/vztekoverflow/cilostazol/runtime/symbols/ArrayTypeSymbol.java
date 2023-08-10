@@ -1,11 +1,14 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.signature.ArrayShapeSig;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
 public final class ArrayTypeSymbol extends TypeSymbol {
   private final TypeSymbol elementType;
+  private final NamedTypeSymbol arrayType;
   private final int rank;
   private final int[] lengths;
   private final int[] lowerBounds;
@@ -21,6 +24,13 @@ public final class ArrayTypeSymbol extends TypeSymbol {
     this.rank = rank;
     this.lengths = lengths;
     this.lowerBounds = lowerBounds;
+    this.arrayType =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                "Array",
+                "System",
+                AssemblyIdentity.SystemPrivateCoreLib700(),
+                definingModule.getContext());
   }
 
   public TypeSymbol getElementType() {
@@ -46,14 +56,22 @@ public final class ArrayTypeSymbol extends TypeSymbol {
 
   @Override
   protected int getHierarchyDepth() {
-    // System.Array
-    // System.Object
-    return 2;
+    return arrayType.getHierarchyDepth();
   }
 
   @Override
   public boolean isArray() {
     return true;
+  }
+
+  @Override
+  public NamedTypeSymbol[] getInterfaces() {
+    return arrayType.getInterfaces();
+  }
+
+  @Override
+  public NamedTypeSymbol[] getSuperClasses() {
+    return arrayType.getSuperClasses();
   }
 
   public static class ArrayTypeSymbolFactory {

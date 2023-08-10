@@ -1,9 +1,35 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import com.vztekoverflow.cilostazol.exceptions.InvalidOperationException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 
 public final class ReferenceSymbol extends TypeSymbol {
+  @Override
+  protected int getHierarchyDepth() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
+  public boolean isInterface() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
+  public boolean isArray() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
+  public NamedTypeSymbol[] getInterfaces() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
+  public NamedTypeSymbol[] getSuperClasses() {
+    throw new InvalidOperationException();
+  }
+
   public enum ReferenceType {
     Local,
     Argument,

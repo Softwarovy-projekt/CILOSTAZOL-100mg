@@ -222,6 +222,40 @@ public class PrimitiveTypesParsingTests extends TypeSystemTestBase {
     assertEquals("System", elementType.getNamespace());
   }
 
+  public void testArrayType() {
+    final String projectName = "PrimitiveTypesTest";
+    CILOSTAZOLContext ctx = init(getDllPath(projectName));
+    AssemblyIdentity assemblyIdentity = getAssemblyID(projectName);
+
+    var type = ctx.resolveType("ArrayClass", projectName, assemblyIdentity);
+
+    assertEquals(1, type.getFields().length);
+    assertEquals("fieldArray", type.getFields()[0].getName());
+    assertTrue(type.getFields()[0].getType() instanceof ArrayTypeSymbol);
+    var arrayType = (ArrayTypeSymbol) type.getFields()[0].getType();
+
+    // interfaces
+    assertEquals(6, arrayType.getInterfaces().length);
+    assertTrue(
+        Arrays.stream(arrayType.getInterfaces()).anyMatch(i -> i.getName().equals("ICollection")));
+    assertTrue(
+        Arrays.stream(arrayType.getInterfaces()).anyMatch(i -> i.getName().equals("IEnumerable")));
+    assertTrue(Arrays.stream(arrayType.getInterfaces()).anyMatch(i -> i.getName().equals("IList")));
+    assertTrue(
+        Arrays.stream(arrayType.getInterfaces())
+            .anyMatch(i -> i.getName().equals("IStructuralComparable")));
+    assertTrue(
+        Arrays.stream(arrayType.getInterfaces())
+            .anyMatch(i -> i.getName().equals("IStructuralEquatable")));
+    assertTrue(
+        Arrays.stream(arrayType.getInterfaces()).anyMatch(i -> i.getName().equals("ICloneable")));
+
+    // inheritance
+    assertEquals(1, arrayType.getSuperClasses().length);
+    assertTrue(
+        Arrays.stream(arrayType.getSuperClasses()).anyMatch(i -> i.getName().equals("Object")));
+  }
+
   @ParameterizedTest
   @MethodSource("provideNumericPrimitiveTypesData")
   public void testNumericPrimitiveTypes(
