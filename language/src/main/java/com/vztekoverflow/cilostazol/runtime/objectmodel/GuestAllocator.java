@@ -168,13 +168,18 @@ public final class GuestAllocator {
     // TODO: Check whether taking a field reference is valid for Nullable<T>
     switch (typeSymbol.getSystemType()) {
       case Boolean, Char, Byte, Int, Short, Float, Long, Double -> {
-        StaticField valueField =
-            typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1);
-        return createFieldReference(
-            SymbolResolver.resolveReference(
-                ReferenceSymbol.ReferenceType.Field, typeSymbol.getContext()),
-            boxedObject,
-            valueField);
+        try {
+          StaticField valueField =
+              typeSymbol.getAssignableInstanceField(typeSymbol.getFields()[0], frame, slot + 1);
+          return createFieldReference(
+              SymbolResolver.resolveReference(
+                  ReferenceSymbol.ReferenceType.Field, typeSymbol.getContext()),
+              boxedObject,
+              valueField);
+        } catch (Exception ignored) {
+          // TODO: Throw a proper exception
+          throw new InterpreterException("System.InvalidCastException");
+        }
       }
       case Void -> throw new InterpreterException("Cannot unbox void");
       case Object -> {

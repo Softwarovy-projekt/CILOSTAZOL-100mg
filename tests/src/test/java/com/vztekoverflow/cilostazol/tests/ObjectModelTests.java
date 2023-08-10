@@ -383,7 +383,6 @@ public class ObjectModelTests extends TestBase {
   }
 
   @Test
-  @Disabled("Branching is not taken into account during static analysis")
   public void staticFieldAccessBoolean() {
     var result =
         runTestFromCode(
@@ -428,16 +427,95 @@ public class ObjectModelTests extends TestBase {
     var result =
         runTestFromCode(
             """
-                    TestStruct2 obj = new TestStruct2();
+                    TestClass2 obj = new TestClass2();
                     obj.a = 42;
                     return obj.a;
 
-                    public class TestStruct
+                    public class TestClass
                     {
                         public int a;
                     }
 
-                    public class TestStruct2 : TestStruct { }
+                    public class TestClass2 : TestClass { }
+                    """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void grandParentFieldAccess() {
+    var result =
+        runTestFromCode(
+            """
+                    TestClass3 obj = new TestClass3();
+                    obj.a = 42;
+                    obj.b = 42L;
+                    obj.c = obj.a + obj.b;
+                    return (int) (long) obj.c;
+
+                    public class TestClass
+                    {
+                        public int a;
+                    }
+
+                    public class TestClass2 : TestClass
+                    {
+                        public long b;
+                    }
+                    public class TestClass3 : TestClass2
+                    {
+                        public object c;
+                    }
+                    """);
+
+    assertEquals(84, result.exitCode());
+  }
+
+  @Test
+  @Disabled("CALLVIRT not implemented")
+  public void interfacePropertyAccess() {
+    var result =
+        runTestFromCode(
+            """
+                            TestClass obj = new TestClass();
+                            obj.a = 42;
+                            return obj.a;
+
+                            public interface TestInterface
+                            {
+                                public int a { get; set; }
+                            }
+
+                            public class TestClass : TestInterface
+                            {
+                                public int a { get; set; }
+                            }
+                            """);
+
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  @Disabled("CALLVIRT not implemented")
+  public void interfaceTransitiveFieldAccess() {
+    var result =
+        runTestFromCode(
+            """
+                    TestClass2 obj = new TestClass2();
+                    obj.a = 42;
+                    return obj.a;
+
+                    public interface TestInterface
+                    {
+                        public int a { get; set; }
+                    }
+
+                    public class TestClass : TestInterface
+                    {
+                        public int a { get; set; }
+                    }
+
+                    public class TestClass2 : TestClass { }
                     """);
 
     assertEquals(42, result.exitCode());
