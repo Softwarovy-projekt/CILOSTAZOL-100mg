@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test;
 
 public class VirtualCallsTests extends TestBase {
   @Test
-  @Disabled("Its purpose is to rapidly develop tests while being able to see CIL next to in thanks to the Rider IDE.")
+  @Disabled(
+      "Its purpose is to rapidly develop tests while being able to see CIL next to in thanks to the Rider IDE.")
   public void simpleVirtCallDll() {
     var result = runTestFromDll("CallsTests");
 
