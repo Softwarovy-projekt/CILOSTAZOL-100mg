@@ -224,6 +224,7 @@ public class BytecodeInstructions {
   public static final int LDLOC = 0xFE0C;
   public static final int LDLOCA = 0xFE0D;
   public static final int STLOC = 0xFE0E;
+  public static final int LOCALLOC = 0xFE0F;
   public static final int INITOBJ = 0xFE15;
   public static final int CPBLK = 0xFE17;
   public static final int INITBLK = 0xFE18;
@@ -503,6 +504,7 @@ public class BytecodeInstructions {
     defPrefixed(SIZEOF, "sizeof", "otttt", 1);
     defPrefixed(CPBLK, "cpblk", "o", -3);
     defPrefixed(INITBLK, "initblk", "o", -3);
+    defPrefixed(LOCALLOC, "localloc", "o", 0);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }
