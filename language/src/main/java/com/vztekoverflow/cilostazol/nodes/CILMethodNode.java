@@ -156,16 +156,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case STLOC_1:
         case STLOC_2:
         case STLOC_3:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              topStack - 1,
-              curOpcode - STLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()));
+          CILOSTAZOLFrame.copyStatic(frame, topStack - 1, curOpcode - STLOC_0);
           break;
         case STLOC_S:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              topStack - 1,
-              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()));
+          CILOSTAZOLFrame.copyStatic(frame, topStack - 1, bytecodeBuffer.getImmUByte(pc));
           break;
 
           // Loading locals to top
@@ -173,15 +167,15 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case LDLOC_1:
         case LDLOC_2:
         case LDLOC_3:
-          CILOSTAZOLFrame.copyStatic(
-              frame, curOpcode - LDLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()), topStack);
+          CILOSTAZOLFrame.copyStatic(frame, curOpcode - LDLOC_0, topStack);
           break;
         case LDLOC_S:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()),
-              topStack);
+          CILOSTAZOLFrame.copyStatic(frame, bytecodeBuffer.getImmUByte(pc), topStack);
           break;
+        case LDLOC:
+          CILOSTAZOLFrame.copyStatic(frame, bytecodeBuffer.getImmUShort(pc), topStack);
+          break;
+          // Storing to args
         case LDLOCA_S:
           CILOSTAZOLFrame.putObject(
               frame,
@@ -193,8 +187,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                       SymbolResolver.resolveReference(
                           ReferenceSymbol.ReferenceType.Local, getMethod().getContext()),
                       frame,
-                      bytecodeBuffer.getImmUByte(pc)
-                          + CILOSTAZOLFrame.isInstantiable(getMethod())));
+                      bytecodeBuffer.getImmUByte(pc)));
           break;
 
           // Loading args to top
@@ -214,11 +207,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               topStack);
           break;
         case LDARG:
-            CILOSTAZOLFrame.copyStatic(
-                frame,
-                CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUShort(pc),
-                topStack);
-            break;
+          CILOSTAZOLFrame.copyStatic(
+              frame,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUShort(pc),
+              topStack);
+          break;
         case LDARGA_S:
           loadArgument(frame, bytecodeBuffer.getImmUByte(pc), topStack);
           break;

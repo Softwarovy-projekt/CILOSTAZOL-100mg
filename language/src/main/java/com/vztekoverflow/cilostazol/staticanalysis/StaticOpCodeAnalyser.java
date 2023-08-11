@@ -136,7 +136,7 @@ public class StaticOpCodeAnalyser {
         break;
 
       case LDLOC_S:
-        // case LDLOC: //we do not track this opcode
+      case LDLOC:
         handleLoc(locals, stack, topStack, bytecodeBuffer.getImmUByte(pc));
         break;
 
