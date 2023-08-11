@@ -690,6 +690,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case INITBLK:
         case CPBLK:
         case LDFTN:
+        case LDVIRTFTN:
           throw new InterpreterException("Unmanaged memory manipulation not implemented");
 
         case TRUFFLE_NODE:
