@@ -175,19 +175,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case LDLOC:
           CILOSTAZOLFrame.copyStatic(frame, bytecodeBuffer.getImmUShort(pc), topStack);
           break;
-          // Storing to args
         case LDLOCA_S:
-          CILOSTAZOLFrame.putObject(
-              frame,
-              topStack,
-              getMethod()
-                  .getContext()
-                  .getAllocator()
-                  .createStackReference(
-                      SymbolResolver.resolveReference(
-                          ReferenceSymbol.ReferenceType.Local, getMethod().getContext()),
-                      frame,
-                      bytecodeBuffer.getImmUByte(pc)));
+          loadLocalIndirect(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          break;
+        case LDLOCA:
+          loadLocalIndirect(frame, bytecodeBuffer.getImmUShort(pc), topStack);
           break;
 
           // Loading args to top
@@ -711,20 +703,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       topStack += BytecodeInstructions.getStackEffect(curOpcode);
       pc = nextpc;
     }
-  }
-
-  private void loadArgument(VirtualFrame frame, int index, int topStack) {
-    CILOSTAZOLFrame.putObject(
-        frame,
-        topStack,
-        getMethod()
-            .getContext()
-            .getAllocator()
-            .createStackReference(
-                SymbolResolver.resolveReference(
-                    ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
-                frame,
-                index + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
   }
 
   // region arithmetics
@@ -1527,6 +1505,35 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private void duplicateSlot(VirtualFrame frame, int top) {
     CILOSTAZOLFrame.copyStatic(frame, top - 1, top);
   }
+
+  private void loadArgument(VirtualFrame frame, int index, int topStack) {
+    CILOSTAZOLFrame.putObject(
+        frame,
+        topStack,
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createStackReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
+                frame,
+                index + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
+  }
+
+  private void loadLocalIndirect(VirtualFrame frame, int slot, int topStack) {
+    CILOSTAZOLFrame.putObject(
+        frame,
+        topStack,
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createStackReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Local, getMethod().getContext()),
+                frame,
+                slot));
+  }
+
   // endregion
 
   private Object getReturnValue(VirtualFrame frame, int top) {

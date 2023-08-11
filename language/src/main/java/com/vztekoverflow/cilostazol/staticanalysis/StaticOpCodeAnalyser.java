@@ -141,7 +141,7 @@ public class StaticOpCodeAnalyser {
         break;
 
       case LDLOCA_S:
-        // case LDLOCA: //we do not track this opcode
+      case LDLOCA:
         push(stack, topStack, StackType.ManagedPointer);
         break;
 

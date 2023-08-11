@@ -220,6 +220,7 @@ public class BytecodeInstructions {
   public static final int LDARGA = 0xFE0A;
   public static final int STARG = 0xFE0B;
   public static final int LDLOC = 0xFE0C;
+  public static final int LDLOCA = 0xFE0D;
   public static final int STLOC = 0xFE0E;
   public static final int INITOBJ = 0xFE15;
   public static final int CPBLK = 0xFE17;
@@ -328,6 +329,7 @@ public class BytecodeInstructions {
     def(LDLOC_S, "ldloc.s", "oi", 1);
     def(LDLOCA_S, "ldloca.s", "oi", 1);
     defPrefixed(LDLOC, "ldloc", "oii", 1);
+    defPrefixed(LDLOCA, "ldloca", "oii", 1);
 
     def(LDTOKEN, "ldtoken", "otttt", 1);
 
