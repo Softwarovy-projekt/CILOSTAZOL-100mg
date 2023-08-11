@@ -15,6 +15,7 @@ import com.vztekoverflow.cil.parser.bytecode.BytecodeBuffer;
 import com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
+import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.nodes.nodeized.*;
@@ -699,13 +700,19 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           break;
 
         default:
-          System.out.println("Opcode not implemented: " + curOpcode);
+          LogUnsupportedOpcode(curOpcode);
           break;
       }
 
       topStack += BytecodeInstructions.getStackEffect(curOpcode);
       pc = nextpc;
     }
+  }
+
+  @CompilerDirectives.TruffleBoundary
+  private static void LogUnsupportedOpcode(int curOpcode) {
+    System.out.println(
+        CILOSTAZOLBundle.message("cilostazol.exception.not.supported.OpCode", curOpcode));
   }
 
   // region arithmetics

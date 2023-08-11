@@ -10,7 +10,7 @@ import com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InvalidCLIException;
-import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
+import com.vztekoverflow.cilostazol.exceptions.OpCodeNotSupportedException;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
@@ -564,10 +564,9 @@ public class StaticOpCodeAnalyser {
         push(stack, topStack, Int32);
         break;
       case TRUFFLE_NODE:
-        // TODO
         break;
       default:
-        ThrowNotSupportedException();
+        ThrowNotSupportedException(curOpcode);
         break;
     }
     return topStack;
@@ -929,8 +928,8 @@ public class StaticOpCodeAnalyser {
   }
 
   @CompilerDirectives.TruffleBoundary
-  private static void ThrowNotSupportedException() {
-    throw new NotImplementedException();
+  private static void ThrowNotSupportedException(int opCode) {
+    throw new OpCodeNotSupportedException(opCode);
   }
 
   // region type comparison helpers
@@ -942,9 +941,6 @@ public class StaticOpCodeAnalyser {
       case NativeFloat -> OpCodeType.NativeFloat;
       case Object -> OpCodeType.Object;
       case ManagedPointer -> OpCodeType.ManagedPointer;
-      default -> ThrowInvalidCLI(
-          CILOSTAZOLBundle.message(
-              "cilostazol.exception.invalid.type.on.stack", operand.name(), opCode));
     };
   }
 
