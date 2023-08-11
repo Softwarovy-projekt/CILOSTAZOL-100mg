@@ -213,19 +213,17 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUByte(pc),
               topStack);
           break;
+        case LDARG:
+            CILOSTAZOLFrame.copyStatic(
+                frame,
+                CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUShort(pc),
+                topStack);
+            break;
         case LDARGA_S:
-          CILOSTAZOLFrame.putObject(
-              frame,
-              topStack,
-              getMethod()
-                  .getContext()
-                  .getAllocator()
-                  .createStackReference(
-                      SymbolResolver.resolveReference(
-                          ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
-                      frame,
-                      bytecodeBuffer.getImmUByte(pc)
-                          + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
+          loadArgument(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          break;
+        case LDARGA:
+          loadArgument(frame, bytecodeBuffer.getImmUShort(pc), topStack);
           break;
 
           // Storing args
@@ -715,6 +713,20 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       topStack += BytecodeInstructions.getStackEffect(curOpcode);
       pc = nextpc;
     }
+  }
+
+  private void loadArgument(VirtualFrame frame, int index, int topStack) {
+    CILOSTAZOLFrame.putObject(
+        frame,
+        topStack,
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createStackReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
+                frame,
+                index + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
   }
 
   // region arithmetics
