@@ -216,7 +216,10 @@ public class BytecodeInstructions {
   public static final int CGT_UN = 0xFE03;
   public static final int CLT = 0xFE04;
   public static final int CLT_UN = 0xFE05;
+  public static final int LDARG = 0xFE09;
+  public static final int LDARGA = 0xFE0A;
   public static final int STARG = 0xFE0B;
+  public static final int STLOC = 0xFE0E;
   public static final int INITOBJ = 0xFE15;
   public static final int SIZEOF = 0xFE1C;
 
@@ -329,6 +332,7 @@ public class BytecodeInstructions {
     def(STLOC_2, "stloc.2", "o", -1);
     def(STLOC_3, "stloc.3", "o", -1);
     def(STLOC_S, "stloc.s", "oi", -1);
+    defPrefixed(STLOC, "stloc", "oii", -1);
 
     def(LDARG_0, "ldarg.0", "o", 1);
     def(LDARG_1, "ldarg.1", "o", 1);
@@ -336,8 +340,11 @@ public class BytecodeInstructions {
     def(LDARG_3, "ldarg.3", "o", 1);
     def(LDARG_S, "ldarg.s", "oi", 1);
     def(LDARGA_S, "ldarga.s", "oi", 1);
+    defPrefixed(LDARG, "ldarg", "oii", 1);
+    defPrefixed(LDARGA, "ldarga", "oii", 1);
 
     def(STARG_S, "starg.s", "oi", -1);
+    defPrefixed(STARG, "starg", "oii", -1);
 
     def(LDIND_I1, "ldind.i1", "o", 0);
     def(LDIND_U1, "ldind.u1", "o", 0);
@@ -484,7 +491,6 @@ public class BytecodeInstructions {
     def(CONV_R_UN, "conv.r.un", "o", 0);
 
     defPrefixed(SIZEOF, "sizeof", "otttt", 1);
-    defPrefixed(STARG, "starg", "oii", -1);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }

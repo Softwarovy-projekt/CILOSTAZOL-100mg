@@ -102,9 +102,9 @@ public class StaticOpCodeAnalyser {
       case STLOC_2:
       case STLOC_3:
       case STLOC_S:
-        // case STLOC: //we do not track this opcode
+      case STLOC:
       case STARG_S:
-        // case STARG: //we do not track this opcode
+      case STARG:
         setTypeByStack(types, stack, topStack, pc, curOpcode);
         clear(stack, topStack);
         break;
@@ -117,12 +117,14 @@ public class StaticOpCodeAnalyser {
         break;
 
       case LDARG_S:
-        // case LDARG: //we do not track this opcode
         handleArg(parameters, stack, topStack, bytecodeBuffer.getImmUByte(pc));
+        break;
+      case LDARG:
+        handleArg(parameters, stack, topStack, bytecodeBuffer.getImmUShort(pc));
         break;
 
       case LDARGA_S:
-        // case LDARGA: //we do not track this opcode
+      case LDARGA:
         push(stack, topStack, StackType.ManagedPointer);
         break;
 
