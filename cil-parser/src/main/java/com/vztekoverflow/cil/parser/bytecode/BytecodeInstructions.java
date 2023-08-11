@@ -216,6 +216,7 @@ public class BytecodeInstructions {
   public static final int CGT_UN = 0xFE03;
   public static final int CLT = 0xFE04;
   public static final int CLT_UN = 0xFE05;
+  public static final int LDFTN = 0xFE06;
   public static final int LDARG = 0xFE09;
   public static final int LDARGA = 0xFE0A;
   public static final int STARG = 0xFE0B;
@@ -404,6 +405,7 @@ public class BytecodeInstructions {
     def(STELEM_REF, "stelem.ref", "o", -3);
 
     def(LDELEMA, "ldelema", "otttt", 0);
+    defPrefixed(LDFTN, "ldftn", "otttt", 1);
 
     def(DUP, "dup", "o", 1);
 

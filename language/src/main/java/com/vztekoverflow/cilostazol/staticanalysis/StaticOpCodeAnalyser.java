@@ -571,6 +571,9 @@ public class StaticOpCodeAnalyser {
         clear(stack, topStack - 1);
         clear(stack, topStack - 2);
         break;
+      case LDFTN:
+        replace(stack, topStack, ManagedPointer);
+        break;
       case TRUFFLE_NODE:
         // TODO
         break;
