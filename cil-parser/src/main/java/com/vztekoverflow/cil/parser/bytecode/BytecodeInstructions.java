@@ -221,6 +221,8 @@ public class BytecodeInstructions {
   public static final int STARG = 0xFE0B;
   public static final int STLOC = 0xFE0E;
   public static final int INITOBJ = 0xFE15;
+  public static final int CPBLK = 0xFE17;
+  public static final int INITBLK = 0xFE18;
   public static final int SIZEOF = 0xFE1C;
 
   // Custom truffle instructions start here
@@ -491,6 +493,8 @@ public class BytecodeInstructions {
     def(CONV_R_UN, "conv.r.un", "o", 0);
 
     defPrefixed(SIZEOF, "sizeof", "otttt", 1);
+    defPrefixed(CPBLK, "cpblk", "o", -3);
+    defPrefixed(INITBLK, "initblk", "o", -3);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }

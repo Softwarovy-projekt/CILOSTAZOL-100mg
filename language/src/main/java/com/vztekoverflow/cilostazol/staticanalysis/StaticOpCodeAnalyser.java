@@ -565,6 +565,12 @@ public class StaticOpCodeAnalyser {
       case SIZEOF:
         push(stack, topStack, Int32);
         break;
+      case CPBLK:
+      case INITBLK:
+        clear(stack, topStack);
+        clear(stack, topStack - 1);
+        clear(stack, topStack - 2);
+        break;
       case TRUFFLE_NODE:
         // TODO
         break;

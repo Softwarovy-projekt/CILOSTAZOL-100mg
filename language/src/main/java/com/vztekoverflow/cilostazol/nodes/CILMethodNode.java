@@ -701,6 +701,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, true);
           break;
 
+          // Unmanaged memory manipulation
+        case INITBLK:
+        case CPBLK:
+          throw new InterpreterException("Unmanaged memory manipulation not implemented");
+
         case TRUFFLE_NODE:
           topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
           break;
