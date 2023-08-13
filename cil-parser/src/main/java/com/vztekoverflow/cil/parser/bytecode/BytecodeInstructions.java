@@ -229,6 +229,7 @@ public class BytecodeInstructions {
   public static final int CPBLK = 0xFE17;
   public static final int INITBLK = 0xFE18;
   public static final int SIZEOF = 0xFE1C;
+  public static final int REFANYTYPE = 0xFE1D;
 
   // Custom truffle instructions start here
   // Allowed by III.1.2.1:
@@ -505,6 +506,10 @@ public class BytecodeInstructions {
     defPrefixed(CPBLK, "cpblk", "o", -3);
     defPrefixed(INITBLK, "initblk", "o", -3);
     defPrefixed(LOCALLOC, "localloc", "o", 0);
+
+    def(MKREFANY, "mkrefany", "otttt", 0);
+    defPrefixed(REFANYVAL, "refanyval", "o", 0);
+    defPrefixed(REFANYTYPE, "refanytype", "o", 0);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }

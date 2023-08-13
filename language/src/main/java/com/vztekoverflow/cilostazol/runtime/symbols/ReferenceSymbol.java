@@ -8,7 +8,8 @@ public final class ReferenceSymbol extends TypeSymbol {
     Local,
     Argument,
     Field,
-    ArrayElement
+    ArrayElement,
+    Typed
   }
 
   private final ReferenceType type;
@@ -37,6 +38,10 @@ public final class ReferenceSymbol extends TypeSymbol {
 
     public static ReferenceSymbol createArrayElemReference() {
       return new ReferenceSymbol(ReferenceType.ArrayElement);
+    }
+
+    public static ReferenceSymbol createTypedReference() {
+      return new ReferenceSymbol(ReferenceType.Typed);
     }
   }
 }

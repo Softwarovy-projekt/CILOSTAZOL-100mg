@@ -273,7 +273,7 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack, Int32);
         break;
       case LDIND_I8:
-        // case LDIND_U8: //we do not track this opcode
+        // LDIND_U8 has the same opcode and logic
         replace(stack, topStack, Int64);
         break;
       case LDIND_I:

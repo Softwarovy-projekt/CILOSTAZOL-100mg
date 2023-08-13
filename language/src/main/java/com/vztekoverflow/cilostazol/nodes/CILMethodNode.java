@@ -290,6 +290,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case SIZEOF:
           getSize(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
+        case MKREFANY:
+          makeTypedRef(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
+        case REFANYTYPE:
+          break;
+        case REFANYVAL:
+          break;
 
           // Branching
         case BEQ:
@@ -1481,11 +1488,25 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       }
     }
   }
-  // endregion
 
   private void storeIndirectNative(VirtualFrame frame, int top) {
     storeIndirectInt(frame, top);
   }
+
+  private void makeTypedRef(VirtualFrame frame, int top, CLITablePtr token) {
+    StaticObject reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    StaticObject typedReference =
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createTypedReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Typed, getMethod().getContext()),
+                reference,
+                token);
+    CILOSTAZOLFrame.putObject(frame, top - 1, typedReference);
+  }
+  // endregion
 
   // region other helpers
   private void pop(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {

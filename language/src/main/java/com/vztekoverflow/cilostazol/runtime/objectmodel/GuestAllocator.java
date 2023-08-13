@@ -6,6 +6,7 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.AllocationReporter;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
 import com.vztekoverflow.cilostazol.exceptions.InstantiationError;
 import com.vztekoverflow.cilostazol.exceptions.InstantiationException;
@@ -298,6 +299,15 @@ public final class GuestAllocator {
         reference.getContext().getArrayElementReferenceShape().getFactory().create(reference);
     reference.getContext().getArrayElementReferenceArrayProperty().setObject(newRef, array);
     reference.getContext().getArrayElementReferenceIndexProperty().setInt(newRef, elemIndex);
+    return newRef;
+  }
+
+  public StaticObject createTypedReference(
+      ReferenceSymbol referenceSymbol, StaticObject reference, CLITablePtr token) {
+    StaticObject newRef =
+        referenceSymbol.getContext().getTypedReferenceShape().getFactory().create(referenceSymbol);
+    referenceSymbol.getContext().getTypedReferenceInnerRefProperty().setObject(newRef, reference);
+    referenceSymbol.getContext().getTypedReferenceTypeTokenProperty().setObject(newRef, token);
     return newRef;
   }
   // endregion
