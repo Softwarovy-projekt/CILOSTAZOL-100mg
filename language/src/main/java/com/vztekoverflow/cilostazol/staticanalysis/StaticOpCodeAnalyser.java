@@ -535,7 +535,7 @@ public class StaticOpCodeAnalyser {
           break;
         }
       case REFANYTYPE:
-        push(stack, topStack, Int32);
+        replace(stack, topStack, Int32);
         break;
       case CKFINITE:
         setTypeByStack(types, stack, topStack, pc, curOpcode);
