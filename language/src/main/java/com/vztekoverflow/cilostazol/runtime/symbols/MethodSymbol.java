@@ -289,7 +289,7 @@ public class MethodSymbol extends Symbol {
           locals = new LocalSymbol[0];
           methodHeaderFlags = new MethodHeaderFlags(firstByte & 0x3);
           headerSize = 1;
-          codeSize = (firstByte >> 2) & 0xFF;
+          codeSize = (firstByte >> 2) & 0x3F;
         } else if (pom.hasFlag(MethodHeaderFlags.Flag.CORILMETHOD_FATFORMAT)) {
           final short firstWord = (short) (firstByte | (buf.getByte() << 8));
           methodHeaderFlags = new MethodHeaderFlags(firstWord & 0xFFF);
