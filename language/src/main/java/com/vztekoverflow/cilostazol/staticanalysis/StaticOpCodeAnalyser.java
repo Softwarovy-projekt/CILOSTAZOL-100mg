@@ -636,7 +636,8 @@ public class StaticOpCodeAnalyser {
     if (method.hasReturnValue())
       replace(
           stack,
-          topStack - method.getParameterCountIncludingInstance(),
+          // +1 because the api requires idx of the first empty space
+          topStack - method.getParameterCountIncludingInstance() + 1,
           method.getReturnType().getType().getStackTypeKind());
 
     return topStack
