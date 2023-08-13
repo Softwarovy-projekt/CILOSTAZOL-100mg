@@ -50,6 +50,7 @@ public class CILOSTAZOLContext {
 
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> typedReferenceShape;
+
   @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceInnerRefProperty;
   @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceTypeTokenProperty;
   // region SOM
