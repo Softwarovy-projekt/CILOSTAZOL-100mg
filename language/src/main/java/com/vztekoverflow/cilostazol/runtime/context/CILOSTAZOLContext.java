@@ -47,9 +47,73 @@ public class CILOSTAZOLContext {
   private final ReferenceSymbol typedReference;
 
   private final AppDomain appDomain;
+
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> typedReferenceShape;
+  
   @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceInnerRefProperty;
+  @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceTypeTokenProperty;
+  // region SOM
+  @CompilerDirectives.CompilationFinal private StaticProperty arrayProperty;
+
+  @CompilerDirectives.CompilationFinal
+  private StaticShape<StaticObject.StaticObjectFactory> arrayShape;
+
+  @CompilerDirectives.CompilationFinal
+  private StaticShape<StaticObject.StaticObjectFactory> stackReferenceShape;
+
+  // region Symbols
+  @CompilerDirectives.CompilationFinal private StaticProperty stackReferenceFrameProperty;
+  @CompilerDirectives.CompilationFinal private StaticProperty stackReferenceIndexProperty;
+  private StaticShape<StaticObject.StaticObjectFactory> fieldReferenceShape;
+  @CompilerDirectives.CompilationFinal private StaticProperty fieldReferenceObjectProperty;
+  @CompilerDirectives.CompilationFinal private StaticProperty fieldReferenceFieldProperty;
+
+  @CompilerDirectives.CompilationFinal
+  private StaticShape<StaticObject.StaticObjectFactory> arrayElementReferenceShape;
+
+  @CompilerDirectives.CompilationFinal private StaticProperty arrayElementReferenceArrayProperty;
+  // endregion
+  @CompilerDirectives.CompilationFinal private StaticProperty arrayElementReferenceIndexProperty;
+
+  public CILOSTAZOLContext(CILOSTAZOLLanguage lang, TruffleLanguage.Env env) {
+    language = lang;
+    this.env = env;
+    getLanguage().initializeGuestAllocator(env);
+    libraryPaths =
+        Arrays.stream(CILOSTAZOLEngineOption.getPolyglotOptionSearchPaths(env))
+            .filter(
+                p -> {
+                  TruffleFile file = getEnv().getInternalTruffleFile(p.toString());
+                  return file.isDirectory();
+                })
+            .distinct()
+            .toArray(Path[]::new);
+    appDomain = new AppDomain();
+
+    // init ref symbols
+    localReference = ReferenceSymbol.ReferenceSymbolFactory.createLocalReference();
+    argumentReference = ReferenceSymbol.ReferenceSymbolFactory.createArgumentReference();
+    fieldReference = ReferenceSymbol.ReferenceSymbolFactory.createFieldReference();
+    arrayElementReference = ReferenceSymbol.ReferenceSymbolFactory.createArrayElemReference();
+    typedReference = ReferenceSymbol.ReferenceSymbolFactory.createTypedReference();
+  }
+
+  // For test propose only
+  @TestOnly
+  public CILOSTAZOLContext(CILOSTAZOLLanguage lang, Path[] libraryPaths) {
+    language = lang;
+    env = null;
+    this.libraryPaths = libraryPaths;
+    appDomain = new AppDomain();
+
+    // init ref symbols
+    localReference = ReferenceSymbol.ReferenceSymbolFactory.createLocalReference();
+    argumentReference = ReferenceSymbol.ReferenceSymbolFactory.createArgumentReference();
+    fieldReference = ReferenceSymbol.ReferenceSymbolFactory.createFieldReference();
+    arrayElementReference = ReferenceSymbol.ReferenceSymbolFactory.createArrayElemReference();
+    typedReference = ReferenceSymbol.ReferenceSymbolFactory.createTypedReference();
+  }
 
   public static CILOSTAZOLContext get(Node node) {
     return CONTEXT_REF.get(node);
@@ -66,8 +130,6 @@ public class CILOSTAZOLContext {
   public TruffleLanguage.Env getEnv() {
     return env;
   }
-
-  // region Symbols
 
   public ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank) {
     var cacheKey = new ArrayCacheKey(elemType, rank);
@@ -118,7 +180,6 @@ public class CILOSTAZOLContext {
           return k.genMethod().construct(k.typeArgs());
         });
   }
-  @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceTypeTokenProperty;
 
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {
     // Loading assemblies is an expensive task which should be never compiled
@@ -155,13 +216,6 @@ public class CILOSTAZOLContext {
     appDomain.loadAssembly(result);
     return result;
   }
-  // endregion
-
-  // region SOM
-  @CompilerDirectives.CompilationFinal private StaticProperty arrayProperty;
-
-  @CompilerDirectives.CompilationFinal
-  private StaticShape<StaticObject.StaticObjectFactory> arrayShape;
 
   public StaticProperty getArrayProperty() {
     if (arrayProperty == null) {
@@ -180,59 +234,6 @@ public class CILOSTAZOLContext {
               .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
     }
     return arrayShape;
-  }
-
-  @CompilerDirectives.CompilationFinal
-  private StaticShape<StaticObject.StaticObjectFactory> stackReferenceShape;
-  @CompilerDirectives.CompilationFinal private StaticProperty stackReferenceFrameProperty;
-  @CompilerDirectives.CompilationFinal private StaticProperty stackReferenceIndexProperty;
-
-  private StaticShape<StaticObject.StaticObjectFactory> fieldReferenceShape;
-  @CompilerDirectives.CompilationFinal private StaticProperty fieldReferenceObjectProperty;
-  @CompilerDirectives.CompilationFinal private StaticProperty fieldReferenceFieldProperty;
-
-  @CompilerDirectives.CompilationFinal
-  private StaticShape<StaticObject.StaticObjectFactory> arrayElementReferenceShape;
-  @CompilerDirectives.CompilationFinal private StaticProperty arrayElementReferenceArrayProperty;
-  @CompilerDirectives.CompilationFinal private StaticProperty arrayElementReferenceIndexProperty;
-
-  public CILOSTAZOLContext(CILOSTAZOLLanguage lang, TruffleLanguage.Env env) {
-    language = lang;
-    this.env = env;
-    getLanguage().initializeGuestAllocator(env);
-    libraryPaths =
-        Arrays.stream(CILOSTAZOLEngineOption.getPolyglotOptionSearchPaths(env))
-            .filter(
-                p -> {
-                  TruffleFile file = getEnv().getInternalTruffleFile(p.toString());
-                  return file.isDirectory();
-                })
-            .distinct()
-            .toArray(Path[]::new);
-    appDomain = new AppDomain();
-
-    // init ref symbols
-    localReference = ReferenceSymbol.ReferenceSymbolFactory.createLocalReference();
-    argumentReference = ReferenceSymbol.ReferenceSymbolFactory.createArgumentReference();
-    fieldReference = ReferenceSymbol.ReferenceSymbolFactory.createFieldReference();
-    arrayElementReference = ReferenceSymbol.ReferenceSymbolFactory.createArrayElemReference();
-    typedReference = ReferenceSymbol.ReferenceSymbolFactory.createTypedReference();
-  }
-
-  // For test propose only
-  @TestOnly
-  public CILOSTAZOLContext(CILOSTAZOLLanguage lang, Path[] libraryPaths) {
-    language = lang;
-    env = null;
-    this.libraryPaths = libraryPaths;
-    appDomain = new AppDomain();
-
-    // init ref symbols
-    localReference = ReferenceSymbol.ReferenceSymbolFactory.createLocalReference();
-    argumentReference = ReferenceSymbol.ReferenceSymbolFactory.createArgumentReference();
-    fieldReference = ReferenceSymbol.ReferenceSymbolFactory.createFieldReference();
-    arrayElementReference = ReferenceSymbol.ReferenceSymbolFactory.createArrayElemReference();
-    typedReference = ReferenceSymbol.ReferenceSymbolFactory.createTypedReference();
   }
 
   public ReferenceSymbol resolveReference(ReferenceSymbol.ReferenceType type) {
