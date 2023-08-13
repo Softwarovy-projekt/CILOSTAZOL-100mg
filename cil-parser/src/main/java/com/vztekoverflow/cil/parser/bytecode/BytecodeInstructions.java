@@ -508,7 +508,7 @@ public class BytecodeInstructions {
     defPrefixed(LOCALLOC, "localloc", "o", 0);
 
     def(MKREFANY, "mkrefany", "otttt", 0);
-    defPrefixed(REFANYVAL, "refanyval", "o", 0);
+    defPrefixed(REFANYVAL, "refanyval", "otttt", 0);
     defPrefixed(REFANYTYPE, "refanytype", "o", 0);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);

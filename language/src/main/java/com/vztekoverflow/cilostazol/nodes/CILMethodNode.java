@@ -294,8 +294,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           makeTypedRef(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
         case REFANYTYPE:
+          getTypeFromTypedRef(frame, topStack);
           break;
         case REFANYVAL:
+          getRefFromTypedRef(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
 
           // Branching
@@ -1505,6 +1507,30 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 reference,
                 token);
     CILOSTAZOLFrame.putObject(frame, top - 1, typedReference);
+  }
+
+  private void getTypeFromTypedRef(VirtualFrame frame, int top) {
+    StaticObject typedReference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    CLITablePtr token =
+        (CLITablePtr)
+            getMethod().getContext().getTypedReferenceTypeTokenProperty().getObject(typedReference);
+    CILOSTAZOLFrame.putInt32(frame, top - 1, token.getToken());
+  }
+
+  private void getRefFromTypedRef(VirtualFrame frame, int top, CLITablePtr token) {
+    StaticObject typedReference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    CLITablePtr constructingToken =
+        (CLITablePtr)
+            getMethod().getContext().getTypedReferenceTypeTokenProperty().getObject(typedReference);
+    if (token != constructingToken) {
+      // TODO: Throw a proper exception
+      throw new InterpreterException("System.InvalidCastException");
+    }
+    CILOSTAZOLFrame.putObject(
+        frame,
+        top - 1,
+        (StaticObject)
+            getMethod().getContext().getTypedReferenceInnerRefProperty().getObject(typedReference));
   }
   // endregion
 
