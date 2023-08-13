@@ -2,7 +2,6 @@ package com.vztekoverflow.cilostazol.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class ObjectModelTests extends TestBase {
@@ -472,7 +471,6 @@ public class ObjectModelTests extends TestBase {
   }
 
   @Test
-  @Disabled("CALLVIRT not implemented")
   public void interfacePropertyAccess() {
     var result =
         runTestFromCode(
@@ -496,7 +494,6 @@ public class ObjectModelTests extends TestBase {
   }
 
   @Test
-  @Disabled("CALLVIRT not implemented")
   public void interfaceTransitiveFieldAccess() {
     var result =
         runTestFromCode(

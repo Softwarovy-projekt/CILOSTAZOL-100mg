@@ -127,8 +127,7 @@ public class NonVirtualCallsTests extends TestBase {
   }
 
   @Test
-  @Disabled("WIP. missing comparison of strings")
-  public void callWithReturnString() {
+  public void callWithReturnStringOnTrue() {
     var result =
         runTestFromCode(
             """
@@ -143,10 +142,12 @@ public class NonVirtualCallsTests extends TestBase {
 
                             if (result == "Hello World!")
                             {
+                                Console.Write("TRUE");
                                 return 42;
                             }
                             else
                             {
+                                Console.Write("FALSE");
                                 return -42;
                             }
                         }
@@ -160,6 +161,45 @@ public class NonVirtualCallsTests extends TestBase {
                     """);
 
     assertEquals(42, result.exitCode());
+    assertEquals("TRUE", result.output());
+  }
+
+  @Test
+  public void callWithReturnStringOnFalse() {
+    var result =
+        runTestFromCode(
+            """
+                          using System;
+                          namespace CustomTest
+                          {
+                            public class Program
+                            {
+                                public static int Main()
+                                {
+                                    var result = Foo();
+
+                                    if (result == "Hello World!")
+                                    {
+                                        Console.Write("TRUE");
+                                        return 42;
+                                    }
+                                    else
+                                    {
+                                        Console.Write("FALSE");
+                                        return -42;
+                                    }
+                                }
+
+                                public static string Foo()
+                                {
+                                    return "NOT Hello World!";
+                                }
+                            }
+                          }
+                            """);
+
+    assertEquals(-42, result.exitCode());
+    assertEquals("FALSE", result.output());
   }
 
   @Test
@@ -288,5 +328,40 @@ public class NonVirtualCallsTests extends TestBase {
                     """);
     assertEquals(42, result.exitCode());
     assertEquals("A.Foo", result.output());
+  }
+
+  @Test
+  public void ExtensionMethodCall() {
+    var result =
+        runTestFromCode(
+            """
+              using System;
+              namespace CustomTest
+              {
+                  public class Program
+                  {
+                      public static int Main()
+                      {
+                          return new A().Bar();
+                      }
+                  }
+
+                  public class A{
+                      public virtual int Foo(){
+                          Console.Write("A.Foo");
+                          return 42;
+                      }
+                  }
+
+                  public static class AExtensions{
+                      public static int Bar(this A a){
+                          Console.Write("A.Bar");
+                          return 43;
+                      }
+                  }
+              }
+                    """);
+    assertEquals(43, result.exitCode());
+    assertEquals("A.Bar", result.output());
   }
 }
