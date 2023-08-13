@@ -67,6 +67,15 @@ public final class FieldSymbol extends Symbol {
     return declaringType;
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof FieldSymbol && equals((FieldSymbol) obj);
+  }
+
+  public boolean equals(FieldSymbol other) {
+    return getName().equals(other.getName()) && getType().equals(other.getType());
+  }
+
   public static class FieldSymbolFactory {
     public static FieldSymbol create(
         CLIFieldTableRow row, TypeSymbol[] mvars, TypeSymbol[] vars, ModuleSymbol module) {

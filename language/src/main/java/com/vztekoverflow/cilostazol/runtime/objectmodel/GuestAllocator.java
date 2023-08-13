@@ -321,9 +321,11 @@ public final class GuestAllocator {
           final var charArray = createNewPrimitiveArray(charArrayType, stringChar.length);
           ctx.getArrayProperty().setObject(charArray, stringChar);
 
-          final var result = createNew(SymbolResolver.getString(ctx), frame, topStack);
-          stringType.getInstanceFields(frame, topStack)[0].setInt(result, stringChar.length);
-          stringType.getInstanceFields(frame, topStack)[1].setObject(result, charArray);
+          final var result = createNew(stringType, frame, topStack);
+          ((NamedTypeSymbol) result.getTypeSymbol())
+              .getInstanceFields(frame, topStack)[0].setInt(result, stringChar.length);
+          ((NamedTypeSymbol) result.getTypeSymbol())
+              .getInstanceFields(frame, topStack)[1].setObject(result, charArray);
           return result;
         });
   }

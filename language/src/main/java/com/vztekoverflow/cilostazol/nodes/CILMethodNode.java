@@ -1759,21 +1759,30 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void loadInstanceField(
       VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
-    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field =
-        classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     StaticObject object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
                 frame, top - 1, getMethod().getContext());
+    StaticField field = findFieldInObject(object, fieldPtr, frame, top);
     loadValueFromField(frame, top, field, object);
   }
 
   private void loadStaticField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field = classMember.symbol.getAssignableStaticField(classMember.member, frame, top);
     StaticObject object = classMember.symbol.getStaticInstance(frame, top);
+    StaticField field = findFieldInObject(object, fieldPtr, frame, top);
     loadValueFromField(frame, top + 1, field, object);
+  }
+
+  private StaticField findFieldInObject(StaticObject object, CLITablePtr fieldPtr, VirtualFrame frame, int top) {
+    var resolvedField = SymbolResolver.resolveField(fieldPtr, method.getModule());
+    assert resolvedField.symbol.equals(object.getTypeSymbol());
+    return Arrays.stream(((NamedTypeSymbol) object.getTypeSymbol()).getInstanceFields(frame, top))
+            .filter(f -> f.getSymbol().equals(resolvedField.member))
+            .findFirst()
+            .orElseThrow(() ->
+                    new InterpreterException(
+                            CILOSTAZOLBundle.message("cilostazol.exception.instance.field.not.found", resolvedField.member.toString(), object.getTypeSymbol().toString())));
   }
 
   private void loadValueFromField(

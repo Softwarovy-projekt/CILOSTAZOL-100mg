@@ -14,6 +14,10 @@ public class StaticField extends StaticProperty {
     return symbol.isStatic();
   }
 
+  public FieldSymbol getSymbol() {
+    return symbol;
+  }
+
   public SystemType getKind() {
     return symbol.getSystemType();
   }
