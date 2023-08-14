@@ -166,34 +166,34 @@ public class NonVirtualCallsTests extends TestBase {
     var result =
         runTestFromCode(
             """
-                          using System;
-                          namespace CustomTest
+                using System;
+                namespace CustomTest
+                {
+                  public class Program
+                  {
+                      public static int Main()
+                      {
+                          var result = Foo();
+
+                          if (result == "Hello World!")
                           {
-                            public class Program
-                            {
-                                public static int Main()
-                                {
-                                    var result = Foo();
-
-                                    if (result == "Hello World!")
-                                    {
-                                        Console.Write("TRUE");
-                                        return 42;
-                                    }
-                                    else
-                                    {
-                                        Console.Write("FALSE");
-                                        return -42;
-                                    }
-                                }
-
-                                public static string Foo()
-                                {
-                                    return "NOT Hello World!";
-                                }
-                            }
+                              Console.Write("TRUE");
+                              return 42;
                           }
-                            """);
+                          else
+                          {
+                              Console.Write("FALSE");
+                              return -42;
+                          }
+                      }
+
+                      public static string Foo()
+                      {
+                          return "NOT Hello World!";
+                      }
+                  }
+                }
+                  """);
 
     assertEquals(-42, result.exitCode());
     assertEquals("FALSE", result.output());

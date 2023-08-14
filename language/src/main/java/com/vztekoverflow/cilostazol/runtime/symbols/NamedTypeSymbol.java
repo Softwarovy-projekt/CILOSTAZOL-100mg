@@ -178,22 +178,13 @@ public class NamedTypeSymbol extends TypeSymbol {
   public MethodSymbol[] getMethods() {
     if (lazyMethods == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      // TODO: create on demand
-      lazyMethods =
-          switch (definingRow.getTableId()) {
-            case CLITableConstants.CLI_TABLE_TYPE_DEF -> LazyFactory.createMethods(
+      lazyMethods = LazyFactory.createMethods(
                 this,
                 definingModule
                     .getDefiningFile()
                     .getTableHeads()
                     .getTypeDefTableHead()
                     .skip(definingRow));
-            case CLITableConstants.CLI_TABLE_TYPE_REF -> null; // TODO: implement case for ref table
-            case CLITableConstants
-                .CLI_TABLE_TYPE_SPEC -> null; // TODO: implement case for spec table
-            default -> throw new TypeSystemException(
-                CILOSTAZOLBundle.message("typeSystem.unknownTableType"));
-          };
     }
 
     return lazyMethods;
