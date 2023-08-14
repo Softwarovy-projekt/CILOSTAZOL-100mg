@@ -5,10 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 public class OSRTests extends OSRTestBase {
-  /**
-   * Time taken on M1 Macbook Air without OSR: ~23s Time taken on M1 Macbook Air in .NET Release:
-   * ~0.04s Time taken on M1 Macbook Air with OSR: ~0.04s
-   */
+
   @Test
   public void test() {
     var result =
