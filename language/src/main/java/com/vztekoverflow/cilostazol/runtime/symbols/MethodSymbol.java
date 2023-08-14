@@ -42,7 +42,7 @@ public class MethodSymbol extends Symbol {
   @CompilerDirectives.CompilationFinal protected RootNode node;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private StaticOpCodeAnalyser.OpCodeType[] opCodeTypes = null;
+  protected StaticOpCodeAnalyser.OpCodeType[] opCodeTypes = null;
 
   protected MethodSymbol(
       String name,

@@ -41,8 +41,10 @@ public class TypeMap {
   public TypeSymbol substitute(TypeSymbol symbol) {
     if (symbol == null) return null;
 
-    if (symbol instanceof TypeParameterSymbol) {
-      return substituteTypeParameter((TypeParameterSymbol) symbol);
+    if (symbol instanceof TypeParameterSymbol typeParameterSymbol) {
+      return substituteTypeParameter(typeParameterSymbol);
+    } else if (symbol instanceof ArrayTypeSymbol arrayTypeSymbol) {
+      return substitute(arrayTypeSymbol.getElementType());
     } else {
       return substituteNamedTypeSymbol((NamedTypeSymbol) symbol);
     }

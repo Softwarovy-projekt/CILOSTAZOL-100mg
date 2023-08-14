@@ -451,7 +451,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   @Override
   public String toString() {
-    return this.namespace + "/" + this.name;
+    return this.namespace + "::" + this.name;
   }
 
   // region Flags

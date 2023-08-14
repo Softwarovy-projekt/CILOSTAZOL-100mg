@@ -361,6 +361,58 @@ public final class SymbolResolver {
     };
   }
 
+  public static ClassMember<FieldSymbol> resolveFieldFrom(
+      CLITablePtr ptr, NamedTypeSymbol object, ModuleSymbol module) {
+    return switch (ptr.getTableId()) {
+      case CLITableConstants.CLI_TABLE_FIELD -> resolveFieldFrom(
+          module.getDefiningFile().getTableHeads().getFieldTableHead().skip(ptr), object, module);
+      case CLITableConstants.CLI_TABLE_MEMBER_REF -> resolveFieldFrom(
+          module.getDefiningFile().getTableHeads().getMemberRefTableHead().skip(ptr),
+          object,
+          module);
+      default -> throw new CILParserException();
+    };
+  }
+
+  public static ClassMember<FieldSymbol> resolveFieldFrom(
+      CLIFieldTableRow row, NamedTypeSymbol object, ModuleSymbol module) {
+    var idx = module.getLocalField(row);
+    return new ClassMember<>(object, object.getFields()[idx.getIndex()]);
+  }
+
+  public static ClassMember<FieldSymbol> resolveFieldFrom(
+      CLIMemberRefTableRow row, NamedTypeSymbol object, ModuleSymbol module) {
+    var name = row.getNameHeapPtr().read(module.getDefiningFile().getStringHeap());
+    var type =
+        (NamedTypeSymbol)
+            resolveType(
+                row.getKlassTablePtr(), new TypeSymbol[0], object.getTypeParameters(), module);
+    var sig =
+        FieldSig.parse(
+            new SignatureReader(
+                row.getSignatureHeapPtr().read(module.getDefiningFile().getBlobHeap())));
+    return resolveField(
+        type, name, resolveType(sig.getType(), new TypeSymbol[0], type.getTypeArguments(), module));
+  }
+
+  public static String resolveFieldName(CLITablePtr ptr, ModuleSymbol module) {
+    return switch (ptr.getTableId()) {
+      case CLITableConstants.CLI_TABLE_FIELD -> resolveFieldName(
+          module.getDefiningFile().getTableHeads().getFieldTableHead().skip(ptr), module);
+      case CLITableConstants.CLI_TABLE_MEMBER_REF -> resolveFieldName(
+          module.getDefiningFile().getTableHeads().getMemberRefTableHead().skip(ptr), module);
+      default -> throw new CILParserException();
+    };
+  }
+
+  public static String resolveFieldName(CLIFieldTableRow ptr, ModuleSymbol module) {
+    return ptr.getNameHeapPtr().read(module.getDefiningFile().getStringHeap());
+  }
+
+  public static String resolveFieldName(CLIMemberRefTableRow ptr, ModuleSymbol module) {
+    return ptr.getNameHeapPtr().read(module.getDefiningFile().getStringHeap());
+  }
+
   public static ClassMember<FieldSymbol> resolveField(CLIFieldTableRow row, ModuleSymbol module) {
     var idx = module.getLocalField(row);
     return new ClassMember<FieldSymbol>(
@@ -442,7 +494,11 @@ public final class SymbolResolver {
     var paramTypes = new TypeSymbol[sig.getParams().length];
     for (int i = 0; i < paramTypes.length; i++) {
       paramTypes[i] =
-          resolveType(sig.getParams()[i].getTypeSig(), methodTypeArgs, typeTypeArgs, module);
+          resolveType(
+              sig.getParams()[i].getTypeSig(),
+              methodTypeArgs,
+              ((NamedTypeSymbol) type).getTypeArguments(),
+              module);
     }
 
     return resolveMethod(

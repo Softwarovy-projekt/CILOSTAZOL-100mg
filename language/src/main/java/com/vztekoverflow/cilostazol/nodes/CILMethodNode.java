@@ -229,8 +229,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           // Loading fields
         case LDFLD:
-          loadInstanceField(
-              frame, topStack, bytecodeBuffer.getImmToken(pc), getMethod().getOpCodeTypes()[pc]);
+          loadInstanceField(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
         case LDSFLD:
           loadStaticField(frame, topStack, bytecodeBuffer.getImmToken(pc));
@@ -1757,8 +1756,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 field));
   }
 
-  private void loadInstanceField(
-      VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
+  private void loadInstanceField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     StaticObject object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
@@ -1774,15 +1772,19 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     loadValueFromField(frame, top + 1, field, object);
   }
 
-  private StaticField findFieldInObject(StaticObject object, CLITablePtr fieldPtr, VirtualFrame frame, int top) {
-    var resolvedField = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    assert resolvedField.symbol.equals(object.getTypeSymbol());
+  private StaticField findFieldInObject(
+      StaticObject object, CLITablePtr fieldPtr, VirtualFrame frame, int top) {
+    var fieldName = SymbolResolver.resolveFieldName(fieldPtr, method.getModule());
     return Arrays.stream(((NamedTypeSymbol) object.getTypeSymbol()).getInstanceFields(frame, top))
-            .filter(f -> f.getSymbol().equals(resolvedField.member))
-            .findFirst()
-            .orElseThrow(() ->
-                    new InterpreterException(
-                            CILOSTAZOLBundle.message("cilostazol.exception.instance.field.not.found", resolvedField.member.toString(), object.getTypeSymbol().toString())));
+        .filter(f -> f.getSymbol().getName().equals(fieldName))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new InterpreterException(
+                    CILOSTAZOLBundle.message(
+                        "cilostazol.exception.instance.field.not.found",
+                        fieldName,
+                        object.getTypeSymbol().toString())));
   }
 
   private void loadValueFromField(
@@ -1824,13 +1826,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   void storeInstanceField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
-    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field =
-        classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     StaticObject object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
                 frame, top - 2, getMethod().getContext());
+    var field = findFieldInObject(object, fieldPtr, frame, top);
     assignValueToField(frame, top, field, object);
   }
 
