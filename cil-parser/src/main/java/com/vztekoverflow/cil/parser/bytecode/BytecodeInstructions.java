@@ -415,6 +415,8 @@ public class BytecodeInstructions {
 
     def(POP, "pop", "o", -1);
 
+    def(JMP, "jmp", "otttt", 0);
+
     def(RET, "ret", "o", 0);
 
     def(BR, "br", "oiiii", 0);

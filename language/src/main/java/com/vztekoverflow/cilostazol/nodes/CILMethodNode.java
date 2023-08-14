@@ -382,11 +382,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           // This does not interest us at the moment
           break;
 
-        case JMP:
-          // Exit current method and jump to the specified method
-          // TODO - finish after function calls are done
-          break;
-
         case SWITCH:
           {
             var numCases = bytecodeBuffer.getImmUInt(pc);
@@ -401,16 +396,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case RET:
           return getReturnValue(frame, topStack - 1);
 
+        case JMP:
         case CALL:
-          {
-            var methodToken = bytecodeBuffer.getImmToken(pc);
-            topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALL);
-            break;
-          }
         case CALLVIRT:
           {
             var methodToken = bytecodeBuffer.getImmToken(pc);
-            topStack = nodeizeOpToken(frame, topStack, methodToken, pc, CALLVIRT);
+            topStack = nodeizeOpToken(frame, topStack, methodToken, pc, curOpcode);
             break;
           }
           // Store indirect
@@ -1986,6 +1977,20 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 getMethod().getDefiningType().getTypeArguments(),
                 getMethod().getModule());
         node = new NEWOBJNode(method.member, top);
+      }
+      case JMP -> {
+        var method =
+            SymbolResolver.resolveMethod(
+                token,
+                getMethod().getTypeArguments(),
+                getMethod().getDefiningType().getTypeArguments(),
+                getMethod().getModule());
+        if (method.member.getMethodFlags().hasFlag(Flag.UNMANAGED_EXPORT)) {
+          // Either native support must be supported or some workaround must be implemented
+          throw new NotImplementedException();
+        }
+
+        node = new JMPNode(method.member, top);
       }
       case CALL -> {
         var method =
