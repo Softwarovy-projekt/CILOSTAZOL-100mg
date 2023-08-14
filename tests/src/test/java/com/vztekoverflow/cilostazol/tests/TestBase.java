@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 
 public abstract class TestBase {
-  private static final String directoryDlls = "../runtime";
   private static final String directoryDllTests = "src/test/resources/BasicTests";
   private static final String directoryCustomTest =
       "src/test/resources/InterpreterTests/CustomTest";
@@ -29,7 +28,8 @@ public abstract class TestBase {
   private static final String configuration = "Debug";
   private static final String dotnetVersion = "net7.0";
 
-  private static OutputStream outputStream;
+  protected static final String directoryDlls = "../runtime";
+  protected static OutputStream outputStream;
 
   public static Context context;
 
@@ -59,7 +59,7 @@ public abstract class TestBase {
     try {
       var sourceFile = compileCode(sourceCode, directory).toFile();
 
-      var retCode = context.eval(getSource(sourceFile)).asInt();
+      var retCode = evaluate(sourceFile);
 
       return new RunResult(outputStream.toString(), retCode);
     } finally {
@@ -80,7 +80,7 @@ public abstract class TestBase {
     try {
       var sourceFilePath = compileFile(sourceFile, directory).toFile();
 
-      var retCode = context.eval(getSource(sourceFilePath)).asInt();
+      var retCode = evaluate(sourceFilePath);
 
       return new RunResult(outputStream.toString(), retCode);
     } finally {
@@ -88,6 +88,11 @@ public abstract class TestBase {
       deleteDirectory(directory.toFile());
     }
   }
+
+  protected int evaluate(File sourceFilePath) {
+    return context.eval(getSource(sourceFilePath)).asInt();
+  }
+
   /**
    * Use this or {@link #runTestFromFile(String)} for each major feature of the interpreter (return,
    * if, while, etc.).
@@ -96,7 +101,7 @@ public abstract class TestBase {
     context = setupContext().build();
     var sourceFilePath = this.getDllPathFromProject(projectName).toFile();
 
-    var retCode = context.eval(getSource(sourceFilePath)).asInt();
+    var retCode = evaluate(sourceFilePath);
     return new RunResult(outputStream.toString(), retCode);
   }
 
@@ -246,7 +251,7 @@ public abstract class TestBase {
     return sourceCode;
   }
 
-  private Context.Builder setupContext() {
+  protected Context.Builder setupContext() {
     return Context.newBuilder(LANGUAGE_ID)
         .engine(
             Engine.newBuilder(LANGUAGE_ID)
@@ -257,7 +262,7 @@ public abstract class TestBase {
         .allowAllAccess(true);
   }
 
-  private Source getSource(File sourceFile) {
+  protected Source getSource(File sourceFile) {
     try {
       return Source.newBuilder(LANGUAGE_ID, sourceFile).build();
     } catch (NoSuchFileException e) {
