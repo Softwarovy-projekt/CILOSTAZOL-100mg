@@ -32,6 +32,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getBoolean(CILOSTAZOLContext ctx) {
     if (Boolean == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Boolean =
           (NamedTypeSymbol)
               resolveType("Boolean", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -41,6 +42,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getByte(CILOSTAZOLContext ctx) {
     if (Byte == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Byte =
           (NamedTypeSymbol)
               resolveType("Byte", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -50,6 +52,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getSByte(CILOSTAZOLContext ctx) {
     if (SByte == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       SByte =
           (NamedTypeSymbol)
               resolveType("SByte", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -59,6 +62,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getChar(CILOSTAZOLContext ctx) {
     if (Char == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Char =
           (NamedTypeSymbol)
               resolveType("Char", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -68,6 +72,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getDouble(CILOSTAZOLContext ctx) {
     if (Double == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Double =
           (NamedTypeSymbol)
               resolveType("Double", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -77,6 +82,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getSingle(CILOSTAZOLContext ctx) {
     if (Single == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Single =
           (NamedTypeSymbol)
               resolveType("Single", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -86,6 +92,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getInt32(CILOSTAZOLContext ctx) {
     if (Int32 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Int32 =
           (NamedTypeSymbol)
               resolveType("Int32", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -95,6 +102,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getUInt32(CILOSTAZOLContext ctx) {
     if (UInt32 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       UInt32 =
           (NamedTypeSymbol)
               resolveType("UInt32", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -104,6 +112,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getInt64(CILOSTAZOLContext ctx) {
     if (Int64 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Int64 =
           (NamedTypeSymbol)
               resolveType("Int64", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -113,6 +122,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getUInt64(CILOSTAZOLContext ctx) {
     if (UInt64 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       UInt64 =
           (NamedTypeSymbol)
               resolveType("UInt64", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -122,6 +132,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getInt16(CILOSTAZOLContext ctx) {
     if (Int16 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Int16 =
           (NamedTypeSymbol)
               resolveType("Int16", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -131,6 +142,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getUInt16(CILOSTAZOLContext ctx) {
     if (UInt16 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       UInt16 =
           (NamedTypeSymbol)
               resolveType("UInt16", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -140,6 +152,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getObject(CILOSTAZOLContext ctx) {
     if (Object == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Object =
           (NamedTypeSymbol)
               resolveType("Object", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -149,6 +162,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getVoid(CILOSTAZOLContext ctx) {
     if (Void == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Void =
           (NamedTypeSymbol)
               resolveType("Void", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -158,6 +172,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getString(CILOSTAZOLContext ctx) {
     if (String == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       String =
           (NamedTypeSymbol)
               resolveType("String", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
@@ -167,6 +182,7 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getArray(CILOSTAZOLContext ctx) {
     if (Array == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       Array =
           (NamedTypeSymbol)
               resolveType("String", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
