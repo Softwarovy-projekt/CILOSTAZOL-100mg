@@ -216,8 +216,20 @@ public class BytecodeInstructions {
   public static final int CGT_UN = 0xFE03;
   public static final int CLT = 0xFE04;
   public static final int CLT_UN = 0xFE05;
+  public static final int LDFTN = 0xFE06;
+  public static final int LDVIRTFTN = 0xFE07;
+  public static final int LDARG = 0xFE09;
+  public static final int LDARGA = 0xFE0A;
+  public static final int STARG = 0xFE0B;
+  public static final int LDLOC = 0xFE0C;
+  public static final int LDLOCA = 0xFE0D;
+  public static final int STLOC = 0xFE0E;
+  public static final int LOCALLOC = 0xFE0F;
   public static final int INITOBJ = 0xFE15;
+  public static final int CPBLK = 0xFE17;
+  public static final int INITBLK = 0xFE18;
   public static final int SIZEOF = 0xFE1C;
+  public static final int REFANYTYPE = 0xFE1D;
 
   // Custom truffle instructions start here
   // Allowed by III.1.2.1:
@@ -320,6 +332,8 @@ public class BytecodeInstructions {
     def(LDLOC_3, "ldloc.3", "o", 1);
     def(LDLOC_S, "ldloc.s", "oi", 1);
     def(LDLOCA_S, "ldloca.s", "oi", 1);
+    defPrefixed(LDLOC, "ldloc", "oii", 1);
+    defPrefixed(LDLOCA, "ldloca", "oii", 1);
 
     def(LDTOKEN, "ldtoken", "otttt", 1);
 
@@ -328,6 +342,7 @@ public class BytecodeInstructions {
     def(STLOC_2, "stloc.2", "o", -1);
     def(STLOC_3, "stloc.3", "o", -1);
     def(STLOC_S, "stloc.s", "oi", -1);
+    defPrefixed(STLOC, "stloc", "oii", -1);
 
     def(LDARG_0, "ldarg.0", "o", 1);
     def(LDARG_1, "ldarg.1", "o", 1);
@@ -335,8 +350,11 @@ public class BytecodeInstructions {
     def(LDARG_3, "ldarg.3", "o", 1);
     def(LDARG_S, "ldarg.s", "oi", 1);
     def(LDARGA_S, "ldarga.s", "oi", 1);
+    defPrefixed(LDARG, "ldarg", "oii", 1);
+    defPrefixed(LDARGA, "ldarga", "oii", 1);
 
     def(STARG_S, "starg.s", "oi", -1);
+    defPrefixed(STARG, "starg", "oii", -1);
 
     def(LDIND_I1, "ldind.i1", "o", 0);
     def(LDIND_U1, "ldind.u1", "o", 0);
@@ -390,6 +408,8 @@ public class BytecodeInstructions {
     def(STELEM_REF, "stelem.ref", "o", -3);
 
     def(LDELEMA, "ldelema", "otttt", 0);
+    defPrefixed(LDFTN, "ldftn", "otttt", 1);
+    defPrefixed(LDVIRTFTN, "ldvirtftn", "otttt", 0);
 
     def(DUP, "dup", "o", 1);
 
@@ -483,6 +503,13 @@ public class BytecodeInstructions {
     def(CONV_R_UN, "conv.r.un", "o", 0);
 
     defPrefixed(SIZEOF, "sizeof", "otttt", 1);
+    defPrefixed(CPBLK, "cpblk", "o", -3);
+    defPrefixed(INITBLK, "initblk", "o", -3);
+    defPrefixed(LOCALLOC, "localloc", "o", 0);
+
+    def(MKREFANY, "mkrefany", "otttt", 0);
+    defPrefixed(REFANYVAL, "refanyval", "otttt", 0);
+    defPrefixed(REFANYTYPE, "refanytype", "o", 0);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }

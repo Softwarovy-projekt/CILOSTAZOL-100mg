@@ -110,7 +110,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           pop(frame, topStack, getMethod().getOpCodeTypes()[pc]);
           break;
         case DUP:
-          duplicateSlot(frame, topStack - 1);
+          duplicateSlot(frame, topStack);
           break;
 
           // Loading on top of the stack
@@ -155,16 +155,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case STLOC_1:
         case STLOC_2:
         case STLOC_3:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              topStack - 1,
-              curOpcode - STLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()));
+          CILOSTAZOLFrame.copyStatic(frame, topStack - 1, curOpcode - STLOC_0);
           break;
         case STLOC_S:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              topStack - 1,
-              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()));
+          CILOSTAZOLFrame.copyStatic(frame, topStack - 1, bytecodeBuffer.getImmUByte(pc));
           break;
 
           // Loading locals to top
@@ -172,28 +166,19 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         case LDLOC_1:
         case LDLOC_2:
         case LDLOC_3:
-          CILOSTAZOLFrame.copyStatic(
-              frame, curOpcode - LDLOC_0 + CILOSTAZOLFrame.isInstantiable(getMethod()), topStack);
+          CILOSTAZOLFrame.copyStatic(frame, curOpcode - LDLOC_0, topStack);
           break;
         case LDLOC_S:
-          CILOSTAZOLFrame.copyStatic(
-              frame,
-              bytecodeBuffer.getImmUByte(pc) + CILOSTAZOLFrame.isInstantiable(getMethod()),
-              topStack);
+          CILOSTAZOLFrame.copyStatic(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          break;
+        case LDLOC:
+          CILOSTAZOLFrame.copyStatic(frame, bytecodeBuffer.getImmUShort(pc), topStack);
           break;
         case LDLOCA_S:
-          CILOSTAZOLFrame.putObject(
-              frame,
-              topStack,
-              getMethod()
-                  .getContext()
-                  .getAllocator()
-                  .createStackReference(
-                      SymbolResolver.resolveReference(
-                          ReferenceSymbol.ReferenceType.Local, getMethod().getContext()),
-                      frame,
-                      bytecodeBuffer.getImmUByte(pc)
-                          + CILOSTAZOLFrame.isInstantiable(getMethod())));
+          loadLocalIndirect(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          break;
+        case LDLOCA:
+          loadLocalIndirect(frame, bytecodeBuffer.getImmUShort(pc), topStack);
           break;
 
           // Loading args to top
@@ -212,20 +197,31 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUByte(pc),
               topStack);
           break;
-        case LDARGA_S:
-          CILOSTAZOLFrame.putObject(
+        case LDARG:
+          CILOSTAZOLFrame.copyStatic(
               frame,
-              topStack,
-              getMethod()
-                  .getContext()
-                  .getAllocator()
-                  .createStackReference(
-                      SymbolResolver.resolveReference(
-                          ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
-                      frame,
-                      bytecodeBuffer.getImmUByte(pc)
-                          + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUShort(pc),
+              topStack);
           break;
+        case LDARGA_S:
+          loadArgument(frame, bytecodeBuffer.getImmUByte(pc), topStack);
+          break;
+        case LDARGA:
+          loadArgument(frame, bytecodeBuffer.getImmUShort(pc), topStack);
+          break;
+
+          // Storing args
+        case STARG_S:
+          CILOSTAZOLFrame.moveValueStatic(
+              frame,
+              topStack - 1,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUByte(pc));
+          break;
+        case STARG:
+          CILOSTAZOLFrame.moveValueStatic(
+              frame,
+              topStack - 1,
+              CILOSTAZOLFrame.getStartArgsOffset(getMethod()) + bytecodeBuffer.getImmUShort(pc));
 
           // Loading fields
         case LDFLD:
@@ -292,6 +288,15 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           break;
         case SIZEOF:
           getSize(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
+        case MKREFANY:
+          makeTypedRef(frame, topStack, bytecodeBuffer.getImmToken(pc));
+          break;
+        case REFANYTYPE:
+          getTypeFromTypedRef(frame, topStack);
+          break;
+        case REFANYVAL:
+          getRefFromTypedRef(frame, topStack, bytecodeBuffer.getImmToken(pc));
           break;
 
           // Branching
@@ -694,6 +699,16 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           doNumericBinary(
               frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, true);
           break;
+
+          // Unmanaged memory manipulation
+        case INITBLK:
+        case CPBLK:
+        case LDFTN:
+        case LDVIRTFTN:
+        case LOCALLOC:
+        case LDTOKEN:
+          throw new InterpreterException(
+              "Unmanaged memory manipulation not implemented for opcode " + curOpcode);
 
         case TRUFFLE_NODE:
           topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
@@ -1486,11 +1501,49 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       }
     }
   }
-  // endregion
 
   private void storeIndirectNative(VirtualFrame frame, int top) {
     storeIndirectInt(frame, top);
   }
+
+  private void makeTypedRef(VirtualFrame frame, int top, CLITablePtr token) {
+    StaticObject reference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    StaticObject typedReference =
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createTypedReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Typed, getMethod().getContext()),
+                reference,
+                token);
+    CILOSTAZOLFrame.putObject(frame, top - 1, typedReference);
+  }
+
+  private void getTypeFromTypedRef(VirtualFrame frame, int top) {
+    StaticObject typedReference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    CLITablePtr token =
+        (CLITablePtr)
+            getMethod().getContext().getTypedReferenceTypeTokenProperty().getObject(typedReference);
+    CILOSTAZOLFrame.putInt32(frame, top - 1, token.getToken());
+  }
+
+  private void getRefFromTypedRef(VirtualFrame frame, int top, CLITablePtr token) {
+    StaticObject typedReference = CILOSTAZOLFrame.popObject(frame, top - 1);
+    CLITablePtr constructingToken =
+        (CLITablePtr)
+            getMethod().getContext().getTypedReferenceTypeTokenProperty().getObject(typedReference);
+    if (token != constructingToken) {
+      // TODO: Throw a proper exception
+      throw new InterpreterException("System.InvalidCastException");
+    }
+    CILOSTAZOLFrame.putObject(
+        frame,
+        top - 1,
+        (StaticObject)
+            getMethod().getContext().getTypedReferenceInnerRefProperty().getObject(typedReference));
+  }
+  // endregion
 
   // region other helpers
   private void pop(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
@@ -1513,8 +1566,37 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void duplicateSlot(VirtualFrame frame, int top) {
-    CILOSTAZOLFrame.copyStatic(frame, top, top + 1);
+    CILOSTAZOLFrame.copyStatic(frame, top - 1, top);
   }
+
+  private void loadArgument(VirtualFrame frame, int index, int topStack) {
+    CILOSTAZOLFrame.putObject(
+        frame,
+        topStack,
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createStackReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Argument, getMethod().getContext()),
+                frame,
+                index + CILOSTAZOLFrame.getStartArgsOffset(getMethod())));
+  }
+
+  private void loadLocalIndirect(VirtualFrame frame, int slot, int topStack) {
+    CILOSTAZOLFrame.putObject(
+        frame,
+        topStack,
+        getMethod()
+            .getContext()
+            .getAllocator()
+            .createStackReference(
+                SymbolResolver.resolveReference(
+                    ReferenceSymbol.ReferenceType.Local, getMethod().getContext()),
+                frame,
+                slot));
+  }
+
   // endregion
 
   private Object getReturnValue(VirtualFrame frame, int top) {

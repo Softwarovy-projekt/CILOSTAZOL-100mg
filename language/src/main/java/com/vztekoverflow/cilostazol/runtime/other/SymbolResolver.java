@@ -234,8 +234,7 @@ public final class SymbolResolver {
     var resolutionScope = row.getResolutionScopeTablePtr();
     AssemblyIdentity identity =
         switch (resolutionScope.getTableId()) {
-          case CLITableConstants.CLI_TABLE_MODULE -> module.getDefiningFile().getAssemblyIdentity();
-          case CLITableConstants.CLI_TABLE_MODULE_REF -> module
+          case CLITableConstants.CLI_TABLE_MODULE, CLITableConstants.CLI_TABLE_MODULE_REF -> module
               .getDefiningFile()
               .getAssemblyIdentity();
           case CLITableConstants.CLI_TABLE_ASSEMBLY_REF -> AssemblyIdentity.fromAssemblyRefRow(

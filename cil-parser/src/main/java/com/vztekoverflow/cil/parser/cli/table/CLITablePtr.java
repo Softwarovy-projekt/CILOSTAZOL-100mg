@@ -16,6 +16,7 @@ public class CLITablePtr {
 
   private final byte tableId;
   private final int rowNo;
+  private final int token;
 
   /**
    * Create a new table pointer.
@@ -26,6 +27,18 @@ public class CLITablePtr {
   public CLITablePtr(byte tableId, int rowNo) {
     this.tableId = tableId;
     this.rowNo = rowNo;
+    this.token = -1;
+  }
+
+  /**
+   * Create a new table pointer.
+   *
+   * @param token the metadata token
+   */
+  public CLITablePtr(int token) {
+    this.tableId = (byte) (token >> 24);
+    this.rowNo = token & 0xFFFFFF;
+    this.token = token;
   }
 
   /**
@@ -35,9 +48,7 @@ public class CLITablePtr {
    * @return a table pointer pointer equivalent to the specified token
    */
   public static CLITablePtr fromToken(int token) {
-    byte table = (byte) (token >> 24);
-    int rowNo = token & 0xFFFFFF;
-    return new CLITablePtr(table, rowNo);
+    return new CLITablePtr(token);
   }
 
   /**
@@ -63,5 +74,9 @@ public class CLITablePtr {
 
   public boolean isEmpty() {
     return rowNo == 0;
+  }
+
+  public int getToken() {
+    return token;
   }
 }
