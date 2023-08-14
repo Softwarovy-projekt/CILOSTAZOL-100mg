@@ -5,6 +5,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.staticobject.StaticProperty;
+import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
@@ -301,8 +302,9 @@ public final class CILOSTAZOLFrame {
   // endregion
 
   // TODO: It should rely on Assembly as well...
-  public static StackType getStackTypeKind(String name, String namespace) {
-    if (Objects.equals(namespace, "System")) {
+  public static StackType getStackTypeKind(
+      String name, String namespace, AssemblyIdentity assembly) {
+    if (AssemblyIdentity.isStandardLib(assembly) && Objects.equals(namespace, "System")) {
       switch (name) {
         case "Boolean":
         case "Byte":
@@ -329,6 +331,12 @@ public final class CILOSTAZOLFrame {
   public static void copyStatic(Frame frame, int sourceSlot, int destSlot) {
     assert sourceSlot >= 0 && destSlot >= 0;
     frame.copyStatic(sourceSlot, destSlot);
+  }
+
+  public static void moveValueStatic(Frame frame, int sourceSlot, int destSlot) {
+    assert sourceSlot >= 0 && destSlot >= 0;
+    frame.copyStatic(sourceSlot, destSlot);
+    frame.clearStatic(sourceSlot);
   }
 
   // region stack types

@@ -102,9 +102,9 @@ public class StaticOpCodeAnalyser {
       case STLOC_2:
       case STLOC_3:
       case STLOC_S:
-        // case STLOC: //we do not track this opcode
+      case STLOC:
       case STARG_S:
-        // case STARG: //we do not track this opcode
+      case STARG:
         setTypeByStack(types, stack, topStack, pc, curOpcode);
         clear(stack, topStack);
         break;
@@ -117,12 +117,14 @@ public class StaticOpCodeAnalyser {
         break;
 
       case LDARG_S:
-        // case LDARG: //we do not track this opcode
         handleArg(parameters, stack, topStack, bytecodeBuffer.getImmUByte(pc));
+        break;
+      case LDARG:
+        handleArg(parameters, stack, topStack, bytecodeBuffer.getImmUShort(pc));
         break;
 
       case LDARGA_S:
-        // case LDARGA: //we do not track this opcode
+      case LDARGA:
         push(stack, topStack, StackType.ManagedPointer);
         break;
 
@@ -134,12 +136,12 @@ public class StaticOpCodeAnalyser {
         break;
 
       case LDLOC_S:
-        // case LDLOC: //we do not track this opcode
+      case LDLOC:
         handleLoc(locals, stack, topStack, bytecodeBuffer.getImmUByte(pc));
         break;
 
       case LDLOCA_S:
-        // case LDLOCA: //we do not track this opcode
+      case LDLOCA:
         push(stack, topStack, StackType.ManagedPointer);
         break;
 
@@ -271,7 +273,7 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack, Int32);
         break;
       case LDIND_I8:
-        // case LDIND_U8: //we do not track this opcode
+        // LDIND_U8 has the same opcode and logic
         replace(stack, topStack, Int64);
         break;
       case LDIND_I:
@@ -536,6 +538,9 @@ public class StaticOpCodeAnalyser {
           replace(stack, topStack, ManagedPointer);
           break;
         }
+      case REFANYTYPE:
+        replace(stack, topStack, Int32);
+        break;
       case CKFINITE:
         setTypeByStack(types, stack, topStack, pc, curOpcode);
         break;
@@ -566,6 +571,22 @@ public class StaticOpCodeAnalyser {
         break;
       case SIZEOF:
         push(stack, topStack, Int32);
+        break;
+      case CPBLK:
+      case INITBLK:
+        clear(stack, topStack);
+        clear(stack, topStack - 1);
+        clear(stack, topStack - 2);
+        break;
+      case LDFTN:
+        push(stack, topStack, ManagedPointer);
+        break;
+      case LOCALLOC:
+      case LDVIRTFTN:
+        replace(stack, topStack, ManagedPointer);
+        break;
+      case LDTOKEN:
+        push(stack, topStack, Object);
         break;
       case TRUFFLE_NODE:
         break;
