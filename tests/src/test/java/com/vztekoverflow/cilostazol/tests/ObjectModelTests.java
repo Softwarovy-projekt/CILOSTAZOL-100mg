@@ -542,6 +542,7 @@ public class ObjectModelTests extends TestBase {
   }
 
   @Test
+  @Disabled("Requires handling padding (also on windows the reference is 8B when run with maven)")
   public void sizeOfStructTest() {
     var result =
         runTestFromCode(

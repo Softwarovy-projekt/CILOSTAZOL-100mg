@@ -143,22 +143,31 @@ public class CILOSTAZOLContext {
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */
   public NamedTypeSymbol resolveType(String name, String namespace, AssemblyIdentity assembly) {
-
     var cacheKey = new TypeDefinitionCacheKey(name, namespace, assembly);
 
-    return typeDefinitionCache.computeIfAbsent(
-        cacheKey,
-        k -> {
-          AssemblySymbol assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
-          if (assemblySymbol == null) {
-            assemblySymbol = findAssembly(cacheKey.assemblyIdentity());
-          }
+    if (typeDefinitionCache.containsKey(cacheKey)) {
+      return typeDefinitionCache.get(cacheKey);
+    } else {
 
-          if (assemblySymbol != null)
-            return assemblySymbol.getLocalType(cacheKey.name(), cacheKey.namespace());
+      AssemblySymbol assemblySymbol = resolveAssembly(assembly);
+      var defAssembly = assemblySymbol.getLocalTypeDefiningAssembly(name, namespace);
+      cacheKey = new TypeDefinitionCacheKey(name, namespace, defAssembly);
+      assemblySymbol = resolveAssembly(cacheKey.assemblyIdentity());
 
-          return null;
-        });
+      if (typeDefinitionCache.containsKey(cacheKey)) {
+        return typeDefinitionCache.get(cacheKey);
+      }
+
+      if (assemblySymbol != null) {
+        var result = assemblySymbol.getLocalType(cacheKey.name(), cacheKey.namespace());
+        if (result != null) {
+          typeDefinitionCache.put(cacheKey, result);
+          return result;
+        }
+      }
+
+      return null;
+    }
   }
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */
@@ -179,6 +188,15 @@ public class CILOSTAZOLContext {
         k -> {
           return k.genMethod().construct(k.typeArgs());
         });
+  }
+
+  public AssemblySymbol resolveAssembly(AssemblyIdentity assemblyIdentity) {
+    AssemblySymbol assemblySymbol = appDomain.getAssembly(assemblyIdentity);
+    if (assemblySymbol == null) {
+      assemblySymbol = findAssembly(assemblyIdentity);
+    }
+
+    return assemblySymbol;
   }
 
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {

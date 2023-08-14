@@ -37,6 +37,15 @@ public final class AssemblySymbol extends Symbol {
     return null;
   }
 
+  public AssemblyIdentity getLocalTypeDefiningAssembly(String name, String namespace) {
+    for (ModuleSymbol module : getModules()) {
+      final var assemblyId = module.getLocalTypeDefiningAssembly(name, namespace);
+      if (assemblyId != null) return assemblyId;
+    }
+
+    return null;
+  }
+
   public AssemblyIdentity getIdentity() {
     return definingFile.getAssemblyIdentity();
   }
