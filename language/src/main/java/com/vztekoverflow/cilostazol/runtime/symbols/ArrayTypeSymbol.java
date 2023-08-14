@@ -2,11 +2,9 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.signature.ArrayShapeSig;
-import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
-import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
-public final class ArrayTypeSymbol extends TypeSymbol {
+public final class ArrayTypeSymbol extends NamedTypeSymbol {
   private final TypeSymbol elementType;
   private final NamedTypeSymbol arrayType;
   private final int rank;
@@ -19,18 +17,40 @@ public final class ArrayTypeSymbol extends TypeSymbol {
       int[] lengths,
       int[] lowerBounds,
       ModuleSymbol definingModule) {
-    super(definingModule, CILOSTAZOLFrame.StackType.Object, SystemType.Object);
-    this.elementType = elementType;
-    this.rank = rank;
-    this.lengths = lengths;
-    this.lowerBounds = lowerBounds;
-    this.arrayType =
+    this(
+        elementType,
+        rank,
+        lengths,
+        lowerBounds,
+        definingModule,
         (NamedTypeSymbol)
             SymbolResolver.resolveType(
                 "Array",
                 "System",
                 AssemblyIdentity.SystemPrivateCoreLib700(),
-                definingModule.getContext());
+                definingModule.getContext()));
+  }
+
+  private ArrayTypeSymbol(
+      TypeSymbol elementType,
+      int rank,
+      int[] lengths,
+      int[] lowerBounds,
+      ModuleSymbol definingModule,
+      NamedTypeSymbol arrayType) {
+    super(
+        definingModule,
+        1056897,
+        "Array",
+        "System",
+        arrayType.getTypeParameters(),
+        arrayType.definingRow,
+        arrayType.map);
+    this.elementType = elementType;
+    this.rank = rank;
+    this.lengths = lengths;
+    this.lowerBounds = lowerBounds;
+    this.arrayType = arrayType;
   }
 
   public TypeSymbol getElementType() {
