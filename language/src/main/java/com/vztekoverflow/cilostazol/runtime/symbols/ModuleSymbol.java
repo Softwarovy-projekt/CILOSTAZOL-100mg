@@ -73,16 +73,16 @@ public final class ModuleSymbol extends Symbol {
               == CLITableConstants.CLI_TABLE_ASSEMBLY_REF
           && (row.getFlags() & IS_TYPE_FORWARDER_FLAG_MASK) != 0) {
 
-        var assemblyId = AssemblyIdentity.fromAssemblyRefRow(
+        var assemblyId =
+            AssemblyIdentity.fromAssemblyRefRow(
                 getDefiningFile().getStringHeap(),
                 getDefiningFile()
-                        .getTableHeads()
-                        .getAssemblyRefTableHead()
-                        .skip(row.getImplementationTablePtr()));
+                    .getTableHeads()
+                    .getAssemblyRefTableHead()
+                    .skip(row.getImplementationTablePtr()));
 
         var assembly = getContext().resolveAssembly(assemblyId);
-        if (assembly == null)
-          return null;
+        if (assembly == null) return null;
 
         return assembly.getLocalTypeDefiningAssembly(name, namespace);
       }
