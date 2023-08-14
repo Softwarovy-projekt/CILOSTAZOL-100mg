@@ -143,29 +143,19 @@ public class CILOSTAZOLContext {
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */
   public NamedTypeSymbol resolveType(String name, String namespace, AssemblyIdentity assembly) {
-
     var cacheKey = new TypeDefinitionCacheKey(name, namespace, assembly);
 
     if (typeDefinitionCache.containsKey(cacheKey)) {
       return typeDefinitionCache.get(cacheKey);
     } else {
-      AssemblySymbol assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
-      if (assemblySymbol == null) {
-        assemblySymbol = findAssembly(cacheKey.assemblyIdentity());
-      }
 
+      AssemblySymbol assemblySymbol = resolveAssembly(assembly);
       var defAssembly = assemblySymbol.getLocalTypeDefiningAssembly(name, namespace);
-      if (defAssembly != assembly) {
-        cacheKey = new TypeDefinitionCacheKey(name, namespace, defAssembly);
+      cacheKey = new TypeDefinitionCacheKey(name, namespace, defAssembly);
+      assemblySymbol = resolveAssembly(cacheKey.assemblyIdentity());
 
-        if (typeDefinitionCache.containsKey(cacheKey)) {
-          return typeDefinitionCache.get(cacheKey);
-        }
-
-        assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
-        if (assemblySymbol == null) {
-          assemblySymbol = findAssembly(cacheKey.assemblyIdentity());
-        }
+      if (typeDefinitionCache.containsKey(cacheKey)) {
+        return typeDefinitionCache.get(cacheKey);
       }
 
       if (assemblySymbol != null) {
@@ -198,6 +188,15 @@ public class CILOSTAZOLContext {
         k -> {
           return k.genMethod().construct(k.typeArgs());
         });
+  }
+
+  public AssemblySymbol resolveAssembly(AssemblyIdentity assemblyIdentity) {
+    AssemblySymbol assemblySymbol = appDomain.getAssembly(assemblyIdentity);
+    if (assemblySymbol == null) {
+      assemblySymbol = findAssembly(assemblyIdentity);
+    }
+
+    return assemblySymbol;
   }
 
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {

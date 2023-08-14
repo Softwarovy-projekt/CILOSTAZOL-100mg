@@ -112,7 +112,8 @@ public class NamedTypeSymbol extends TypeSymbol {
       TypeMap map) {
     super(
         definingModule,
-        CILOSTAZOLFrame.getStackTypeKind(name, namespace),
+        CILOSTAZOLFrame.getStackTypeKind(
+            name, namespace, definingModule.getDefiningFile().getAssemblyIdentity()),
         SystemType.getTypeKind(
             name, namespace, definingModule.getDefiningFile().getAssemblyIdentity()));
     assert definingRow.getTableId() == CLITableConstants.CLI_TABLE_TYPE_DEF;
