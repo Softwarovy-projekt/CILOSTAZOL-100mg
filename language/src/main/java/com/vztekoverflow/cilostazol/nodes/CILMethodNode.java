@@ -1134,7 +1134,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         Frame refFrame =
             (Frame) getMethod().getContext().getStackReferenceFrameProperty().getObject(reference);
         int index = getMethod().getContext().getStackReferenceIndexProperty().getInt(reference);
-        CILOSTAZOLFrame.putInt64(frame, top - 1, CILOSTAZOLFrame.getLocalLong(frame, index));
+        CILOSTAZOLFrame.putInt64(refFrame, top - 1, CILOSTAZOLFrame.getLocalLong(frame, index));
       }
       case Field -> {
         StaticObject refObj =
@@ -1649,7 +1649,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     // TODO: The value can be a Nullable<T>, which is handled differently than T
     var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
     var sourceType = object.getTypeSymbol();
-    if (sourceType.isAssignableFrom(targetType)) {
+    if (targetType.isAssignableFrom(sourceType)) {
       // Success: put object back on stack with a new type
       CILOSTAZOLFrame.putObject(frame, slot, object);
     } else {

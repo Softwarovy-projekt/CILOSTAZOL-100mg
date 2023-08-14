@@ -146,19 +146,38 @@ public class CILOSTAZOLContext {
 
     var cacheKey = new TypeDefinitionCacheKey(name, namespace, assembly);
 
-    return typeDefinitionCache.computeIfAbsent(
-        cacheKey,
-        k -> {
-          AssemblySymbol assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
-          if (assemblySymbol == null) {
-            assemblySymbol = findAssembly(cacheKey.assemblyIdentity());
-          }
+    if (typeDefinitionCache.containsKey(cacheKey)) {
+      return typeDefinitionCache.get(cacheKey);
+    } else {
+      AssemblySymbol assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
+      if (assemblySymbol == null) {
+        assemblySymbol = findAssembly(cacheKey.assemblyIdentity());
+      }
 
-          if (assemblySymbol != null)
-            return assemblySymbol.getLocalType(cacheKey.name(), cacheKey.namespace());
+      var defAssembly = assemblySymbol.getLocalTypeDefiningAssembly(name, namespace);
+      if (defAssembly != assembly) {
+        cacheKey = new TypeDefinitionCacheKey(name, namespace, defAssembly);
 
-          return null;
-        });
+        if (typeDefinitionCache.containsKey(cacheKey)) {
+          return typeDefinitionCache.get(cacheKey);
+        }
+
+        assemblySymbol = appDomain.getAssembly(cacheKey.assemblyIdentity());
+        if (assemblySymbol == null) {
+          assemblySymbol = findAssembly(cacheKey.assemblyIdentity());
+        }
+      }
+
+      if (assemblySymbol != null) {
+        var result = assemblySymbol.getLocalType(cacheKey.name(), cacheKey.namespace());
+        if (result != null) {
+          typeDefinitionCache.put(cacheKey, result);
+          return result;
+        }
+      }
+
+      return null;
+    }
   }
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */

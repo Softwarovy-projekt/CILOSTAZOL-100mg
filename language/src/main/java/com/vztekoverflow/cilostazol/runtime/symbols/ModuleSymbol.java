@@ -1,6 +1,9 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import static com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol.IS_TYPE_FORWARDER_FLAG_MASK;
+
 import com.oracle.truffle.api.CompilerDirectives;
+import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.CLIFile;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIFieldTableRow;
@@ -57,6 +60,29 @@ public final class ModuleSymbol extends Symbol {
     }
 
     return null;
+  }
+
+  public AssemblyIdentity getLocalTypeDefiningAssembly(String name, String namespace) {
+    for (var row : definingFile.getTableHeads().getExportedTypeTableHead()) {
+      var rowName = row.getTypeNameHeapPtr().read(definingFile.getStringHeap());
+      var rowNamespace = row.getTypeNamespaceHeapPtr().read(definingFile.getStringHeap());
+
+      if (rowName.equals(name)
+          && rowNamespace.equals(namespace)
+          && row.getImplementationTablePtr().getTableId()
+              == CLITableConstants.CLI_TABLE_ASSEMBLY_REF
+          && (row.getFlags() & IS_TYPE_FORWARDER_FLAG_MASK) != 0) {
+
+        return AssemblyIdentity.fromAssemblyRefRow(
+            getDefiningFile().getStringHeap(),
+            getDefiningFile()
+                .getTableHeads()
+                .getAssemblyRefTableHead()
+                .skip(row.getImplementationTablePtr()));
+      }
+    }
+
+    return getDefiningFile().getAssemblyIdentity();
   }
 
   public FieldIndex getLocalField(CLIFieldTableRow row) {

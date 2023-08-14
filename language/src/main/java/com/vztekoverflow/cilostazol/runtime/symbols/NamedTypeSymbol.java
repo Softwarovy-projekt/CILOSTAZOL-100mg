@@ -26,15 +26,15 @@ import java.util.*;
 
 public class NamedTypeSymbol extends TypeSymbol {
   // region constants
-  private static final int ABSTRACT_FLAG_MASK = 0x80;
-  private static final int SEALED_FLAG_MASK = 0x100;
-  private static final int SPECIAL_NAME_FLAG_MASK = 0x400;
-  private static final int IMPORT_FLAG_MASK = 0x1000;
-  private static final int SERIALIZABLE_FLAG_MASK = 0x2000;
-  private static final int BEFORE_FIELD_INIT_FLAG_MASK = 0x100000;
-  private static final int RT_SPECIAL_NAME_FLAG_MASK = 0x800;
-  private static final int HAS_SECURITY_FLAG_MASK = 0x40000;
-  private static final int IS_TYPE_FORWARDER_FLAG_MASK = 0x200000;
+  public static final int ABSTRACT_FLAG_MASK = 0x80;
+  public static final int SEALED_FLAG_MASK = 0x100;
+  public static final int SPECIAL_NAME_FLAG_MASK = 0x400;
+  public static final int IMPORT_FLAG_MASK = 0x1000;
+  public static final int SERIALIZABLE_FLAG_MASK = 0x2000;
+  public static final int BEFORE_FIELD_INIT_FLAG_MASK = 0x100000;
+  public static final int RT_SPECIAL_NAME_FLAG_MASK = 0x800;
+  public static final int HAS_SECURITY_FLAG_MASK = 0x40000;
+  public static final int IS_TYPE_FORWARDER_FLAG_MASK = 0x200000;
   // endregion
 
   protected final int flags;
