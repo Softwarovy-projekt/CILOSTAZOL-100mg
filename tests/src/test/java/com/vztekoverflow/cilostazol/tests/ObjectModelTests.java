@@ -472,7 +472,6 @@ public class ObjectModelTests extends TestBase {
   }
 
   @Test
-  @Disabled("CALLVIRT not implemented")
   public void interfacePropertyAccess() {
     var result =
         runTestFromCode(
@@ -496,7 +495,6 @@ public class ObjectModelTests extends TestBase {
   }
 
   @Test
-  @Disabled("CALLVIRT not implemented")
   public void interfaceTransitiveFieldAccess() {
     var result =
         runTestFromCode(

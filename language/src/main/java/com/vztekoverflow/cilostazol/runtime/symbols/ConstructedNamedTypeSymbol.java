@@ -40,7 +40,12 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   public NamedTypeSymbol getDirectBaseClass() {
     if (lazyDirectBaseClass == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      lazyDirectBaseClass = map.substitute(constructedFrom.getDirectBaseClass());
+      var baseClass = constructedFrom.getDirectBaseClass();
+      if (baseClass == null) {
+        lazyDirectBaseClass = null;
+      } else {
+        lazyDirectBaseClass = map.substitute(constructedFrom.getDirectBaseClass());
+      }
     }
 
     return lazyDirectBaseClass;
@@ -119,6 +124,12 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
 
     return lazyFields;
   }
+
+  @Override
+  public String toString() {
+    return super.toString() + "<" + Arrays.toString(typeArguments) + ">";
+  }
+
   // endregion
 
   public static final class ConstructedNamedTypeSymbolFactory {

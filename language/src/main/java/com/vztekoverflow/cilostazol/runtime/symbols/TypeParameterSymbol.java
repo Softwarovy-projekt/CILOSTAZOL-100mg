@@ -72,6 +72,11 @@ public final class TypeParameterSymbol extends TypeSymbol {
     throw new InvalidOperationException();
   }
 
+  @Override
+  public String toString() {
+    return name;
+  }
+
   public static class TypeParameterSymbolFactory {
     public static TypeParameterSymbol createWith(
         TypeParameterSymbol symbol, TypeSymbol[] constrains) {

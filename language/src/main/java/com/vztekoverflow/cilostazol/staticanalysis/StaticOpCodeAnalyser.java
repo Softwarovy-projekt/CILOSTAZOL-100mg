@@ -423,7 +423,10 @@ public class StaticOpCodeAnalyser {
       case LDFLD:
         {
           var fieldPtr = bytecodeBuffer.getImmToken(pc);
-          var field = SymbolResolver.resolveField(fieldPtr, module).member;
+          var field =
+              SymbolResolver.resolveField(
+                      fieldPtr, ((NamedTypeSymbol) parameters[0]).getTypeArguments(), module)
+                  .member;
           replace(stack, topStack, field.getType().getStackTypeKind());
           break;
         }
@@ -657,7 +660,8 @@ public class StaticOpCodeAnalyser {
     if (method.hasReturnValue())
       replace(
           stack,
-          topStack - method.getParameterCountIncludingInstance(),
+          // +1 because the api requires idx of the first empty space
+          topStack - method.getParameterCountIncludingInstance() + 1,
           method.getReturnType().getType().getStackTypeKind());
 
     return topStack

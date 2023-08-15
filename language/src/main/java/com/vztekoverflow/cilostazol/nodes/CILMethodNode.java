@@ -253,8 +253,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
             // Loading fields
           case LDFLD:
-            loadInstanceField(
-                frame, topStack, bytecodeBuffer.getImmToken(pc), getMethod().getOpCodeTypes()[pc]);
+            loadInstanceField(frame, topStack, bytecodeBuffer.getImmToken(pc));
             break;
           case LDSFLD:
             loadStaticField(frame, topStack, bytecodeBuffer.getImmToken(pc));
@@ -1833,12 +1832,14 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void loadFieldInstanceFieldRef(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
-    final var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    final var field = classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     final var object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
                 frame, top - 1, getMethod().getContext());
+    var instance = (NamedTypeSymbol) object.getTypeSymbol();
+    final var classMember =
+        SymbolResolver.resolveField(fieldPtr, instance.getTypeArguments(), method.getModule());
+    final var field = classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     CILOSTAZOLFrame.putObject(
         frame,
         top - 1,
@@ -1869,15 +1870,16 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 field));
   }
 
-  private void loadInstanceField(
-      VirtualFrame frame, int top, CLITablePtr fieldPtr, StaticOpCodeAnalyser.OpCodeType type) {
-    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field =
-        classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
+  private void loadInstanceField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
     StaticObject object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
                 frame, top - 1, getMethod().getContext());
+    var instance = (NamedTypeSymbol) object.getTypeSymbol();
+    var classMember =
+        SymbolResolver.resolveField(fieldPtr, instance.getTypeArguments(), method.getModule());
+    StaticField field =
+        classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     loadValueFromField(frame, top, field, object);
   }
 
@@ -1927,13 +1929,15 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   void storeInstanceField(VirtualFrame frame, int top, CLITablePtr fieldPtr) {
-    var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
-    StaticField field =
-        classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     StaticObject object =
         (StaticObject)
             CILOSTAZOLFrame.popObjectFromPossibleReference(
                 frame, top - 2, getMethod().getContext());
+    var instance = (NamedTypeSymbol) object.getTypeSymbol();
+    var classMember =
+        SymbolResolver.resolveField(fieldPtr, instance.getTypeArguments(), method.getModule());
+    StaticField field =
+        classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
     assignValueToField(frame, top, field, object);
   }
 

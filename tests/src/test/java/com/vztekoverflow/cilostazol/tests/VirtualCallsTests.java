@@ -600,4 +600,134 @@ public class VirtualCallsTests extends TestBase {
     assertEquals(52, result.exitCode());
     assertEquals("B.Foo", result.output());
   }
+
+  @Test
+  public void MethodFromInterfaceCall() {
+    var result =
+        runTestFromCode(
+            """
+                using System;
+                namespace CallsTests;
+
+                public class Program
+                {
+                    public static int Main()
+                    {
+                        IA a = getA();
+                        return a.Foo();
+                    }
+
+                    public static IA getA() {
+                        return new A();
+                    }
+                }
+
+                public interface IA
+                {
+                    public int Foo();
+                }
+
+                public class A : IA
+                {
+                    public int Foo()
+                    {
+                        Console.Write("A.Foo");
+                        return 42;
+                    }
+                }
+        """);
+    assertEquals(42, result.exitCode());
+    assertEquals("A.Foo", result.output());
+  }
+
+  @Test
+  public void InheritedMethodFromInterfaceCall() {
+    var result =
+        runTestFromCode(
+            """
+                using System;
+                namespace CallsTests;
+
+                public class Program
+                {
+                    public static int Main()
+                    {
+                        IA a = getB();
+                        return a.Foo();
+                    }
+
+                    public static IA getB() {
+                        return new B();
+                    }
+                }
+
+                public interface IA
+                {
+                    public int Foo();
+                }
+
+                public class A : IA
+                {
+                    public int Foo()
+                    {
+                        Console.Write("A.Foo");
+                        return 42;
+                    }
+                }
+
+                public class B : A
+                {
+                }
+        """);
+    assertEquals(42, result.exitCode());
+    assertEquals("A.Foo", result.output());
+  }
+
+  @Test
+  public void OverwrittenInheritedMethodFromInterfaceCall() {
+    var result =
+        runTestFromCode(
+            """
+                            using System;
+                            namespace CallsTests;
+
+                            public class Program
+                            {
+                                public static int Main()
+                                {
+                                    IA a = getB();
+                                    return a.Foo();
+                                }
+
+                                public static IA getB() {
+                                    return new B();
+                                }
+                            }
+
+                            public interface IA
+                            {
+                                public int Foo();
+                            }
+
+                            public class A : IA
+                            {
+                                public int Foo()
+                                {
+                                    Console.Write("A.Foo");
+                                    return 42;
+                                }
+                            }
+
+                            public class B : A
+                            {
+                                public int Foo()
+                                {
+                                    Console.Write("B.Foo");
+                                    return 52;
+                                }
+                            }
+                    """);
+    assertEquals(52, result.exitCode());
+    assertEquals("B.Foo", result.output());
+  }
 }
