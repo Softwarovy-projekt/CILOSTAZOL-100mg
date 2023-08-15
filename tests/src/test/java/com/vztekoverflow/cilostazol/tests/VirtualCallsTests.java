@@ -604,7 +604,8 @@ public class VirtualCallsTests extends TestBase {
   @Test
   public void MethodFromInterfaceCall() {
     var result =
-            runTestFromCode("""
+        runTestFromCode(
+            """
                 using System;
                 namespace CallsTests;
 
@@ -612,10 +613,10 @@ public class VirtualCallsTests extends TestBase {
                 {
                     public static int Main()
                     {
-                        IA a = getA(); 
+                        IA a = getA();
                         return a.Foo();
                     }
-                    
+
                     public static IA getA() {
                         return new A();
                     }
@@ -642,7 +643,8 @@ public class VirtualCallsTests extends TestBase {
   @Test
   public void InheritedMethodFromInterfaceCall() {
     var result =
-            runTestFromCode("""
+        runTestFromCode(
+            """
                 using System;
                 namespace CallsTests;
 
@@ -650,10 +652,10 @@ public class VirtualCallsTests extends TestBase {
                 {
                     public static int Main()
                     {
-                        IA a = getB(); 
+                        IA a = getB();
                         return a.Foo();
                     }
-                    
+
                     public static IA getB() {
                         return new B();
                     }
@@ -672,7 +674,7 @@ public class VirtualCallsTests extends TestBase {
                         return 42;
                     }
                 }
-                
+
                 public class B : A
                 {
                 }
