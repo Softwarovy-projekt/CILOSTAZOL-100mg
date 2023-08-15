@@ -8,9 +8,9 @@ import com.oracle.truffle.api.instrumentation.AllocationReporter;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cilostazol.CILOSTAZOLLanguage;
+import com.vztekoverflow.cilostazol.exceptions.*;
 import com.vztekoverflow.cilostazol.exceptions.InstantiationError;
 import com.vztekoverflow.cilostazol.exceptions.InstantiationException;
-import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NegativeArraySizeException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
@@ -166,6 +166,10 @@ public final class GuestAllocator {
   public StaticObject unboxToReference(
       NamedTypeSymbol typeSymbol, VirtualFrame frame, MethodSymbol method, int slot) {
     StaticObject boxedObject = CILOSTAZOLFrame.popObject(frame, slot);
+    if (boxedObject.equals(StaticObject.NULL))
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.NullReference, method.getContext(), frame, slot + 1);
+
     // TODO: Check whether taking a field reference is valid for Nullable<T>
     switch (typeSymbol.getSystemType()) {
       case Boolean, Char, Byte, Int, Short, Float, Long, Double -> {
@@ -178,8 +182,8 @@ public final class GuestAllocator {
               boxedObject,
               valueField);
         } catch (Exception ignored) {
-          // TODO: Throw a proper exception
-          throw new InterpreterException("System.InvalidCastException");
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.InvalidCast, method.getContext(), frame, slot + 1);
         }
       }
       case Void -> throw new InterpreterException("Cannot unbox void");

@@ -1,7 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.other;
 
-import static com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol.IS_TYPE_FORWARDER_FLAG_MASK;
-
+import com.oracle.truffle.api.CompilerDirectives;
 import com.vztekoverflow.cil.parser.CILParserException;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
@@ -75,6 +74,25 @@ public final class SymbolResolver {
 
   public static NamedTypeSymbol getArray(CILOSTAZOLContext ctx) {
     return ctx.getArray();
+  }
+  public static NamedTypeSymbol getIntPtr(CILOSTAZOLContext ctx) {
+    if (IntPtr == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      IntPtr =
+              (NamedTypeSymbol)
+                      resolveType("IntPtr", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
+    }
+    return IntPtr;
+  }
+
+  public static NamedTypeSymbol getUIntPtr(CILOSTAZOLContext ctx) {
+    if (UIntPtr == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      UIntPtr =
+              (NamedTypeSymbol)
+                      resolveType("UIntPtr", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
+    }
+    return UIntPtr;
   }
   // endregion
 
@@ -154,31 +172,7 @@ public final class SymbolResolver {
         nameAndNamespace.getLeft(), nameAndNamespace.getRight(), identity, module.getContext());
   }
 
-  public static TypeSymbol resolveType(CLIExportedTypeTableRow row, ModuleSymbol module) {
-    if (row.getImplementationTablePtr().getTableId() == CLITableConstants.CLI_TABLE_ASSEMBLY_REF
-        && (row.getFlags() & IS_TYPE_FORWARDER_FLAG_MASK)
-            != 0) // type is forwarded to difference assembly
-    {
-      var rowName = row.getTypeNameHeapPtr().read(module.getDefiningFile().getStringHeap());
-      var rowNamespace =
-          row.getTypeNamespaceHeapPtr().read(module.getDefiningFile().getStringHeap());
-
-      var assemblyIdentity =
-          AssemblyIdentity.fromAssemblyRefRow(
-              module.getDefiningFile().getStringHeap(),
-              module
-                  .getDefiningFile()
-                  .getTableHeads()
-                  .getAssemblyRefTableHead()
-                  .skip(row.getImplementationTablePtr()));
-
-      return resolveType(rowName, rowNamespace, assemblyIdentity, module.getContext());
-    }
-
-    return null;
-  }
-
-  public static TypeSymbol resolveType(
+  private static TypeSymbol resolveType(
       TypeSig signature,
       TypeSymbol[] methodTypeArgs,
       TypeSymbol[] typeTypeArgs,
