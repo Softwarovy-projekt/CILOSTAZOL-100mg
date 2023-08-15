@@ -26,9 +26,31 @@ public final class SymbolResolver {
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol UInt16 = null;
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Object = null;
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Void = null;
+  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol IntPtr = null;
+  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol UIntPtr = null;
 
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol String = null;
   @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Array = null;
+
+  public static NamedTypeSymbol getIntPtr(CILOSTAZOLContext ctx) {
+    if (IntPtr == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      IntPtr =
+          (NamedTypeSymbol)
+              resolveType("IntPtr", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
+    }
+    return IntPtr;
+  }
+
+  public static NamedTypeSymbol getUIntPtr(CILOSTAZOLContext ctx) {
+    if (UIntPtr == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      UIntPtr =
+          (NamedTypeSymbol)
+              resolveType("UIntPtr", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
+    }
+    return UIntPtr;
+  }
 
   public static NamedTypeSymbol getBoolean(CILOSTAZOLContext ctx) {
     if (Boolean == null) {
@@ -322,6 +344,8 @@ public final class SymbolResolver {
           resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
           1,
           module.getContext());
+      case TypeSig.ELEMENT_TYPE_U -> getIntPtr(module.getContext());
+      case TypeSig.ELEMENT_TYPE_I -> getUIntPtr(module.getContext());
       default -> null;
     };
   }

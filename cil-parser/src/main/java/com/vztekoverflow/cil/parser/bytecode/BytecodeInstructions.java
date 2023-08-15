@@ -208,7 +208,6 @@ public class BytecodeInstructions {
   public static final int STIND_I = 0xDF;
   public static final int CONV_U = 0xE0;
 
-  public static final int MAX = 0xE0;
   public static final int PREFIXED = 0xFE;
 
   public static final int CEQ = 0xFE01;
@@ -225,9 +224,11 @@ public class BytecodeInstructions {
   public static final int LDLOCA = 0xFE0D;
   public static final int STLOC = 0xFE0E;
   public static final int LOCALLOC = 0xFE0F;
+  public static final int ENDFILTER = 0xFE11;
   public static final int INITOBJ = 0xFE15;
   public static final int CPBLK = 0xFE17;
   public static final int INITBLK = 0xFE18;
+  public static final int RETHROW = 0xFE1A;
   public static final int SIZEOF = 0xFE1C;
   public static final int REFANYTYPE = 0xFE1D;
 
@@ -512,6 +513,13 @@ public class BytecodeInstructions {
     def(MKREFANY, "mkrefany", "otttt", 0);
     defPrefixed(REFANYVAL, "refanyval", "otttt", 0);
     defPrefixed(REFANYTYPE, "refanytype", "o", 0);
+
+    def(THROW, "throw", "o", 0);
+    defPrefixed(RETHROW, "rethrow", "o", 0);
+    defPrefixed(ENDFILTER, "endfilter", "o", 0);
+    def(ENDFINALLY, "endfinally", "o", 0);
+    def(LEAVE, "leave", "oiiii", 0);
+    def(LEAVE_S, "leave.s", "oi", 0);
 
     def(TRUFFLE_NODE, "truffle.node", "oiiii", 0);
   }

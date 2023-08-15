@@ -149,7 +149,7 @@ public class CastingTests extends TestBase {
                     return b == null ? 42 : 0;
                     """);
     } catch (PolyglotException e) {
-      assertTrue(e.getMessage().contains("InvalidCastException"));
+      assertTrue(e.getMessage().contains("RuntimeCILException"));
       return;
     }
 

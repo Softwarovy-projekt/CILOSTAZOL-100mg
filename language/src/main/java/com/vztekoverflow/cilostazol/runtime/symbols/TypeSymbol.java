@@ -95,7 +95,7 @@ public abstract class TypeSymbol extends Symbol {
    */
   public boolean checkOrdinaryClassSubclassing(TypeSymbol other) {
     int depth = getHierarchyDepth();
-    return other.getHierarchyDepth() >= depth && other.getSuperClasses()[depth] == this;
+    return other.getHierarchyDepth() > depth && other.getSuperClasses()[depth] == this;
   }
 
   /**
@@ -179,6 +179,8 @@ public abstract class TypeSymbol extends Symbol {
             module);
         case TypeSig.ELEMENT_TYPE_SZARRAY -> ArrayTypeSymbolFactory.create(
             create(typeSig.getInnerType(), mvars, vars, module), module);
+        case TypeSig.ELEMENT_TYPE_U -> SymbolResolver.getIntPtr(module.getContext());
+        case TypeSig.ELEMENT_TYPE_I -> SymbolResolver.getUIntPtr(module.getContext());
         default -> null;
       };
     }

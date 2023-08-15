@@ -418,6 +418,7 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack, Object);
         break;
       case THROW:
+      case RETHROW:
         clear(stack, topStack);
         break;
       case LDFLD:
@@ -547,6 +548,7 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack, ManagedPointer); // typed reference is a managed pointer:
         // https://dotnet.github.io/dotNext/features/core/ref.html
         break;
+      case ENDFILTER:
       case ENDFAULT:
         // case ENDFINALLY: same opcode as ENDFAULT
       case LEAVE_S:
