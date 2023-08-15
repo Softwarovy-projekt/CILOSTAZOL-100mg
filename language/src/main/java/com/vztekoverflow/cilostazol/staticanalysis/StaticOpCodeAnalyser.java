@@ -424,7 +424,8 @@ public class StaticOpCodeAnalyser {
         {
           var fieldPtr = bytecodeBuffer.getImmToken(pc);
           var field =
-              SymbolResolver.resolveFieldFrom(fieldPtr, (NamedTypeSymbol) parameters[0], module)
+              SymbolResolver.resolveField(
+                      fieldPtr, ((NamedTypeSymbol) parameters[0]).getTypeArguments(), module)
                   .member;
           replace(stack, topStack, field.getType().getStackTypeKind());
           break;
@@ -432,9 +433,7 @@ public class StaticOpCodeAnalyser {
       case LDSFLD:
         {
           var fieldPtr = bytecodeBuffer.getImmToken(pc);
-          var field =
-              SymbolResolver.resolveFieldFrom(fieldPtr, (NamedTypeSymbol) parameters[0], module)
-                  .member;
+          var field = SymbolResolver.resolveField(fieldPtr, module).member;
           push(stack, topStack, field.getType().getStackTypeKind());
           break;
         }

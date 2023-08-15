@@ -311,6 +311,8 @@ public final class SymbolResolver {
               shapeSig.rank(),
               module.getContext());
         else
+          // TODO: maybe throw NotImplemented exception as non-vector arrays are not supported
+          // Partition IV 4.1.2
           yield ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
               resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
               shapeSig,
@@ -376,56 +378,17 @@ public final class SymbolResolver {
     };
   }
 
-  public static ClassMember<FieldSymbol> resolveFieldFrom(
-      CLITablePtr ptr, NamedTypeSymbol object, ModuleSymbol module) {
+  public static ClassMember<FieldSymbol> resolveField(
+      CLITablePtr ptr, TypeSymbol[] typeTypeArgs, ModuleSymbol module) {
     return switch (ptr.getTableId()) {
-      case CLITableConstants.CLI_TABLE_FIELD -> resolveFieldFrom(
-          module.getDefiningFile().getTableHeads().getFieldTableHead().skip(ptr), object, module);
-      case CLITableConstants.CLI_TABLE_MEMBER_REF -> resolveFieldFrom(
+      case CLITableConstants.CLI_TABLE_FIELD -> resolveField(
+          module.getDefiningFile().getTableHeads().getFieldTableHead().skip(ptr), module);
+      case CLITableConstants.CLI_TABLE_MEMBER_REF -> resolveField(
           module.getDefiningFile().getTableHeads().getMemberRefTableHead().skip(ptr),
-          object,
+          typeTypeArgs,
           module);
       default -> throw new CILParserException();
     };
-  }
-
-  public static ClassMember<FieldSymbol> resolveFieldFrom(
-      CLIFieldTableRow row, NamedTypeSymbol object, ModuleSymbol module) {
-    var idx = module.getLocalField(row);
-    return new ClassMember<>(object, object.getFields()[idx.getIndex()]);
-  }
-
-  public static ClassMember<FieldSymbol> resolveFieldFrom(
-      CLIMemberRefTableRow row, NamedTypeSymbol object, ModuleSymbol module) {
-    var name = row.getNameHeapPtr().read(module.getDefiningFile().getStringHeap());
-    var type =
-        (NamedTypeSymbol)
-            resolveType(
-                row.getKlassTablePtr(), new TypeSymbol[0], object.getTypeParameters(), module);
-    var sig =
-        FieldSig.parse(
-            new SignatureReader(
-                row.getSignatureHeapPtr().read(module.getDefiningFile().getBlobHeap())));
-    return resolveField(
-        type, name, resolveType(sig.getType(), new TypeSymbol[0], type.getTypeArguments(), module));
-  }
-
-  public static String resolveFieldName(CLITablePtr ptr, ModuleSymbol module) {
-    return switch (ptr.getTableId()) {
-      case CLITableConstants.CLI_TABLE_FIELD -> resolveFieldName(
-          module.getDefiningFile().getTableHeads().getFieldTableHead().skip(ptr), module);
-      case CLITableConstants.CLI_TABLE_MEMBER_REF -> resolveFieldName(
-          module.getDefiningFile().getTableHeads().getMemberRefTableHead().skip(ptr), module);
-      default -> throw new CILParserException();
-    };
-  }
-
-  public static String resolveFieldName(CLIFieldTableRow ptr, ModuleSymbol module) {
-    return ptr.getNameHeapPtr().read(module.getDefiningFile().getStringHeap());
-  }
-
-  public static String resolveFieldName(CLIMemberRefTableRow ptr, ModuleSymbol module) {
-    return ptr.getNameHeapPtr().read(module.getDefiningFile().getStringHeap());
   }
 
   public static ClassMember<FieldSymbol> resolveField(CLIFieldTableRow row, ModuleSymbol module) {
@@ -436,8 +399,15 @@ public final class SymbolResolver {
 
   public static ClassMember<FieldSymbol> resolveField(
       CLIMemberRefTableRow row, ModuleSymbol module) {
+    return resolveField(row, new TypeSymbol[0], module);
+  }
+
+  public static ClassMember<FieldSymbol> resolveField(
+      CLIMemberRefTableRow row, TypeSymbol[] typeTypeArgs, ModuleSymbol module) {
     var name = row.getNameHeapPtr().read(module.getDefiningFile().getStringHeap());
-    var type = (NamedTypeSymbol) resolveType(row.getKlassTablePtr(), module);
+    var type =
+        (NamedTypeSymbol)
+            resolveType(row.getKlassTablePtr(), new TypeSymbol[0], typeTypeArgs, module);
     var sig =
         FieldSig.parse(
             new SignatureReader(
@@ -557,13 +527,10 @@ public final class SymbolResolver {
       TypeSymbol[] parameterTypes,
       int genParams) {
     // Note: CSharp prohibits overloading on return type, so we can ignore return type
-    // TODO: resolving virtual methods
 
     var currentType = type;
     while (currentType != null) {
-      if (currentType.isArray()) {
-        // TOD0: Arrays
-      } else if (currentType instanceof NamedTypeSymbol n) {
+      if (currentType instanceof NamedTypeSymbol n) {
         for (MethodSymbol method : n.getMethods()) {
           if (isCompatible(method, methodName, parameterTypes, genParams))
             return new ClassMember<MethodSymbol>(n, method);
