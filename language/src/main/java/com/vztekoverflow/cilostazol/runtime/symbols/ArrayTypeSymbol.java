@@ -22,8 +22,7 @@ public final class ArrayTypeSymbol extends NamedTypeSymbol {
         rank,
         lengths,
         lowerBounds,
-        definingModule,
-        (NamedTypeSymbol)
+            (NamedTypeSymbol)
             SymbolResolver.resolveType(
                 "Array",
                 "System",
@@ -36,10 +35,9 @@ public final class ArrayTypeSymbol extends NamedTypeSymbol {
       int rank,
       int[] lengths,
       int[] lowerBounds,
-      ModuleSymbol definingModule,
       NamedTypeSymbol arrayType) {
     super(
-        definingModule,
+        arrayType.definingModule,
         1056897,
         "Array",
         "System",
