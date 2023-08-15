@@ -55,8 +55,10 @@ public class CILOSTAZOLContext {
   @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceInnerRefProperty;
   @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceTypeTokenProperty;
   @CompilerDirectives.CompilationFinal private StaticProperty arrayProperty;
+
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> arrayShape;
+
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> stackReferenceShape;
 
