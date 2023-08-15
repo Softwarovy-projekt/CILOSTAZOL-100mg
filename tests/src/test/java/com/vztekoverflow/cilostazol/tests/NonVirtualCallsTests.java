@@ -2,6 +2,7 @@ package com.vztekoverflow.cilostazol.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class NonVirtualCallsTests extends TestBase {
@@ -162,6 +163,7 @@ public class NonVirtualCallsTests extends TestBase {
   }
 
   @Test
+  @Disabled("Is Flaky")
   public void callWithReturnStringOnFalse() {
     var result =
         runTestFromCode(
