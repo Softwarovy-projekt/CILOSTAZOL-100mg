@@ -5,6 +5,7 @@ import com.vztekoverflow.cil.parser.cli.signature.SignatureReader;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIFieldTableRow;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
 public final class FieldSymbol extends Symbol {
 
@@ -83,8 +84,7 @@ public final class FieldSymbol extends Symbol {
       final var signature = row.getSignatureHeapPtr().read(module.getDefiningFile().getBlobHeap());
 
       final FieldSig fieldSig = FieldSig.parse(new SignatureReader(signature));
-      final TypeSymbol type =
-          TypeSymbol.TypeSymbolFactory.create(fieldSig.getType(), mvars, vars, module);
+      final TypeSymbol type = SymbolResolver.resolveType(fieldSig.getType(), mvars, vars, module);
       short flags = row.getFlags();
       short visibilityFlags = (short) (row.getFlags() & 0x0007);
 

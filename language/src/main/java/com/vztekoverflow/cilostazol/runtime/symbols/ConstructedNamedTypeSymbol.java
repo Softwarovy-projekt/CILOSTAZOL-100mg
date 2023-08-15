@@ -2,6 +2,8 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   private final NamedTypeSymbol constructedFrom;
@@ -85,7 +87,7 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
     if (lazyVMethodTable == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyVMethodTable =
-          Arrays.stream(constructedFrom.getMethods())
+          Arrays.stream(constructedFrom.getVMT())
               .map(
                   x ->
                       SubstitutedMethodSymbol.SubstitutedMethodSymbolFactory.create(
@@ -97,16 +99,19 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   }
 
   @Override
-  public MethodSymbol[] getMethodsImpl() {
+  public Map<MethodSymbol, MethodSymbol> getMethodsImpl() {
     if (lazyMethodImpl == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       lazyMethodImpl =
-          Arrays.stream(constructedFrom.getMethods())
-              .map(
-                  x ->
-                      SubstitutedMethodSymbol.SubstitutedMethodSymbolFactory.create(
-                          x.getDefinition(), x, this))
-              .toArray(MethodSymbol[]::new);
+          constructedFrom.getMethodsImpl().entrySet().stream()
+              .collect(
+                  Collectors.toMap(
+                      x ->
+                          SubstitutedMethodSymbol.SubstitutedMethodSymbolFactory.create(
+                              x.getKey().getDefinition(), x.getKey(), this),
+                      x ->
+                          SubstitutedMethodSymbol.SubstitutedMethodSymbolFactory.create(
+                              x.getValue().getDefinition(), x.getValue(), this)));
     }
 
     return lazyMethodImpl;

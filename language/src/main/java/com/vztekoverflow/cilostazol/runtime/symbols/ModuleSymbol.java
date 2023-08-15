@@ -13,6 +13,7 @@ import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeDefTableRow;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
 import com.vztekoverflow.cilostazol.runtime.other.FieldIndex;
 import com.vztekoverflow.cilostazol.runtime.other.MethodIndex;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
 public final class ModuleSymbol extends Symbol {
   private final CLIFile definingFile;
@@ -55,7 +56,7 @@ public final class ModuleSymbol extends Symbol {
       var rowNamespace = row.getTypeNamespaceHeapPtr().read(definingFile.getStringHeap());
 
       if (rowName.equals(name) && rowNamespace.equals(namespace)) {
-        return NamedTypeSymbol.NamedTypeSymbolFactory.create(row, this);
+        return (NamedTypeSymbol) SymbolResolver.resolveType(row, this);
       }
     }
 

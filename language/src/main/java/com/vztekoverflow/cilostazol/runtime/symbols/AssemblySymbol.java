@@ -28,6 +28,7 @@ public final class AssemblySymbol extends Symbol {
     return modules;
   }
 
+  // region type resolving
   public NamedTypeSymbol getLocalType(String name, String namespace) {
     for (ModuleSymbol module : getModules()) {
       final NamedTypeSymbol type = module.getLocalType(name, namespace);
@@ -45,6 +46,7 @@ public final class AssemblySymbol extends Symbol {
 
     return null;
   }
+  // endregion
 
   public AssemblyIdentity getIdentity() {
     return definingFile.getAssemblyIdentity();

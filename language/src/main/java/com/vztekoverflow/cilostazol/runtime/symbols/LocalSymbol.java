@@ -3,11 +3,12 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 import com.vztekoverflow.cil.parser.cli.signature.LocalVarSig;
 import com.vztekoverflow.cil.parser.cli.signature.LocalVarsSig;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
 public final class LocalSymbol extends Symbol {
-  private boolean pinned;
-  private boolean byRef;
-  private TypeSymbol type;
+  private final boolean pinned;
+  private final boolean byRef;
+  private final TypeSymbol type;
 
   private LocalSymbol(boolean pinned, boolean byRef, TypeSymbol type) {
     super(ContextProviderImpl.getInstance());
@@ -34,7 +35,7 @@ public final class LocalSymbol extends Symbol {
       return new LocalSymbol(
           sig.isByRef(),
           sig.isPinned(),
-          TypeSymbol.TypeSymbolFactory.create(sig.getTypeSig(), mvars, vars, module));
+          SymbolResolver.resolveType(sig.getTypeSig(), mvars, vars, module));
     }
 
     public static LocalSymbol[] create(

@@ -6,17 +6,9 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
-import com.vztekoverflow.cil.parser.cli.signature.SignatureReader;
-import com.vztekoverflow.cil.parser.cli.signature.TypeSig;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.generated.CLITableConstants;
-import com.vztekoverflow.cil.parser.cli.table.generated.CLITypeSpecTableRow;
-import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
-import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
-import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import java.util.Arrays;
 
 public abstract class TypeSymbol extends Symbol {
@@ -117,14 +109,8 @@ public abstract class TypeSymbol extends Symbol {
   }
 
   public abstract boolean isInterface();
-  //  {
-  //    return false;
-  //  }
 
   public abstract boolean isArray();
-  //  {
-  //    return false;
-  //  }
 
   public boolean isCovariantTo(TypeSymbol other) {
     return this.equals(other) || Arrays.asList(getSuperClasses()).contains(other);
@@ -140,73 +126,5 @@ public abstract class TypeSymbol extends Symbol {
 
   public CILOSTAZOLFrame.StackType getStackTypeKind() {
     return stackTypeKind;
-  }
-
-  public static final class TypeSymbolFactory {
-    public static TypeSymbol create(
-        TypeSig typeSig, TypeSymbol[] mvars, TypeSymbol[] vars, ModuleSymbol module) {
-      return switch (typeSig.getElementType()) {
-        case TypeSig.ELEMENT_TYPE_CLASS, TypeSig.ELEMENT_TYPE_VALUETYPE -> create(
-            typeSig.getCliTablePtr(), mvars, vars, module);
-        case TypeSig.ELEMENT_TYPE_VAR -> vars[typeSig.getIndex()];
-        case TypeSig.ELEMENT_TYPE_MVAR -> mvars[typeSig.getIndex()];
-        case TypeSig.ELEMENT_TYPE_GENERICINST -> {
-          var genType = (NamedTypeSymbol) create(typeSig.getCliTablePtr(), mvars, vars, module);
-          TypeSymbol[] typeArgs = new TypeSymbol[typeSig.getTypeArgs().length];
-          for (int i = 0; i < typeArgs.length; i++) {
-            typeArgs[i] = create(typeSig.getTypeArgs()[i], mvars, vars, module);
-          }
-          yield genType.construct(typeArgs);
-        }
-        case TypeSig.ELEMENT_TYPE_I4 -> SymbolResolver.getInt32(module.getContext());
-        case TypeSig.ELEMENT_TYPE_I8 -> SymbolResolver.getInt64(module.getContext());
-        case TypeSig.ELEMENT_TYPE_I2 -> SymbolResolver.getInt16(module.getContext());
-        case TypeSig.ELEMENT_TYPE_I1 -> SymbolResolver.getSByte(module.getContext());
-        case TypeSig.ELEMENT_TYPE_U4 -> SymbolResolver.getUInt32(module.getContext());
-        case TypeSig.ELEMENT_TYPE_U8 -> SymbolResolver.getUInt64(module.getContext());
-        case TypeSig.ELEMENT_TYPE_U2 -> SymbolResolver.getUInt16(module.getContext());
-        case TypeSig.ELEMENT_TYPE_U1 -> SymbolResolver.getByte(module.getContext());
-        case TypeSig.ELEMENT_TYPE_R4 -> SymbolResolver.getSingle(module.getContext());
-        case TypeSig.ELEMENT_TYPE_R8 -> SymbolResolver.getDouble(module.getContext());
-        case TypeSig.ELEMENT_TYPE_BOOLEAN -> SymbolResolver.getBoolean(module.getContext());
-        case TypeSig.ELEMENT_TYPE_CHAR -> SymbolResolver.getChar(module.getContext());
-        case TypeSig.ELEMENT_TYPE_OBJECT, TypeSig.ELEMENT_TYPE_STRING -> SymbolResolver.getObject(
-            module.getContext());
-        case TypeSig.ELEMENT_TYPE_VOID -> SymbolResolver.getVoid(module.getContext());
-        case TypeSig.ELEMENT_TYPE_ARRAY -> ArrayTypeSymbolFactory.create(
-            create(typeSig.getInnerType(), mvars, vars, module),
-            typeSig.getArrayShapeSig(),
-            module);
-        case TypeSig.ELEMENT_TYPE_SZARRAY -> ArrayTypeSymbolFactory.create(
-            create(typeSig.getInnerType(), mvars, vars, module), module);
-        default -> null;
-      };
-    }
-
-    public static TypeSymbol create(
-        CLITablePtr ptr, TypeSymbol[] mvars, TypeSymbol[] vars, ModuleSymbol module) {
-      return switch (ptr.getTableId()) {
-        case CLITableConstants.CLI_TABLE_TYPE_DEF -> NamedTypeSymbol.NamedTypeSymbolFactory.create(
-            module.getDefiningFile().getTableHeads().getTypeDefTableHead().skip(ptr), module);
-        case CLITableConstants.CLI_TABLE_TYPE_REF -> NamedTypeSymbol.NamedTypeSymbolFactory.create(
-            module.getDefiningFile().getTableHeads().getTypeRefTableHead().skip(ptr), module);
-        case CLITableConstants.CLI_TABLE_TYPE_SPEC -> create(
-            module.getDefiningFile().getTableHeads().getTypeSpecTableHead().skip(ptr),
-            mvars,
-            vars,
-            module);
-        default -> throw new TypeSystemException(
-            CILOSTAZOLBundle.message("cilostazol.exception.constructor.withoutDefType"));
-      };
-    }
-
-    public static TypeSymbol create(
-        CLITypeSpecTableRow row, TypeSymbol[] mvars, TypeSymbol[] vars, ModuleSymbol module) {
-      TypeSig signature =
-          TypeSig.read(
-              new SignatureReader(
-                  row.getSignatureHeapPtr().read(module.getDefiningFile().getBlobHeap())));
-      return TypeSymbol.TypeSymbolFactory.create(signature, mvars, vars, module);
-    }
   }
 }

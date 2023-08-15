@@ -3,6 +3,7 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 import com.vztekoverflow.cil.parser.ByteSequenceBuffer;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
 public final class ExceptionHandlerSymbol extends Symbol {
   private final int tryOffset;
@@ -97,7 +98,7 @@ public final class ExceptionHandlerSymbol extends Symbol {
         }
         final TypeSymbol klass =
             (flags.hasFlag(ExceptionClauseFlags.Flag.COR_ILEXCEPTION_CLAUSE_EXCEPTION))
-                ? TypeSymbol.TypeSymbolFactory.create(
+                ? SymbolResolver.resolveType(
                     CLITablePtr.fromToken(classTokenOrFilterOffset), mvars, vars, module)
                 : null;
         handlers[i] =

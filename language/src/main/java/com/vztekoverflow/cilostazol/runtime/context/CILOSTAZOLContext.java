@@ -48,21 +48,18 @@ public class CILOSTAZOLContext {
 
   private final AppDomain appDomain;
 
+  // region shapes
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> typedReferenceShape;
 
   @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceInnerRefProperty;
   @CompilerDirectives.CompilationFinal private StaticProperty typedReferenceTypeTokenProperty;
-  // region SOM
   @CompilerDirectives.CompilationFinal private StaticProperty arrayProperty;
-
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> arrayShape;
-
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> stackReferenceShape;
 
-  // region Symbols
   @CompilerDirectives.CompilationFinal private StaticProperty stackReferenceFrameProperty;
   @CompilerDirectives.CompilationFinal private StaticProperty stackReferenceIndexProperty;
   private StaticShape<StaticObject.StaticObjectFactory> fieldReferenceShape;
@@ -73,8 +70,28 @@ public class CILOSTAZOLContext {
   private StaticShape<StaticObject.StaticObjectFactory> arrayElementReferenceShape;
 
   @CompilerDirectives.CompilationFinal private StaticProperty arrayElementReferenceArrayProperty;
-  // endregion
   @CompilerDirectives.CompilationFinal private StaticProperty arrayElementReferenceIndexProperty;
+  // endregion
+
+  // region symbols
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Boolean = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Byte = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol SByte = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Char = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Double = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Single = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Int32 = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol UInt32 = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Int64 = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol UInt64 = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Int16 = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol UInt16 = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Object = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Void = null;
+
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol String = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol Array = null;
+  // endregion
 
   public CILOSTAZOLContext(CILOSTAZOLLanguage lang, TruffleLanguage.Env env) {
     language = lang;
@@ -131,6 +148,7 @@ public class CILOSTAZOLContext {
     return env;
   }
 
+  // region symbol resolution
   public ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank) {
     var cacheKey = new ArrayCacheKey(elemType, rank);
 
@@ -199,6 +217,16 @@ public class CILOSTAZOLContext {
     return assemblySymbol;
   }
 
+  public ReferenceSymbol resolveReference(ReferenceSymbol.ReferenceType type) {
+    return switch (type) {
+      case Local -> localReference;
+      case Argument -> argumentReference;
+      case Field -> fieldReference;
+      case ArrayElement -> arrayElementReference;
+      case Typed -> typedReference;
+    };
+  }
+
   public AssemblySymbol findAssembly(AssemblyIdentity assemblyIdentity) {
     // Loading assemblies is an expensive task which should be never compiled
     CompilerAsserts.neverPartOfCompilation();
@@ -235,6 +263,136 @@ public class CILOSTAZOLContext {
     return result;
   }
 
+  public NamedTypeSymbol getBoolean() {
+    if (Boolean == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Boolean = resolveType("Boolean", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Boolean;
+  }
+
+  public NamedTypeSymbol getByte() {
+    if (Byte == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Byte = resolveType("Byte", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Byte;
+  }
+
+  public NamedTypeSymbol getSByte() {
+    if (SByte == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      SByte = resolveType("SByte", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return SByte;
+  }
+
+  public NamedTypeSymbol getChar() {
+    if (Char == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Char = resolveType("Char", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Char;
+  }
+
+  public NamedTypeSymbol getDouble() {
+    if (Double == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Double = resolveType("Double", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Double;
+  }
+
+  public NamedTypeSymbol getSingle() {
+    if (Single == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Single = resolveType("Single", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Single;
+  }
+
+  public NamedTypeSymbol getInt32() {
+    if (Int32 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Int32 = resolveType("Int32", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Int32;
+  }
+
+  public NamedTypeSymbol getUInt32() {
+    if (UInt32 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      UInt32 = resolveType("UInt32", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return UInt32;
+  }
+
+  public NamedTypeSymbol getInt64() {
+    if (Int64 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Int64 = resolveType("Int64", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Int64;
+  }
+
+  public NamedTypeSymbol getUInt64() {
+    if (UInt64 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      UInt64 = resolveType("UInt64", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return UInt64;
+  }
+
+  public NamedTypeSymbol getInt16() {
+    if (Int16 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Int16 = resolveType("Int16", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Int16;
+  }
+
+  public NamedTypeSymbol getUInt16() {
+    if (UInt16 == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      UInt16 = resolveType("UInt16", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return UInt16;
+  }
+
+  public NamedTypeSymbol getObject() {
+    if (Object == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Object = resolveType("Object", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Object;
+  }
+
+  public NamedTypeSymbol getVoid() {
+    if (Void == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Void = resolveType("Void", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Void;
+  }
+
+  public NamedTypeSymbol getString() {
+    if (String == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      String = resolveType("String", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return String;
+  }
+
+  public NamedTypeSymbol getArray() {
+    if (Array == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      Array = resolveType("String", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return Array;
+  }
+  // endregion
+
+  // region shapes
   public StaticProperty getArrayProperty() {
     if (arrayProperty == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -252,16 +410,6 @@ public class CILOSTAZOLContext {
               .build(StaticObject.class, StaticObject.StaticObjectFactory.class);
     }
     return arrayShape;
-  }
-
-  public ReferenceSymbol resolveReference(ReferenceSymbol.ReferenceType type) {
-    return switch (type) {
-      case Local -> localReference;
-      case Argument -> argumentReference;
-      case Field -> fieldReference;
-      case ArrayElement -> arrayElementReference;
-      case Typed -> typedReference;
-    };
   }
 
   public StaticShape<StaticObject.StaticObjectFactory> getStackReferenceShape() {
