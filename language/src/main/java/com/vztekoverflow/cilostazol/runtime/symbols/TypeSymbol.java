@@ -87,7 +87,7 @@ public abstract class TypeSymbol extends Symbol {
    */
   public boolean checkOrdinaryClassSubclassing(TypeSymbol other) {
     int depth = getHierarchyDepth();
-    return other.getHierarchyDepth() >= depth && other.getSuperClasses()[depth] == this;
+    return other.getHierarchyDepth() > depth && other.getSuperClasses()[depth] == this;
   }
 
   /**
