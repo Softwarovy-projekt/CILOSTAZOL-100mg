@@ -684,46 +684,47 @@ public class VirtualCallsTests extends TestBase {
   @Test
   public void OverwrittenInheritedMethodFromInterfaceCall() {
     var result =
-            runTestFromCode("""
-                using System;
-                namespace CallsTests;
+        runTestFromCode(
+            """
+                            using System;
+                            namespace CallsTests;
 
-                public class Program
-                {
-                    public static int Main()
-                    {
-                        IA a = getB(); 
-                        return a.Foo();
-                    }
-                    
-                    public static IA getB() {
-                        return new B();
-                    }
-                }
+                            public class Program
+                            {
+                                public static int Main()
+                                {
+                                    IA a = getB();
+                                    return a.Foo();
+                                }
 
-                public interface IA
-                {
-                    public int Foo();
-                }
+                                public static IA getB() {
+                                    return new B();
+                                }
+                            }
 
-                public class A : IA
-                {
-                    public int Foo()
-                    {
-                        Console.Write("A.Foo");
-                        return 42;
-                    }
-                }
-                
-                public class B : A
-                {
-                    public int Foo()
-                    {
-                        Console.Write("B.Foo");
-                        return 52;
-                    }
-                }
-        """);
+                            public interface IA
+                            {
+                                public int Foo();
+                            }
+
+                            public class A : IA
+                            {
+                                public int Foo()
+                                {
+                                    Console.Write("A.Foo");
+                                    return 42;
+                                }
+                            }
+
+                            public class B : A
+                            {
+                                public int Foo()
+                                {
+                                    Console.Write("B.Foo");
+                                    return 52;
+                                }
+                            }
+                    """);
     assertEquals(52, result.exitCode());
     assertEquals("B.Foo", result.output());
   }

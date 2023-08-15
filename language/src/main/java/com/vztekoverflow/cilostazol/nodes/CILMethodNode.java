@@ -253,8 +253,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
             // Loading fields
           case LDFLD:
-            loadInstanceField(
-                frame, topStack, bytecodeBuffer.getImmToken(pc));
+            loadInstanceField(frame, topStack, bytecodeBuffer.getImmToken(pc));
             break;
           case LDSFLD:
             loadStaticField(frame, topStack, bytecodeBuffer.getImmToken(pc));

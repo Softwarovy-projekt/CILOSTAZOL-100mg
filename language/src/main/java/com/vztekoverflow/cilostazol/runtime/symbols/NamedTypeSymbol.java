@@ -179,13 +179,14 @@ public class NamedTypeSymbol extends TypeSymbol {
   public MethodSymbol[] getMethods() {
     if (lazyMethods == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      lazyMethods = LazyFactory.createMethods(
-                this,
-                definingModule
-                    .getDefiningFile()
-                    .getTableHeads()
-                    .getTypeDefTableHead()
-                    .skip(definingRow));
+      lazyMethods =
+          LazyFactory.createMethods(
+              this,
+              definingModule
+                  .getDefiningFile()
+                  .getTableHeads()
+                  .getTypeDefTableHead()
+                  .skip(definingRow));
     }
 
     return lazyMethods;

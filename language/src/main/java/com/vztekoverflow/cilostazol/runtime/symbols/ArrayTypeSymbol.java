@@ -22,7 +22,7 @@ public final class ArrayTypeSymbol extends NamedTypeSymbol {
         rank,
         lengths,
         lowerBounds,
-            (NamedTypeSymbol)
+        (NamedTypeSymbol)
             SymbolResolver.resolveType(
                 "Array",
                 "System",
