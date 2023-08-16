@@ -76,6 +76,7 @@ public final class SymbolResolver {
   public static NamedTypeSymbol getArray(CILOSTAZOLContext ctx) {
     return ctx.getArray();
   }
+
   public static NamedTypeSymbol getIntPtr(CILOSTAZOLContext ctx) {
     return ctx.getIntPtr();
   }

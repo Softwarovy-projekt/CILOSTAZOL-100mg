@@ -971,8 +971,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     return !handler
             .getFlags()
             .hasFlag(
-                    ExceptionHandlerSymbol.ExceptionClauseFlags.Flag.COR_ILEXCEPTION_CLAUSE_EXCEPTION)
-            || handler.getHandlerException().isAssignableFrom(ex.getException().getTypeSymbol());
+                ExceptionHandlerSymbol.ExceptionClauseFlags.Flag.COR_ILEXCEPTION_CLAUSE_EXCEPTION)
+        || handler.getHandlerException().isAssignableFrom(ex.getException().getTypeSymbol());
   }
   // endregion
 
@@ -2577,8 +2577,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     boolean result = binaryCompare(opcode, frame, slot1, slot2, type);
     CILOSTAZOLFrame.putInt32(frame, slot1, result ? 1 : 0);
   }
-
-
 
   /**
    * Do a binary comparison of values on the evaluation stack and return the result as a boolean.
