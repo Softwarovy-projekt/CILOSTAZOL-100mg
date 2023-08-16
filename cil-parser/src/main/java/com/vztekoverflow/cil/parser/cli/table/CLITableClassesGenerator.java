@@ -301,7 +301,7 @@ public class CLITableClassesGenerator {
                     "\t\tif((isSmall && (codedValue & 0xffff) == 0xffff) || (!isSmall && (codedValue & 0xffffffff) == 0xffffffff)) return null;"));
             writer.println(
                 String.format(
-                    "\t\treturn new CLITablePtr(MAP%s_TABLES[codedValue & %d], codedValue >> %d);",
+                    "\t\treturn new CLITablePtr(MAP%s_TABLES[codedValue & %d], (isSmall ? (0x0000ffff & codedValue) : codedValue) >>> %d);",
                     nameToConstName(fieldName), mask, shift));
           }
           writer.println("\t}\n");

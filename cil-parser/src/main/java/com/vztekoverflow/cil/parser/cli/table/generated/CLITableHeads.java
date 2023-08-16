@@ -44,6 +44,10 @@ public class CLITableHeads {
   private final CLIMethodSpecTableRow methodSpecTableHead;
   private final CLIGenericParamConstraintTableRow genericParamConstraintTableHead;
 
+  public static int getTableLength(CLITables tables, CLITableRow<?> row) {
+    return row.getLength() * tables.getTablesHeader().getRowCount(row.getTableId());
+  }
+
   public CLITableHeads(CLITables tables) {
     int cursor = 0;
     moduleTableHead = new CLIModuleTableRow(tables, cursor, 0);
@@ -122,10 +126,6 @@ public class CLITableHeads {
     cursor += getTableLength(tables, methodSpecTableHead);
     genericParamConstraintTableHead = new CLIGenericParamConstraintTableRow(tables, cursor, 0);
     cursor += getTableLength(tables, genericParamConstraintTableHead);
-  }
-
-  public static int getTableLength(CLITables tables, CLITableRow<?> row) {
-    return row.getLength() * tables.getTablesHeader().getRowCount(row.getTableId());
   }
 
   public CLIModuleTableRow getModuleTableHead() {

@@ -1,23 +1,17 @@
 package com.vztekoverflow.cil.parser.cli.table.generated;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITableRow;
-import com.vztekoverflow.cil.parser.cli.table.CLITables;
+import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLINestedKlassTableRow extends CLITableRow<CLINestedKlassTableRow> {
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_NESTED_KLASS_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF};
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private static final byte[] MAP_ENCLOSING_KLASS_TABLES =
       new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF};
 
-  public CLINestedKlassTableRow(CLITables tables, int cursor, int rowIndex) {
-    super(tables, cursor, rowIndex);
-  }
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_NESTED_KLASS_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF};
 
   public final CLITablePtr getNestedKlassTablePtr() {
     int offset = 0;
@@ -28,6 +22,10 @@ public class CLINestedKlassTableRow extends CLITableRow<CLINestedKlassTableRow> 
       rowNo = getInt(offset);
     }
     return new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, rowNo);
+  }
+
+  public CLINestedKlassTableRow(CLITables tables, int cursor, int rowIndex) {
+    super(tables, cursor, rowIndex);
   }
 
   public final CLITablePtr getEnclosingKlassTablePtr() {
