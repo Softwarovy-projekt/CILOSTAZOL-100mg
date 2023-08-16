@@ -6,9 +6,14 @@ import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
 import java.util.Arrays;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
+
   // just to make junit shut up about missing tests...
   public void test() {}
 
@@ -250,6 +255,109 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
     assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[49]);
     assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[54]);
     assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[59]);
+  }
+
+  @Test
+  public void SimpleTryCatch() {
+    /*
+    public int SimpleTryCatchWithThrow()
+    {
+        try
+        {
+            throw new Exception();
+        }
+        catch(Exception ex)
+        {
+            Console.Write("1");
+        }
+
+        return 42;
+    }
+    */
+    MethodSymbol method = getMethodSymbol("SimpleTryCatchWithThrow", "OthersTest");
+
+    var opCodeTypes = method.getOpCodeTypes();
+
+    assertEquals(25, opCodeTypes.length);
+    assertEquals(
+        3,
+        Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
+    assertEquals(
+        1,
+        Arrays.stream(opCodeTypes)
+            .filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Object)
+            .count());
+
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[3]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[15]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[20]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Object, opCodeTypes[11]);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getTryCatchClassNames")
+  public void TryCatch(String className, int[] intOpCodes, int[] objectOpCodes) {
+    MethodSymbol method = getMethodSymbol(className, "OthersTest");
+
+    var opCodeTypes = method.getOpCodeTypes();
+
+    System.out.println("----------------------------");
+    System.out.println(className);
+    for (int i = 0; i < opCodeTypes.length; i++) {
+      if (opCodeTypes[i] != null) System.out.println(i + " " + opCodeTypes[i]);
+    }
+
+    System.out.println("----------------------------");
+
+    assertEquals(
+        intOpCodes.length,
+        Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
+    assertEquals(
+        objectOpCodes.length,
+        Arrays.stream(opCodeTypes)
+            .filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Object)
+            .count());
+
+    for (int intOpCode : intOpCodes) {
+      assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[intOpCode]);
+    }
+    for (int objectOpCode : objectOpCodes) {
+      assertEquals(StaticOpCodeAnalyser.OpCodeType.Object, opCodeTypes[objectOpCode]);
+    }
+  }
+
+  public static Stream<Arguments> getTryCatchClassNames() {
+    /**
+     * first array is of int opcodes, second array is of object opcodes int opcodes are usually
+     * stores of int values, object opcodes are usually stores of exception objects, that's how we
+     * know it was analysed
+     */
+    return Stream.of(
+        Arguments.of("SimpleTryCatchWithThrow", new int[] {3, 15, 20}, new int[] {11}),
+        Arguments.of(
+            "SimpleTryCatchFinallyWithThrow", new int[] {3, 7, 18, 27, 31}, new int[] {14}),
+        Arguments.of("SimpleTryCatchWithoutThrow", new int[] {3, 7, 15, 20}, new int[] {11}),
+        Arguments.of(
+            "SimpleTryCatchFinallyWithoutThrow",
+            new int[] {3, 6, 10, 13, 21, 24, 33, 38, 39},
+            new int[] {17}),
+        Arguments.of("ReturnInCatch", new int[] {3, 8, 10, 12, 27, 31}, new int[] {23}),
+        Arguments.of("ReturnInTry", new int[] {3, 8, 10, 12, 16, 26, 31}, new int[] {22}),
+        Arguments.of("DoubleCatch", new int[] {3, 7, 15, 23, 28}, new int[] {11, 19}),
+        Arguments.of("NestedTry", new int[] {3, 6, 10, 14, 22, 28, 36, 42, 43}, new int[] {18, 32}),
+        Arguments.of(
+            "NestedTryDoubleCatch",
+            new int[] {3, 6, 10, 14, 22, 30, 36, 45, 51, 52},
+            new int[] {18, 26, 40}),
+        Arguments.of("Rethrow", new int[] {3, 6, 10, 22, 28, 29}, new int[] {14, 18}),
+        Arguments.of("OnlyThrow", new int[0], new int[0]),
+        Arguments.of("OnlyConditionalThrow", new int[] {3, 7, 9, 11, 21, 23}, new int[0]),
+        Arguments.of(
+            "NestedTryInCatchClause", new int[] {3, 6, 10, 19, 27, 33, 39, 41}, new int[] {14, 23}),
+        Arguments.of(
+            "NestedTryInCatchClauseWithThrow",
+            new int[] {3, 6, 10, 19, 30, 36, 42, 43},
+            new int[] {14, 26}));
   }
 
   private MethodSymbol getMethodSymbol(String methodName, String projectName) {
