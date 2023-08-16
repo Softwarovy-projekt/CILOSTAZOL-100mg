@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubstitutionTest", "TypePar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BranchOperationsTest", "StaticAnalysisTestTargets\BranchOperationsTest\BranchOperationsTest.csproj", "{C963214E-6CCC-4F05-834A-02E1A201DEA8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OthersTest", "StaticAnalysisTestTargets\OthersTest\OthersTest.csproj", "{40C7808D-8B81-442B-83B2-8190AAE8CD14}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,5 +98,9 @@ Global
 		{C963214E-6CCC-4F05-834A-02E1A201DEA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C963214E-6CCC-4F05-834A-02E1A201DEA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C963214E-6CCC-4F05-834A-02E1A201DEA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40C7808D-8B81-442B-83B2-8190AAE8CD14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40C7808D-8B81-442B-83B2-8190AAE8CD14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40C7808D-8B81-442B-83B2-8190AAE8CD14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40C7808D-8B81-442B-83B2-8190AAE8CD14}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
