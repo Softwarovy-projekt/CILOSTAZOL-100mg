@@ -19,6 +19,7 @@ import com.vztekoverflow.cil.parser.cli.table.CLIUSHeapPtr;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
+import com.vztekoverflow.cilostazol.exceptions.RuntimeCILException;
 import com.vztekoverflow.cilostazol.nodes.nodeized.*;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
@@ -68,6 +69,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     initializeFrame(frame);
     return execute(frame, 0, CILOSTAZOLFrame.getStartStackOffset(method));
   }
+  // endregion
 
   // region OSR
   @Override
@@ -106,6 +108,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     return targetBCI;
   }
 
+  // endregion
+
   private void initializeFrame(VirtualFrame frame) {
     // Init arguments
     Object[] args = frame.getArguments();
@@ -123,6 +127,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     CompilerAsserts.partialEvaluationConstant(startPc);
     int pc = startPc;
     int topStack = top;
+    RuntimeCILException currentEx = null;
 
     while (true) {
       int curOpcode = bytecodeBuffer.getOpcode(pc);
@@ -547,67 +552,165 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             break;
 
           case STELEM:
-            Array.set(
-                getMethod()
-                    .getContext()
-                    .getArrayProperty()
-                    .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                CILOSTAZOLFrame.popObject(frame, topStack - 1).clone());
+            try {
+              Array.set(
+                  getMethod()
+                      .getContext()
+                      .getArrayProperty()
+                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                  CILOSTAZOLFrame.popObject(frame, topStack - 1).clone());
+            } catch (NullPointerException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IllegalArgumentException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            }
             break;
           case STELEM_REF:
-            Array.set(
-                getMethod()
-                    .getContext()
-                    .getArrayProperty()
-                    .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                CILOSTAZOLFrame.popObject(frame, topStack - 1));
+            try {
+              Array.set(
+                  getMethod()
+                      .getContext()
+                      .getArrayProperty()
+                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                  CILOSTAZOLFrame.popObject(frame, topStack - 1));
+            } catch (NullPointerException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IllegalArgumentException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            }
             break;
           case STELEM_I, STELEM_I4:
-            Array.set(
-                getMethod()
-                    .getContext()
-                    .getArrayProperty()
-                    .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+            try {
+              Array.set(
+                  getMethod()
+                      .getContext()
+                      .getArrayProperty()
+                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                  CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+            } catch (NullPointerException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IllegalArgumentException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            }
             break;
           case STELEM_I1:
-            Array.set(
-                getMethod()
-                    .getContext()
-                    .getArrayProperty()
-                    .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                (byte) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+            try {
+              Array.set(
+                  getMethod()
+                      .getContext()
+                      .getArrayProperty()
+                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                  (byte) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+            } catch (NullPointerException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IllegalArgumentException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            }
             break;
           case STELEM_I8:
-            Array.set(
-                getMethod()
-                    .getContext()
-                    .getArrayProperty()
-                    .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                CILOSTAZOLFrame.popInt64(frame, topStack - 1));
+            try {
+              Array.set(
+                  getMethod()
+                      .getContext()
+                      .getArrayProperty()
+                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                  CILOSTAZOLFrame.popInt64(frame, topStack - 1));
+            } catch (NullPointerException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IllegalArgumentException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            }
             break;
           case STELEM_R4:
-            Array.set(
-                getMethod()
-                    .getContext()
-                    .getArrayProperty()
-                    .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                (float) CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+            try {
+              Array.set(
+                  getMethod()
+                      .getContext()
+                      .getArrayProperty()
+                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                  (float) CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+            } catch (NullPointerException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IllegalArgumentException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            }
             break;
           case STELEM_R8:
-            Array.set(
-                getMethod()
-                    .getContext()
-                    .getArrayProperty()
-                    .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+            try {
+              Array.set(
+                  getMethod()
+                      .getContext()
+                      .getArrayProperty()
+                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
+                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                  CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+            } catch (NullPointerException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IllegalArgumentException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            }
             break;
 
             // Conversion
@@ -736,6 +839,38 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             throw new InterpreterException(
                 "Unmanaged memory manipulation not implemented for opcode " + curOpcode);
 
+            // exceptions
+          case THROW:
+            var exObj = CILOSTAZOLFrame.popObject(frame, topStack - 1);
+            if (exObj.equals(StaticObject.NULL))
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(exObj);
+          case RETHROW:
+            throw currentEx;
+          case ENDFINALLY:
+            if (currentEx != null) throw currentEx;
+            break;
+          case LEAVE:
+            {
+              currentEx = null;
+              var fin = getNearestFinally(pc);
+              if (fin != null) nextpc = fin.getHandlerOffset();
+              else nextpc += bytecodeBuffer.getImmInt(pc);
+            }
+            break;
+          case LEAVE_S:
+            {
+              currentEx = null;
+              var fin = getNearestFinally(pc);
+              if (fin != null) pc = fin.getHandlerOffset();
+              else nextpc += bytecodeBuffer.getImmByte(pc);
+            }
+            break;
+
           case TRUFFLE_NODE:
             topStack = nodes[bytecodeBuffer.getImmInt(pc)].execute(frame);
             break;
@@ -749,9 +884,97 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         pc = nextpc;
       } catch (OSRReturnException e) {
         return e.getResultOrRethrow();
+      } catch (Exception ex) {
+        RuntimeCILException cilEx = null;
+        if (!(ex instanceof RuntimeCILException))
+          cilEx =
+              RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ExecutionEngine,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+        else cilEx = (RuntimeCILException) ex;
+
+        topStack += BytecodeInstructions.getStackEffect(curOpcode);
+        CILOSTAZOLFrame.clearEvaluationStack(frame, topStack - 1, getMethod());
+        topStack = CILOSTAZOLFrame.getStartStackOffset(getMethod());
+        ExceptionHandlerSymbol handler = getNearestHandler(pc, cilEx);
+        if (handler == null) {
+          throw cilEx;
+        } else {
+          if (handler
+              .getFlags()
+              .hasFlag(
+                  ExceptionHandlerSymbol.ExceptionClauseFlags.Flag
+                      .COR_ILEXCEPTION_CLAUSE_EXCEPTION)) {
+            CILOSTAZOLFrame.putObject(frame, topStack, cilEx.getException());
+            currentEx = cilEx;
+            pc = handler.getHandlerOffset();
+          } else if (handler
+              .getFlags()
+              .hasFlag(
+                  ExceptionHandlerSymbol.ExceptionClauseFlags.Flag
+                      .COR_ILEXCEPTION_CLAUSE_FINALLY)) {
+            currentEx = cilEx;
+            pc = handler.getHandlerOffset();
+          } else {
+            throw new InterpreterException();
+          }
+        }
       }
     }
   }
+
+  // region exception
+  private ExceptionHandlerSymbol getNearestHandler(int pc, RuntimeCILException ex) {
+    var handlers = getMethod().getExceptionHandlers();
+    for (var handler : handlers) {
+      if (isSatisfied(handler, ex, pc)) {
+        return handler;
+      }
+    }
+
+    return null;
+  }
+
+  private ExceptionHandlerSymbol getNearestFinally(int pc) {
+    var handlers = getMethod().getExceptionHandlers();
+    for (var handler : handlers) {
+      if (handler.getTryOffset() <= pc
+          && handler.getTryOffset() + handler.getTryLength() > pc
+          && handler
+              .getFlags()
+              .hasFlag(
+                  ExceptionHandlerSymbol.ExceptionClauseFlags.Flag
+                      .COR_ILEXCEPTION_CLAUSE_FINALLY)) {
+        return handler;
+      }
+    }
+
+    return null;
+  }
+
+  private boolean isSatisfied(ExceptionHandlerSymbol handler, RuntimeCILException ex, int pc) {
+    if (handler.getTryOffset() > pc || handler.getTryOffset() + handler.getTryLength() <= pc) {
+      return false;
+    }
+
+    if (handler
+            .getFlags()
+            .hasFlag(ExceptionHandlerSymbol.ExceptionClauseFlags.Flag.COR_ILEXCEPTION_CLAUSE_FAULT)
+        || handler
+            .getFlags()
+            .hasFlag(
+                ExceptionHandlerSymbol.ExceptionClauseFlags.Flag.COR_ILEXCEPTION_CLAUSE_FILTER))
+      throw new InterpreterException();
+
+    return !handler
+            .getFlags()
+            .hasFlag(
+                ExceptionHandlerSymbol.ExceptionClauseFlags.Flag.COR_ILEXCEPTION_CLAUSE_EXCEPTION)
+        || handler.getHandlerException().isAssignableFrom(ex.getException().getTypeSymbol());
+  }
+  // endregion
 
   @CompilerDirectives.TruffleBoundary
   private void LogUnsupportedOpcode(int curOpcode) {
@@ -760,62 +983,135 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   // region arithmetics
-  private int doNumericBinary(int op1, int op2, int opcode, boolean ovfCheck, boolean unsigned) {
+  private int doNumericBinary(
+      int op1,
+      int op2,
+      int opcode,
+      boolean ovfCheck,
+      boolean unsigned,
+      VirtualFrame frame,
+      int tp) {
     return switch (opcode) {
       case ADD:
-        if (ovfCheck) yield Math.addExact(op1, op2);
-        else yield op1 + op2;
+        if (ovfCheck) {
+          try {
+            yield Math.addExact(op1, op2);
+          } catch (Exception ex) {
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+          }
+        } else yield op1 + op2;
       case SUB:
         yield op1 - op2;
       case MUL:
-        if (ovfCheck) yield Math.multiplyExact(op1, op2);
-        else yield op1 * op2;
+        if (ovfCheck) {
+          try {
+            yield Math.multiplyExact(op1, op2);
+          } catch (Exception ex) {
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+          }
+        } else yield op1 * op2;
       case DIV:
-        if (unsigned) yield Integer.divideUnsigned(op1, op2);
-        else yield op1 / op2;
+        try {
+          if (unsigned) yield Integer.divideUnsigned(op1, op2);
+          else yield op1 / op2;
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
       case REM:
-        if (unsigned) yield Integer.remainderUnsigned(op1, op2);
-        else yield op1 % op2;
+        try {
+          if (unsigned) yield Integer.remainderUnsigned(op1, op2);
+          else yield op1 % op2;
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
       default:
         throw new InterpreterException();
     };
   }
 
-  private long doNumericBinary(long op1, long op2, int opcode, boolean ovfCheck, boolean unsigned) {
+  private long doNumericBinary(
+      long op1,
+      long op2,
+      int opcode,
+      boolean ovfCheck,
+      boolean unsigned,
+      VirtualFrame frame,
+      int tp) {
     return switch (opcode) {
       case ADD:
-        if (ovfCheck) yield Math.addExact(op1, op2);
-        else yield op1 + op2;
+        if (ovfCheck) {
+          try {
+            yield Math.addExact(op1, op2);
+          } catch (Exception ex) {
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+          }
+        } else yield op1 + op2;
       case SUB:
         yield op1 - op2;
       case MUL:
-        if (ovfCheck) yield Math.multiplyExact(op1, op2);
-        else yield op1 * op2;
+        if (ovfCheck) {
+          try {
+            yield Math.multiplyExact(op1, op2);
+          } catch (Exception ex) {
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+          }
+        } else yield op1 * op2;
       case DIV:
-        if (unsigned) yield Long.divideUnsigned(op1, op2);
-        else yield op1 / op2;
+        try {
+          if (unsigned) yield Long.divideUnsigned(op1, op2);
+          else yield op1 / op2;
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
       case REM:
-        if (unsigned) yield Long.divideUnsigned(op1, op2);
-        else yield op1 % op2;
+        try {
+          if (unsigned) yield Long.remainderUnsigned(op1, op2);
+          else yield op1 % op2;
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
       default:
         throw new InterpreterException();
     };
   }
 
-  private double doNumericBinary(double op1, double op2, int opcode, boolean ovfCheck) {
+  private double doNumericBinary(
+      double op1, double op2, int opcode, boolean ovfCheck, VirtualFrame frame, int tp) {
     return switch (opcode) {
       case ADD:
         var result = op1 + op2;
-        if (ovfCheck && Double.isInfinite(result)) throw new ArithmeticException();
+        if (ovfCheck && Double.isInfinite(result))
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         yield result;
       case DIV:
-        yield op1 / op2;
+        try {
+          yield op1 / op2;
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
       case MUL:
         result = op1 * op2;
-        if (ovfCheck && Double.isInfinite(result)) throw new ArithmeticException();
+        if (ovfCheck && Double.isInfinite(result))
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         yield result;
       case REM:
-        yield op1 % op2;
+        try {
+          yield op1 % op2;
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
       case SUB:
         yield op1 - op2;
       default:
@@ -875,7 +1171,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case NativeInt_Int32 -> {
         final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
         final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
-        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doIntegerBinary(op1, op1, opcode));
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doIntegerBinary(op1, op2, opcode));
       }
       default -> throw new InterpreterException();
     }
@@ -893,37 +1189,38 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 2);
         final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 1);
         CILOSTAZOLFrame.putInt32(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
       }
       case Int64 -> {
         final var op1 = CILOSTAZOLFrame.popInt64(frame, top - 1);
         final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
         CILOSTAZOLFrame.putInt64(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
       }
       case NativeInt -> {
         final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
         final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
         CILOSTAZOLFrame.putNativeInt(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
       }
       case NativeFloat -> {
         if (unsigned) throw new InterpreterException();
         final var op1 = CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
         final var op2 = CILOSTAZOLFrame.popNativeFloat(frame, top - 2);
-        CILOSTAZOLFrame.putNativeFloat(frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck));
+        CILOSTAZOLFrame.putNativeFloat(
+            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, frame, top));
       }
       case Int32_NativeInt -> {
         final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
         final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
         CILOSTAZOLFrame.putNativeInt(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
       }
       case NativeInt_Int32 -> {
         final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
         final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
         CILOSTAZOLFrame.putNativeInt(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned));
+            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
       }
       default -> throw new InterpreterException();
     }
@@ -1019,8 +1316,17 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             getMethod().getDefiningType().getTypeArguments(),
             getMethod().getModule());
     int num = CILOSTAZOLFrame.popInt32(frame, top);
+    if (num < 0)
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, top);
     var arrayType = SymbolResolver.resolveArray(elemType, 1, getMethod().getContext());
-    var object = getMethod().getContext().getArrayShape().getFactory().create(arrayType);
+    StaticObject object = null;
+    try {
+      object = getMethod().getContext().getArrayShape().getFactory().create(arrayType);
+    } catch (Exception ex) {
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.OutOfMemory, getMethod().getContext(), frame, top);
+    }
     Object value =
         switch (elemType.getSystemType()) {
           case Boolean -> new boolean[num];
@@ -1045,13 +1351,24 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private void getArrayLength(VirtualFrame frame, int top) {
     StaticObject arr = CILOSTAZOLFrame.popObject(frame, top);
     Object javaArr = getMethod().getContext().getArrayProperty().getObject(arr);
+    if (javaArr.equals(StaticObject.NULL))
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.NullReference, getMethod().getContext(), frame, top);
     CILOSTAZOLFrame.putInt32(frame, top, Array.getLength(javaArr));
   }
 
   private Object getJavaArrElem(VirtualFrame frame, int top) {
     var idx = CILOSTAZOLFrame.popInt32(frame, top);
     var arr = CILOSTAZOLFrame.popObject(frame, top - 1);
-    return Array.get(getMethod().getContext().getArrayProperty().getObject(arr), idx);
+    if (arr.equals(StaticObject.NULL))
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.NullReference, getMethod().getContext(), frame, top);
+    try {
+      return Array.get(getMethod().getContext().getArrayProperty().getObject(arr), idx);
+    } catch (IndexOutOfBoundsException ex) {
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.IndexOutOfRange, getMethod().getContext(), frame, top);
+    }
   }
   // endregion
 
@@ -1563,8 +1880,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         (CLITablePtr)
             getMethod().getContext().getTypedReferenceTypeTokenProperty().getObject(typedReference);
     if (token != constructingToken) {
-      // TODO: Throw a proper exception
-      throw new InterpreterException("System.InvalidCastException");
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.InvalidCast, getMethod().getContext(), frame, top);
     }
     CILOSTAZOLFrame.putObject(
         frame,
@@ -1682,9 +1999,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       // Success: put object back on stack with a new type
       CILOSTAZOLFrame.putObject(frame, slot, object);
     } else {
-      // Failure: throw InvalidCastException
-      // TODO: Throw a proper exception
-      throw new InterpreterException("System.InvalidCastException");
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.InvalidCast, getMethod().getContext(), frame, slot + 1);
     }
   }
 
@@ -1693,7 +2009,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     if (!type.isValueType()) return;
 
     // TODO: Nullable<T> requires special handling
-    StaticObject object = getMethod().getContext().getAllocator().box(type, frame, slot);
+    StaticObject object = null;
+    try {
+      object = getMethod().getContext().getAllocator().box(type, frame, slot);
+    } catch (Exception ex) {
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.OutOfMemory, getMethod().getContext(), frame, slot + 1);
+    }
     CILOSTAZOLFrame.putObject(frame, slot, object);
   }
 
@@ -1721,16 +2043,16 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       if (sourceType.isAssignableFrom(targetType)) {
         CILOSTAZOLFrame.putObject(frame, slot, object);
       } else {
-        // TODO: Throw a proper exception
-        throw new InterpreterException("System.InvalidCastException");
+        throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+            RuntimeCILException.Exception.InvalidCast, getMethod().getContext(), frame, slot + 1);
       }
     }
 
     try {
       unboxValueType(frame, slot, targetType, sourceType, object);
     } catch (Exception e) {
-      // TODO: Throw a proper exception
-      throw new InterpreterException("System.InvalidCastException");
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.InvalidCast, getMethod().getContext(), frame, slot + 1);
     }
   }
 
@@ -1880,6 +2202,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         SymbolResolver.resolveField(fieldPtr, instance.getTypeArguments(), method.getModule());
     StaticField field =
         classMember.symbol.getAssignableInstanceField(classMember.member, frame, top);
+
+    if (object.equals(StaticObject.NULL))
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.NullReference, getMethod().getContext(), frame, top);
     loadValueFromField(frame, top, field, object);
   }
 
@@ -1945,6 +2271,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     var classMember = SymbolResolver.resolveField(fieldPtr, method.getModule());
     StaticField field = classMember.symbol.getAssignableStaticField(classMember.member, frame, top);
     StaticObject object = classMember.symbol.getStaticInstance(frame, top);
+    if (object.equals(StaticObject.NULL))
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.NullReference, getMethod().getContext(), frame, top);
     assignValueToField(frame, top, field, object);
   }
 
@@ -1985,7 +2314,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       }
     }
   }
+  // endregion
 
+  // region Nodeization
   /**
    * Get a byte[] representing an instruction with the specified opcode and a 32-bit immediate
    * value.
@@ -2005,9 +2336,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     patch[4] = (byte) ((imm >> 24) & 0xFF);
     return patch;
   }
-  // endregion
-
-  // region Nodeization
 
   private int nodeizeOpToken(VirtualFrame frame, int top, CLITablePtr token, int pc, int opcode) {
     CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -2125,6 +2453,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     nodes[nodeIndex] = insert(node);
     return nodeIndex;
   }
+  // endregion
 
   // region Conversion
   private void convertFromSignedToInteger(int opcode, VirtualFrame frame, int top, long value) {
@@ -2148,32 +2477,36 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void convertFromSignedToIntegerAndCheckOverflow(
       int opcode, VirtualFrame frame, int top, long value) {
-    switch (opcode) {
-      case CONV_OVF_I1, CONV_OVF_I1_UN -> CILOSTAZOLFrame.putInt32(
-          frame, top, TypeHelpers.signExtend8Exact(value));
-      case CONV_OVF_I2, CONV_OVF_I2_UN -> CILOSTAZOLFrame.putInt32(
-          frame, top, TypeHelpers.signExtend16Exact(value));
-      case CONV_OVF_I4, CONV_OVF_I4_UN -> CILOSTAZOLFrame.putInt32(
-          frame, top, (int) TypeHelpers.truncate32Exact(value));
-      case CONV_OVF_I8, CONV_OVF_I8_UN, CONV_OVF_U8, CONV_OVF_U8_UN -> CILOSTAZOLFrame.putInt64(
-          frame, top, value);
-      case CONV_OVF_U1, CONV_OVF_U1_UN -> CILOSTAZOLFrame.putInt32(
-          frame, top, TypeHelpers.zeroExtend8Exact(value));
-      case CONV_OVF_U2, CONV_OVF_U2_UN -> CILOSTAZOLFrame.putInt32(
-          frame, top, TypeHelpers.zeroExtend16Exact(value));
-      case CONV_OVF_U4, CONV_OVF_U4_UN -> CILOSTAZOLFrame.putInt32(
-          frame, top, (int) TypeHelpers.zeroExtend32Exact(TypeHelpers.truncate32Exact(value)));
-      case CONV_OVF_I, CONV_OVF_I_UN -> CILOSTAZOLFrame.putNativeInt(
-          frame, top, (int) TypeHelpers.truncate32Exact(value));
-      case CONV_OVF_U, CONV_OVF_U_UN -> CILOSTAZOLFrame.putNativeInt(
-          frame, top, (int) TypeHelpers.zeroExtend32Exact(TypeHelpers.truncate32Exact(value)));
-      default -> {
-        CompilerAsserts.neverPartOfCompilation();
-        throw new InterpreterException("Invalid opcode for conversion");
+    try {
+      switch (opcode) {
+        case CONV_OVF_I1, CONV_OVF_I1_UN -> CILOSTAZOLFrame.putInt32(
+            frame, top, TypeHelpers.signExtend8Exact(value));
+        case CONV_OVF_I2, CONV_OVF_I2_UN -> CILOSTAZOLFrame.putInt32(
+            frame, top, TypeHelpers.signExtend16Exact(value));
+        case CONV_OVF_I4, CONV_OVF_I4_UN -> CILOSTAZOLFrame.putInt32(
+            frame, top, (int) TypeHelpers.truncate32Exact(value));
+        case CONV_OVF_I8, CONV_OVF_I8_UN, CONV_OVF_U8, CONV_OVF_U8_UN -> CILOSTAZOLFrame.putInt64(
+            frame, top, value);
+        case CONV_OVF_U1, CONV_OVF_U1_UN -> CILOSTAZOLFrame.putInt32(
+            frame, top, TypeHelpers.zeroExtend8Exact(value));
+        case CONV_OVF_U2, CONV_OVF_U2_UN -> CILOSTAZOLFrame.putInt32(
+            frame, top, TypeHelpers.zeroExtend16Exact(value));
+        case CONV_OVF_U4, CONV_OVF_U4_UN -> CILOSTAZOLFrame.putInt32(
+            frame, top, (int) TypeHelpers.zeroExtend32Exact(TypeHelpers.truncate32Exact(value)));
+        case CONV_OVF_I, CONV_OVF_I_UN -> CILOSTAZOLFrame.putNativeInt(
+            frame, top, (int) TypeHelpers.truncate32Exact(value));
+        case CONV_OVF_U, CONV_OVF_U_UN -> CILOSTAZOLFrame.putNativeInt(
+            frame, top, (int) TypeHelpers.zeroExtend32Exact(TypeHelpers.truncate32Exact(value)));
+        default -> {
+          CompilerAsserts.neverPartOfCompilation();
+          throw new InterpreterException("Invalid opcode for conversion");
+        }
       }
+    } catch (ArithmeticException ex) {
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, top);
     }
   }
-  // endregion
 
   private long getIntegerValueForConversion(
       VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type, boolean signed) {
@@ -2210,7 +2543,9 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       }
     }
   }
+  // endregion
 
+  // region Branching
   /**
    * Evaluate whether the branch should be taken for simple (true/false) conditional branch
    * instructions based on a value on the evaluation stack.
@@ -2242,9 +2577,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     boolean result = binaryCompare(opcode, frame, slot1, slot2, type);
     CILOSTAZOLFrame.putInt32(frame, slot1, result ? 1 : 0);
   }
-  // endregion
-
-  // region Branching
 
   /**
    * Do a binary comparison of values on the evaluation stack and return the result as a boolean.
@@ -2506,6 +2838,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
     return result;
   }
+  // endregion
 
   // region OSR classes
   private static final class OSRInterpreterState {

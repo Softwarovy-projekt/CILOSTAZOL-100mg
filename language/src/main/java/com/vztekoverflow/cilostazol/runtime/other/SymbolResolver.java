@@ -76,6 +76,14 @@ public final class SymbolResolver {
   public static NamedTypeSymbol getArray(CILOSTAZOLContext ctx) {
     return ctx.getArray();
   }
+
+  public static NamedTypeSymbol getIntPtr(CILOSTAZOLContext ctx) {
+    return ctx.getIntPtr();
+  }
+
+  public static NamedTypeSymbol getUIntPtr(CILOSTAZOLContext ctx) {
+    return ctx.getUIntPtr();
+  }
   // endregion
 
   // region assembly resolution - CLI file
@@ -206,6 +214,8 @@ public final class SymbolResolver {
       case TypeSig.ELEMENT_TYPE_U4 -> getUInt32(module.getContext());
       case TypeSig.ELEMENT_TYPE_U8 -> getUInt64(module.getContext());
       case TypeSig.ELEMENT_TYPE_U2 -> getUInt16(module.getContext());
+      case TypeSig.ELEMENT_TYPE_U -> getUIntPtr(module.getContext());
+      case TypeSig.ELEMENT_TYPE_I -> getIntPtr(module.getContext());
       case TypeSig.ELEMENT_TYPE_U1 -> getByte(module.getContext());
       case TypeSig.ELEMENT_TYPE_R4 -> getSingle(module.getContext());
       case TypeSig.ELEMENT_TYPE_R8 -> getDouble(module.getContext());

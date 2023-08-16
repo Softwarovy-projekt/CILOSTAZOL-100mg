@@ -480,6 +480,7 @@ public class NamedTypeSymbol extends TypeSymbol {
       return NamedTypeSymbolVisibility.values()[flags & MASK];
     }
   }
+  // endregion
 
   private static class LazyFactory {
     private static MethodSymbol[] createMethods(
@@ -657,5 +658,4 @@ public class NamedTypeSymbol extends TypeSymbol {
       return new NamedTypeSymbol(module, flags, name, namespace, typeParams, row.getPtr());
     }
   }
-  // endregion
 }
