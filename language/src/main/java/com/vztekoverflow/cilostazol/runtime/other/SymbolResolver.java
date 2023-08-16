@@ -1,6 +1,7 @@
 package com.vztekoverflow.cilostazol.runtime.other;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import static com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol.IS_TYPE_FORWARDER_FLAG_MASK;
+
 import com.vztekoverflow.cil.parser.CILParserException;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
@@ -12,182 +13,68 @@ import com.vztekoverflow.cilostazol.runtime.symbols.*;
 
 public final class SymbolResolver {
   // region builtin types
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Boolean = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Byte = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol SByte = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Char = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Double = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Single = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Int32 = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol UInt32 = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Int64 = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol UInt64 = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Int16 = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol UInt16 = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Object = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Void = null;
-
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol String = null;
-  @CompilerDirectives.CompilationFinal private static NamedTypeSymbol Array = null;
-
   public static NamedTypeSymbol getBoolean(CILOSTAZOLContext ctx) {
-    if (Boolean == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Boolean =
-          (NamedTypeSymbol)
-              resolveType("Boolean", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Boolean;
+    return ctx.getBoolean();
   }
 
   public static NamedTypeSymbol getByte(CILOSTAZOLContext ctx) {
-    if (Byte == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Byte =
-          (NamedTypeSymbol)
-              resolveType("Byte", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Byte;
+    return ctx.getByte();
   }
 
   public static NamedTypeSymbol getSByte(CILOSTAZOLContext ctx) {
-    if (SByte == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      SByte =
-          (NamedTypeSymbol)
-              resolveType("SByte", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return SByte;
+    return ctx.getSByte();
   }
 
   public static NamedTypeSymbol getChar(CILOSTAZOLContext ctx) {
-    if (Char == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Char =
-          (NamedTypeSymbol)
-              resolveType("Char", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Char;
+    return ctx.getChar();
   }
 
   public static NamedTypeSymbol getDouble(CILOSTAZOLContext ctx) {
-    if (Double == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Double =
-          (NamedTypeSymbol)
-              resolveType("Double", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Double;
+    return ctx.getDouble();
   }
 
   public static NamedTypeSymbol getSingle(CILOSTAZOLContext ctx) {
-    if (Single == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Single =
-          (NamedTypeSymbol)
-              resolveType("Single", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Single;
+    return ctx.getSingle();
   }
 
   public static NamedTypeSymbol getInt32(CILOSTAZOLContext ctx) {
-    if (Int32 == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Int32 =
-          (NamedTypeSymbol)
-              resolveType("Int32", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Int32;
+    return ctx.getInt32();
   }
 
   public static NamedTypeSymbol getUInt32(CILOSTAZOLContext ctx) {
-    if (UInt32 == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      UInt32 =
-          (NamedTypeSymbol)
-              resolveType("UInt32", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return UInt32;
+    return ctx.getUInt32();
   }
 
   public static NamedTypeSymbol getInt64(CILOSTAZOLContext ctx) {
-    if (Int64 == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Int64 =
-          (NamedTypeSymbol)
-              resolveType("Int64", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Int64;
+    return ctx.getInt64();
   }
 
   public static NamedTypeSymbol getUInt64(CILOSTAZOLContext ctx) {
-    if (UInt64 == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      UInt64 =
-          (NamedTypeSymbol)
-              resolveType("UInt64", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return UInt64;
+    return ctx.getUInt64();
   }
 
   public static NamedTypeSymbol getInt16(CILOSTAZOLContext ctx) {
-    if (Int16 == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Int16 =
-          (NamedTypeSymbol)
-              resolveType("Int16", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Int16;
+    return ctx.getInt16();
   }
 
   public static NamedTypeSymbol getUInt16(CILOSTAZOLContext ctx) {
-    if (UInt16 == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      UInt16 =
-          (NamedTypeSymbol)
-              resolveType("UInt16", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return UInt16;
+    return ctx.getUInt16();
   }
 
   public static NamedTypeSymbol getObject(CILOSTAZOLContext ctx) {
-    if (Object == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Object =
-          (NamedTypeSymbol)
-              resolveType("Object", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Object;
+    return ctx.getObject();
   }
 
   public static NamedTypeSymbol getVoid(CILOSTAZOLContext ctx) {
-    if (Void == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Void =
-          (NamedTypeSymbol)
-              resolveType("Void", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Void;
+    return ctx.getVoid();
   }
 
   public static NamedTypeSymbol getString(CILOSTAZOLContext ctx) {
-    if (String == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      String =
-          (NamedTypeSymbol)
-              resolveType("String", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return String;
+    return ctx.getString();
   }
 
   public static NamedTypeSymbol getArray(CILOSTAZOLContext ctx) {
-    if (Array == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      Array =
-          (NamedTypeSymbol)
-              resolveType("String", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return Array;
+    return ctx.getArray();
   }
   // endregion
 
@@ -267,7 +154,31 @@ public final class SymbolResolver {
         nameAndNamespace.getLeft(), nameAndNamespace.getRight(), identity, module.getContext());
   }
 
-  private static TypeSymbol resolveType(
+  public static TypeSymbol resolveType(CLIExportedTypeTableRow row, ModuleSymbol module) {
+    if (row.getImplementationTablePtr().getTableId() == CLITableConstants.CLI_TABLE_ASSEMBLY_REF
+        && (row.getFlags() & IS_TYPE_FORWARDER_FLAG_MASK)
+            != 0) // type is forwarded to difference assembly
+    {
+      var rowName = row.getTypeNameHeapPtr().read(module.getDefiningFile().getStringHeap());
+      var rowNamespace =
+          row.getTypeNamespaceHeapPtr().read(module.getDefiningFile().getStringHeap());
+
+      var assemblyIdentity =
+          AssemblyIdentity.fromAssemblyRefRow(
+              module.getDefiningFile().getStringHeap(),
+              module
+                  .getDefiningFile()
+                  .getTableHeads()
+                  .getAssemblyRefTableHead()
+                  .skip(row.getImplementationTablePtr()));
+
+      return resolveType(rowName, rowNamespace, assemblyIdentity, module.getContext());
+    }
+
+    return null;
+  }
+
+  public static TypeSymbol resolveType(
       TypeSig signature,
       TypeSymbol[] methodTypeArgs,
       TypeSymbol[] typeTypeArgs,

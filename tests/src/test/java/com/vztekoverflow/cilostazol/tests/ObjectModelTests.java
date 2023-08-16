@@ -2,7 +2,6 @@ package com.vztekoverflow.cilostazol.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class ObjectModelTests extends TestBase {
@@ -540,7 +539,6 @@ public class ObjectModelTests extends TestBase {
   }
 
   @Test
-  @Disabled("Requires handling padding (also on windows the reference is 8B when run with maven)")
   public void sizeOfStructTest() {
     var result =
         runTestFromCode(

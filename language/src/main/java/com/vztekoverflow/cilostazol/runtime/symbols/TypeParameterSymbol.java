@@ -7,6 +7,7 @@ import com.vztekoverflow.cil.parser.cli.table.generated.CLIGenericParamTableRow;
 import com.vztekoverflow.cilostazol.exceptions.InvalidOperationException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -136,7 +137,7 @@ public final class TypeParameterSymbol extends TypeSymbol {
         if (row.getTableId() == r.getOwnerTablePtr().getTableId()
             && row.getRowNo() == r.getOwnerTablePtr().getRowNo()) {
           constrains.add(
-              TypeSymbol.TypeSymbolFactory.create(r.getConstraintTablePtr(), mvars, vars, module));
+              SymbolResolver.resolveType(r.getConstraintTablePtr(), mvars, vars, module));
         }
       }
 

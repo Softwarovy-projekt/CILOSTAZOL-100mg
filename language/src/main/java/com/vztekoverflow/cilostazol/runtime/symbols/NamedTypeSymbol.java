@@ -4,19 +4,12 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.staticobject.StaticShape;
-import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
-import com.vztekoverflow.cil.parser.cli.signature.ElementTypeFlag;
-import com.vztekoverflow.cil.parser.cli.signature.TypeSpecSig;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.*;
-import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
-import com.vztekoverflow.cilostazol.exceptions.InvalidCLIException;
 import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
-import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
-import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticField;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
@@ -56,8 +49,7 @@ public class NamedTypeSymbol extends TypeSymbol {
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected MethodSymbol[] lazyMethods;
 
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  protected MethodSymbol[] lazyMethodImpl;
+  @CompilerDirectives.CompilationFinal protected Map<MethodSymbol, MethodSymbol> lazyMethodImpl;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected MethodSymbol[] lazyVMethodTable;
@@ -136,6 +128,10 @@ public class NamedTypeSymbol extends TypeSymbol {
     return namespace;
   }
 
+  public MethodSymbol[] getVMT() {
+    throw new NotImplementedException();
+  }
+
   public NamedTypeSymbol getDirectBaseClass() {
     if (lazyDirectBaseClass == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -192,14 +188,6 @@ public class NamedTypeSymbol extends TypeSymbol {
     return lazyMethods;
   }
 
-  public MethodSymbol[] getMethodsImpl() {
-    throw new NotImplementedException();
-  }
-
-  public MethodSymbol[] getVMT() {
-    throw new NotImplementedException();
-  }
-
   public FieldSymbol[] getFields() {
     if (lazyFields == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -214,6 +202,14 @@ public class NamedTypeSymbol extends TypeSymbol {
     }
 
     return lazyFields;
+  }
+
+  public Map<MethodSymbol, MethodSymbol> getMethodsImpl() {
+    if (lazyMethodImpl == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      lazyMethodImpl = LazyFactory.createMethodsImpl(this);
+    }
+    return lazyMethodImpl;
   }
 
   public StaticField getAssignableInstanceField(
@@ -588,13 +584,20 @@ public class NamedTypeSymbol extends TypeSymbol {
       return result;
     }
 
-    public static MethodSymbol[] createMethodsImpl(NamedTypeSymbol symbol) {
+    public static HashMap<MethodSymbol, MethodSymbol> createMethodsImpl(NamedTypeSymbol symbol) {
       HashMap<MethodSymbol, MethodSymbol> result = new HashMap<MethodSymbol, MethodSymbol>();
       for (var methodImpl :
           symbol.getDefiningModule().getDefiningFile().getTableHeads().getMethodImplTableHead()) {
-        // TODO:...
+        result.put(
+            SymbolResolver.resolveMethod(
+                    methodImpl.getMethodDeclarationTablePtr(), symbol.getDefiningModule())
+                .member,
+            SymbolResolver.resolveMethod(
+                    methodImpl.getMethodBodyTablePtr(), symbol.getDefiningModule())
+                .member);
       }
-      return null;
+
+      return result;
     }
 
     public static FieldSymbol[] createFields(
@@ -641,85 +644,6 @@ public class NamedTypeSymbol extends TypeSymbol {
   }
 
   public static class NamedTypeSymbolFactory {
-    public static NamedTypeSymbol create(CLIExportedTypeTableRow row, ModuleSymbol module) {
-      if (row.getImplementationTablePtr().getTableId() == CLITableConstants.CLI_TABLE_ASSEMBLY_REF
-          && (row.getFlags() & IS_TYPE_FORWARDER_FLAG_MASK)
-              != 0) // type is forwarded to difference assembly
-      {
-        var rowName = row.getTypeNameHeapPtr().read(module.getDefiningFile().getStringHeap());
-        var rowNamespace =
-            row.getTypeNamespaceHeapPtr().read(module.getDefiningFile().getStringHeap());
-        return NamedTypeSymbol.NamedTypeSymbolFactory.getTypeFromDifferentAssembly(
-            rowName, rowNamespace, row.getImplementationTablePtr(), module);
-      }
-
-      return null;
-    }
-
-    public static NamedTypeSymbol create(CLITypeRefTableRow row, ModuleSymbol module) {
-      var name = row.getTypeNameHeapPtr().read(module.getDefiningFile().getStringHeap());
-      var namespace = row.getTypeNamespaceHeapPtr().read(module.getDefiningFile().getStringHeap());
-
-      var resolutionScopeTablePtr = row.getResolutionScopeTablePtr();
-      if (resolutionScopeTablePtr == null) {
-        // TODO: find in ExportedType table
-        throw new NotImplementedException();
-      }
-
-      return switch (resolutionScopeTablePtr.getTableId()) {
-        case CLITableConstants.CLI_TABLE_TYPE_REF -> throw new UnsupportedOperationException(
-            CILOSTAZOLBundle.message("cilostazol.exception.nested.typeRef.resolutionScope"));
-        case CLITableConstants.CLI_TABLE_MODULE_REF -> getTypeFromDifferentModule(
-            name, namespace, resolutionScopeTablePtr, module);
-        case CLITableConstants.CLI_TABLE_MODULE -> throw new InvalidCLIException();
-        case CLITableConstants.CLI_TABLE_ASSEMBLY_REF -> getTypeFromDifferentAssembly(
-            name, namespace, resolutionScopeTablePtr, module);
-        default -> throw new TypeSystemException(
-            CILOSTAZOLBundle.message(
-                "cilostazol.exception.unknown.resolutionScope",
-                namespace,
-                name,
-                resolutionScopeTablePtr.getTableId()));
-      };
-    }
-
-    private static NamedTypeSymbol getTypeFromDifferentModule(
-        String name, String namespace, CLITablePtr resolutionScopeTablePtr, ModuleSymbol module) {
-      var moduleRefName =
-          module
-              .getDefiningFile()
-              .getTableHeads()
-              .getModuleRefTableHead()
-              .skip(resolutionScopeTablePtr)
-              .getNameHeapPtr()
-              .read(module.getDefiningFile().getStringHeap());
-
-      // We can omit looking for file since we know that it is in the same assembly as this module
-      // TODO: can be improved by calling getLocalTypeFromModule that would filter modules right
-      // away by name
-      return CILOSTAZOLContext.get(null)
-          .resolveType(name, namespace, module.getDefiningFile().getAssemblyIdentity());
-    }
-
-    private static NamedTypeSymbol getTypeFromDifferentAssembly(
-        String name, String namespace, CLITablePtr resolutionScopeTablePtr, ModuleSymbol module) {
-      var referencedAssemblyIdentity =
-          AssemblyIdentity.fromAssemblyRefRow(
-              module.getDefiningFile().getStringHeap(),
-              module
-                  .getDefiningFile()
-                  .getTableHeads()
-                  .getAssemblyRefTableHead()
-                  .skip(resolutionScopeTablePtr));
-      var referencedAssembly = module.getContext().findAssembly(referencedAssemblyIdentity);
-      if (referencedAssembly == null) {
-        // TODO: log CILOSTAZOLBundle.message("cilostazol.warning.referencedAssemblyNotFound",
-        // referencedAssemblyIdentity.toString())
-        return null;
-      }
-      return referencedAssembly.getLocalType(name, namespace);
-    }
-
     public static NamedTypeSymbol create(CLITypeDefTableRow row, ModuleSymbol module) {
       var nameAndNamespace = CLIFileUtils.getNameAndNamespace(module.getDefiningFile(), row);
 
@@ -731,29 +655,6 @@ public class NamedTypeSymbol extends TypeSymbol {
       int flags = row.getFlags();
 
       return new NamedTypeSymbol(module, flags, name, namespace, typeParams, row.getPtr());
-    }
-
-    public static NamedTypeSymbol create(
-        TypeSpecSig typeSig, TypeSymbol[] mvars, TypeSymbol[] vars, ModuleSymbol module) {
-      // TODO: null reference exception might have occured here if TypeSig is not created from CLASS
-      // TODO: resolve for other types (SZARRAY, GENERICINST, ...)
-      if (typeSig.getFlag().getFlag() == ElementTypeFlag.Flag.ELEMENT_TYPE_GENERICINST) {
-        NamedTypeSymbol genType =
-            (NamedTypeSymbol)
-                TypeSymbol.TypeSymbolFactory.create(typeSig.getGenType(), mvars, vars, module);
-        TypeSymbol[] typeArgs = new NamedTypeSymbol[typeSig.getTypeArgs().length];
-        for (int i = 0; i < typeArgs.length; i++) {
-          typeArgs[i] =
-              TypeSymbol.TypeSymbolFactory.create(typeSig.getTypeArgs()[i], mvars, vars, module);
-        }
-        return genType.construct(typeArgs); // TODO: is this correct? @Tomas
-      } else if (typeSig.getFlag().getFlag() == ElementTypeFlag.Flag.ELEMENT_TYPE_MVAR) {
-        return null;
-      } else if (typeSig.getFlag().getFlag() == ElementTypeFlag.Flag.ELEMENT_TYPE_VAR) {
-        return null;
-      } else {
-        return null;
-      }
     }
   }
   // endregion

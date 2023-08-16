@@ -3,6 +3,7 @@ package com.vztekoverflow.cilostazol.runtime.symbols;
 import com.vztekoverflow.cil.parser.cli.signature.ParamSig;
 import com.vztekoverflow.cil.parser.cli.table.generated.CLIParamTableRow;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
 public final class ParameterSymbol extends Symbol {
   private final boolean isByRef;
@@ -50,7 +51,7 @@ public final class ParameterSymbol extends Symbol {
         ModuleSymbol module) {
       return new ParameterSymbol(
           paramSig.isByRef(),
-          TypeSymbol.TypeSymbolFactory.create(paramSig.getTypeSig(), mvars, vars, module),
+          SymbolResolver.resolveType(paramSig.getTypeSig(), mvars, vars, module),
           row.getNameHeapPtr().read(module.getDefiningFile().getStringHeap()),
           row.getSequence(),
           new ParamFlags(row.getFlags()));
