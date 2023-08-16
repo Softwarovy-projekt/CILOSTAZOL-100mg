@@ -1,6 +1,7 @@
 package com.vztekoverflow.cilostazol.runtime.other;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import static com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol.IS_TYPE_FORWARDER_FLAG_MASK;
+
 import com.vztekoverflow.cil.parser.CILParserException;
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
@@ -76,23 +77,11 @@ public final class SymbolResolver {
     return ctx.getArray();
   }
   public static NamedTypeSymbol getIntPtr(CILOSTAZOLContext ctx) {
-    if (IntPtr == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      IntPtr =
-              (NamedTypeSymbol)
-                      resolveType("IntPtr", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return IntPtr;
+    return ctx.getIntPtr();
   }
 
   public static NamedTypeSymbol getUIntPtr(CILOSTAZOLContext ctx) {
-    if (UIntPtr == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      UIntPtr =
-              (NamedTypeSymbol)
-                      resolveType("UIntPtr", "System", AssemblyIdentity.SystemRuntimeLib700(), ctx);
-    }
-    return UIntPtr;
+    return ctx.getUIntPtr();
   }
   // endregion
 
@@ -172,7 +161,31 @@ public final class SymbolResolver {
         nameAndNamespace.getLeft(), nameAndNamespace.getRight(), identity, module.getContext());
   }
 
-  private static TypeSymbol resolveType(
+  public static TypeSymbol resolveType(CLIExportedTypeTableRow row, ModuleSymbol module) {
+    if (row.getImplementationTablePtr().getTableId() == CLITableConstants.CLI_TABLE_ASSEMBLY_REF
+        && (row.getFlags() & IS_TYPE_FORWARDER_FLAG_MASK)
+            != 0) // type is forwarded to difference assembly
+    {
+      var rowName = row.getTypeNameHeapPtr().read(module.getDefiningFile().getStringHeap());
+      var rowNamespace =
+          row.getTypeNamespaceHeapPtr().read(module.getDefiningFile().getStringHeap());
+
+      var assemblyIdentity =
+          AssemblyIdentity.fromAssemblyRefRow(
+              module.getDefiningFile().getStringHeap(),
+              module
+                  .getDefiningFile()
+                  .getTableHeads()
+                  .getAssemblyRefTableHead()
+                  .skip(row.getImplementationTablePtr()));
+
+      return resolveType(rowName, rowNamespace, assemblyIdentity, module.getContext());
+    }
+
+    return null;
+  }
+
+  public static TypeSymbol resolveType(
       TypeSig signature,
       TypeSymbol[] methodTypeArgs,
       TypeSymbol[] typeTypeArgs,
@@ -200,6 +213,8 @@ public final class SymbolResolver {
       case TypeSig.ELEMENT_TYPE_U4 -> getUInt32(module.getContext());
       case TypeSig.ELEMENT_TYPE_U8 -> getUInt64(module.getContext());
       case TypeSig.ELEMENT_TYPE_U2 -> getUInt16(module.getContext());
+      case TypeSig.ELEMENT_TYPE_U -> getUIntPtr(module.getContext());
+      case TypeSig.ELEMENT_TYPE_I -> getIntPtr(module.getContext());
       case TypeSig.ELEMENT_TYPE_U1 -> getByte(module.getContext());
       case TypeSig.ELEMENT_TYPE_R4 -> getSingle(module.getContext());
       case TypeSig.ELEMENT_TYPE_R8 -> getDouble(module.getContext());

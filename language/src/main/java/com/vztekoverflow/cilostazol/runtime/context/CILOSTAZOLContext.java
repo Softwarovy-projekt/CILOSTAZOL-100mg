@@ -90,9 +90,10 @@ public class CILOSTAZOLContext {
   @CompilerDirectives.CompilationFinal private NamedTypeSymbol UInt16 = null;
   @CompilerDirectives.CompilationFinal private NamedTypeSymbol Object = null;
   @CompilerDirectives.CompilationFinal private NamedTypeSymbol Void = null;
-
   @CompilerDirectives.CompilationFinal private NamedTypeSymbol String = null;
   @CompilerDirectives.CompilationFinal private NamedTypeSymbol Array = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol UIntPtr = null;
+  @CompilerDirectives.CompilationFinal private NamedTypeSymbol IntPtr = null;
   // endregion
 
   public CILOSTAZOLContext(CILOSTAZOLLanguage lang, TruffleLanguage.Env env) {
@@ -392,6 +393,23 @@ public class CILOSTAZOLContext {
     }
     return Array;
   }
+
+  public NamedTypeSymbol getIntPtr() {
+    if (IntPtr == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      IntPtr = resolveType("IntPtr", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return IntPtr;
+  }
+
+  public NamedTypeSymbol getUIntPtr() {
+    if (UIntPtr == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      UIntPtr = resolveType("UIntPtr", "System", AssemblyIdentity.SystemRuntimeLib700());
+    }
+    return UIntPtr;
+  }
+
   // endregion
 
   // region shapes
