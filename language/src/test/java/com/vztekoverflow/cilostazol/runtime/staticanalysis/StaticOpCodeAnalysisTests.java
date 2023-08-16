@@ -278,9 +278,9 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
 
     var opCodeTypes = method.getOpCodeTypes();
 
-    assertEquals(31, opCodeTypes.length);
+    assertEquals(25, opCodeTypes.length);
     assertEquals(
-        1,
+        3,
         Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
     assertEquals(
         1,
@@ -288,8 +288,10 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
             .filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Object)
             .count());
 
-    assertEquals(StaticOpCodeAnalyser.OpCodeType.Object, opCodeTypes[8]);
-    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[26]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[3]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[15]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Int32, opCodeTypes[20]);
+    assertEquals(StaticOpCodeAnalyser.OpCodeType.Object, opCodeTypes[11]);
   }
 
   @ParameterizedTest
