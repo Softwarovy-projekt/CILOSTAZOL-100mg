@@ -2422,7 +2422,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     if ((method.getName().equals("WriteLine") || method.getName().equals("Write"))
         && method.getDefiningType().getName().equals("Console")
         && method.getDefiningType().getNamespace().equals("System")) {
-      return new PRINTNode(top, method.getName().equals("WriteLine"));
+      return new PRINTNode(top, method.getName().equals("WriteLine"), method.getParameterTypes());
     }
 
     return new CALLNode(method, top);

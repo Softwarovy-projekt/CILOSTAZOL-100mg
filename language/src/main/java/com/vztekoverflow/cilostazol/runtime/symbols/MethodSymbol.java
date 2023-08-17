@@ -174,9 +174,7 @@ public class MethodSymbol extends Symbol {
         + " "
         + getName()
         + "("
-        + Arrays.stream(getTypeParameters())
-            .map(TypeParameterSymbol::getName)
-            .collect(Collectors.joining())
+        + Arrays.stream(getParameterTypes()).map(TypeSymbol::toString).collect(Collectors.joining())
         + ")";
   }
 
