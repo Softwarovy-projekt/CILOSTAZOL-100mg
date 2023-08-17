@@ -1,19 +1,9 @@
 package com.vztekoverflow.cil.parser.cli.table.generated;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITableRow;
-import com.vztekoverflow.cil.parser.cli.table.CLITables;
+import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIMethodSemanticsTableRow extends CLITableRow<CLIMethodSemanticsTableRow> {
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_METHOD_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_METHOD_DEF};
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_ASSOCIATION_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_EVENT, CLITableConstants.CLI_TABLE_PROPERTY};
 
   public CLIMethodSemanticsTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
@@ -23,6 +13,10 @@ public class CLIMethodSemanticsTableRow extends CLITableRow<CLIMethodSemanticsTa
     int offset = 0;
     return getShort(offset);
   }
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_METHOD_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_METHOD_DEF};
 
   public final CLITablePtr getMethodTablePtr() {
     int offset = 2;
@@ -34,6 +28,10 @@ public class CLIMethodSemanticsTableRow extends CLITableRow<CLIMethodSemanticsTa
     }
     return new CLITablePtr(CLITableConstants.CLI_TABLE_METHOD_DEF, rowNo);
   }
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_ASSOCIATION_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_EVENT, CLITableConstants.CLI_TABLE_PROPERTY};
 
   public final CLITablePtr getAssociationTablePtr() {
     int offset = 4;
@@ -47,7 +45,9 @@ public class CLIMethodSemanticsTableRow extends CLITableRow<CLIMethodSemanticsTa
     }
     if ((isSmall && (codedValue & 0xffff) == 0xffff)
         || (!isSmall && (codedValue & 0xffffffff) == 0xffffffff)) return null;
-    return new CLITablePtr(MAP_ASSOCIATION_TABLES[codedValue & 1], codedValue >> 1);
+    return new CLITablePtr(
+        MAP_ASSOCIATION_TABLES[codedValue & 1],
+        (isSmall ? (0x0000ffff & codedValue) : codedValue) >>> 1);
   }
 
   @Override

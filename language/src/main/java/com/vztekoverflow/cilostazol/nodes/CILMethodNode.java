@@ -2382,9 +2382,18 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 getMethod().getModule());
         var instance =
             CILOSTAZOLFrame.getLocalObject(frame, top - 1 - method.member.getParameters().length);
-        // get the actuall mehtod
-        var virtualMethod = TypeHelpers.getVirtualMethodOnInstance(method, instance);
-        node = getCheckedCALLNode(virtualMethod, top);
+
+        if (method.member.getMethodFlags().hasFlag(Flag.VIRTUAL)) {
+          method =
+              SymbolResolver.resolveMethod(
+                  instance.getTypeSymbol(),
+                  method.member.getName(),
+                  method.member.getTypeArguments(),
+                  method.member.getParameterTypes(),
+                  method.member.getTypeParameters().length);
+        }
+
+        node = getCheckedCALLNode(method.member, top);
       }
       default -> {
         CompilerDirectives.transferToInterpreterAndInvalidate();

@@ -1,15 +1,9 @@
 package com.vztekoverflow.cil.parser.cli.table.generated;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITableRow;
-import com.vztekoverflow.cil.parser.cli.table.CLITables;
+import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIAssemblyRefProcessorTableRow extends CLITableRow<CLIAssemblyRefProcessorTableRow> {
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_ASSEMBLY_REF_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_ASSEMBLY_REF};
 
   public CLIAssemblyRefProcessorTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
@@ -19,6 +13,10 @@ public class CLIAssemblyRefProcessorTableRow extends CLITableRow<CLIAssemblyRefP
     int offset = 0;
     return getInt(offset);
   }
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_ASSEMBLY_REF_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_ASSEMBLY_REF};
 
   public final CLITablePtr getAssemblyRefTablePtr() {
     int offset = 4;

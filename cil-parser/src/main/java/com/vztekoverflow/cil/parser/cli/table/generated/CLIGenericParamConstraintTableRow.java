@@ -1,16 +1,10 @@
 package com.vztekoverflow.cil.parser.cli.table.generated;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITableRow;
-import com.vztekoverflow.cil.parser.cli.table.CLITables;
+import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIGenericParamConstraintTableRow
     extends CLITableRow<CLIGenericParamConstraintTableRow> {
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_OWNER_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_GENERIC_PARAM};
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private static final byte[] MAP_CONSTRAINT_TABLES =
@@ -20,9 +14,9 @@ public class CLIGenericParamConstraintTableRow
         CLITableConstants.CLI_TABLE_TYPE_SPEC
       };
 
-  public CLIGenericParamConstraintTableRow(CLITables tables, int cursor, int rowIndex) {
-    super(tables, cursor, rowIndex);
-  }
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_OWNER_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_GENERIC_PARAM};
 
   public final CLITablePtr getOwnerTablePtr() {
     int offset = 0;
@@ -33,6 +27,10 @@ public class CLIGenericParamConstraintTableRow
       rowNo = getInt(offset);
     }
     return new CLITablePtr(CLITableConstants.CLI_TABLE_GENERIC_PARAM, rowNo);
+  }
+
+  public CLIGenericParamConstraintTableRow(CLITables tables, int cursor, int rowIndex) {
+    super(tables, cursor, rowIndex);
   }
 
   public final CLITablePtr getConstraintTablePtr() {
@@ -47,7 +45,9 @@ public class CLIGenericParamConstraintTableRow
     }
     if ((isSmall && (codedValue & 0xffff) == 0xffff)
         || (!isSmall && (codedValue & 0xffffffff) == 0xffffffff)) return null;
-    return new CLITablePtr(MAP_CONSTRAINT_TABLES[codedValue & 3], codedValue >> 2);
+    return new CLITablePtr(
+        MAP_CONSTRAINT_TABLES[codedValue & 3],
+        (isSmall ? (0x0000ffff & codedValue) : codedValue) >>> 2);
   }
 
   @Override
