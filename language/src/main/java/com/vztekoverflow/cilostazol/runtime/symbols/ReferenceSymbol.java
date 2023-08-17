@@ -21,6 +21,11 @@ public final class ReferenceSymbol extends TypeSymbol {
   }
 
   @Override
+  public boolean isClosed() {
+    throw new InvalidOperationException();
+  }
+
+  @Override
   public NamedTypeSymbol[] getInterfaces() {
     throw new InvalidOperationException();
   }

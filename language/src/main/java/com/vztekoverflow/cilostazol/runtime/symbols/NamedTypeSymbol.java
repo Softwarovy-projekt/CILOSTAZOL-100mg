@@ -7,7 +7,6 @@ import com.oracle.truffle.api.staticobject.StaticShape;
 import com.vztekoverflow.cil.parser.cli.CLIFileUtils;
 import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
 import com.vztekoverflow.cil.parser.cli.table.generated.*;
-import com.vztekoverflow.cilostazol.exceptions.NotImplementedException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.nodes.nodeized.CALLNode;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.LinkedFieldLayout;
@@ -50,9 +49,6 @@ public class NamedTypeSymbol extends TypeSymbol {
   protected MethodSymbol[] lazyMethods;
 
   @CompilerDirectives.CompilationFinal protected Map<MethodSymbol, MethodSymbol> lazyMethodImpl;
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  protected MethodSymbol[] lazyVMethodTable;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   protected FieldSymbol[] lazyFields;
@@ -120,16 +116,16 @@ public class NamedTypeSymbol extends TypeSymbol {
   }
 
   // region Getters
+  public boolean isClosed() {
+    return getTypeParameters().length == 0;
+  }
+
   public String getName() {
     return name;
   }
 
   public String getNamespace() {
     return namespace;
-  }
-
-  public MethodSymbol[] getVMT() {
-    throw new NotImplementedException();
   }
 
   public NamedTypeSymbol getDirectBaseClass() {
@@ -589,13 +585,24 @@ public class NamedTypeSymbol extends TypeSymbol {
       HashMap<MethodSymbol, MethodSymbol> result = new HashMap<MethodSymbol, MethodSymbol>();
       for (var methodImpl :
           symbol.getDefiningModule().getDefiningFile().getTableHeads().getMethodImplTableHead()) {
-        result.put(
-            SymbolResolver.resolveMethod(
-                    methodImpl.getMethodDeclarationTablePtr(), symbol.getDefiningModule())
-                .member,
-            SymbolResolver.resolveMethod(
-                    methodImpl.getMethodBodyTablePtr(), symbol.getDefiningModule())
-                .member);
+        if (methodImpl.getKlassTablePtr().getRowNo() == symbol.definingRow.getRowNo()) {
+          var decl =
+              SymbolResolver.resolveMethod(
+                  methodImpl.getMethodDeclarationTablePtr(),
+                  new TypeSymbol[0],
+                  symbol.getTypeArguments(),
+                  symbol.getDefiningModule());
+          var impl =
+              SymbolResolver.resolveMethod(
+                  methodImpl.getMethodBodyTablePtr(),
+                  new TypeSymbol[0],
+                  symbol.getTypeArguments(),
+                  symbol.getDefiningModule());
+
+          if (decl == null || impl == null) throw new RuntimeException();
+
+          result.put(decl.member, impl.member);
+        }
       }
 
       return result;

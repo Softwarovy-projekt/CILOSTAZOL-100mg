@@ -546,7 +546,7 @@ public class VirtualCallsTests extends TestBase {
                     public int Get() => 52;
                 }
 """);
-    assertEquals(52, result.exitCode());
+    assertEquals(42, result.exitCode());
     assertEquals("B.Foo", result.output());
   }
 

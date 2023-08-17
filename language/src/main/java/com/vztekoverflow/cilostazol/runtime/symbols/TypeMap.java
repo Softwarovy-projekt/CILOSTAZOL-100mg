@@ -1,5 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -26,9 +27,12 @@ public class TypeMap {
   }
 
   private NamedTypeSymbol substituteNamedTypeSymbol(NamedTypeSymbol symbol) {
+    if (symbol.isClosed()) return symbol;
+
     var typeArgs = symbol.getTypeArguments();
     var replacedTypeArgs = Arrays.stream(typeArgs).map(this::substitute).toArray(TypeSymbol[]::new);
-    return symbol.construct(replacedTypeArgs);
+    return (NamedTypeSymbol)
+        SymbolResolver.resolveType(symbol, replacedTypeArgs, symbol.getContext());
   }
 
   /**
