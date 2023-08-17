@@ -29,7 +29,6 @@ import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol.MethodFlags.Fla
 import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import org.jetbrains.annotations.NotNull;
 
 public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private final MethodSymbol method;
@@ -2383,9 +2382,18 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 getMethod().getModule());
         var instance =
             CILOSTAZOLFrame.getLocalObject(frame, top - 1 - method.member.getParameters().length);
-        // get the actuall mehtod
-        var virtualMethod = getVirtualMethodOnInstance(method, instance);
-        node = getCheckedCALLNode(virtualMethod, top);
+
+        if (method.member.getMethodFlags().hasFlag(Flag.VIRTUAL)) {
+          method =
+              SymbolResolver.resolveMethod(
+                  instance.getTypeSymbol(),
+                  method.member.getName(),
+                  method.member.getTypeArguments(),
+                  method.member.getParameterTypes(),
+                  method.member.getTypeParameters().length);
+        }
+
+        node = getCheckedCALLNode(method.member, top);
       }
       default -> {
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -2404,32 +2412,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
     // execute the new node
     return nodes[index].execute(frame);
-  }
-
-  @NotNull
-  private MethodSymbol getVirtualMethodOnInstance(
-      SymbolResolver.ClassMember<MethodSymbol> method, StaticObject instance) {
-    var candidateMethod =
-        Arrays.stream(((NamedTypeSymbol) instance.getTypeSymbol()).getMethods())
-            .filter(m -> m.getName().equals(method.member.getName()))
-            .findFirst();
-    if (!candidateMethod.isEmpty()) {
-      return candidateMethod.get();
-    }
-    // iterate predecessors
-    var superClasses = instance.getTypeSymbol().getSuperClasses();
-    for (int i = superClasses.length - 1; i >= 0; i--) {
-      var superClass = superClasses[i];
-      candidateMethod =
-          Arrays.stream(superClass.getMethods())
-              .filter(instanceMethods -> instanceMethods.canOverride(method.member))
-              .findFirst();
-      if (candidateMethod.isPresent()) {
-        return candidateMethod.get();
-      }
-    }
-
-    throw new InterpreterException("Method not found");
   }
 
   private NodeizedNodeBase getCheckedCALLNode(MethodSymbol method, int top) {

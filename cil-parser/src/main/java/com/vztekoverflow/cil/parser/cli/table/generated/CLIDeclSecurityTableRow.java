@@ -1,20 +1,9 @@
 package com.vztekoverflow.cil.parser.cli.table.generated;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.vztekoverflow.cil.parser.cli.table.CLIBlobHeapPtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITableRow;
-import com.vztekoverflow.cil.parser.cli.table.CLITables;
+import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIDeclSecurityTableRow extends CLITableRow<CLIDeclSecurityTableRow> {
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_PARENT_TABLES =
-      new byte[] {
-        CLITableConstants.CLI_TABLE_TYPE_DEF,
-        CLITableConstants.CLI_TABLE_METHOD_DEF,
-        CLITableConstants.CLI_TABLE_ASSEMBLY
-      };
 
   public CLIDeclSecurityTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
@@ -24,6 +13,14 @@ public class CLIDeclSecurityTableRow extends CLITableRow<CLIDeclSecurityTableRow
     int offset = 0;
     return getShort(offset);
   }
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_PARENT_TABLES =
+      new byte[] {
+        CLITableConstants.CLI_TABLE_TYPE_DEF,
+        CLITableConstants.CLI_TABLE_METHOD_DEF,
+        CLITableConstants.CLI_TABLE_ASSEMBLY
+      };
 
   public final CLITablePtr getParentTablePtr() {
     int offset = 2;
@@ -36,7 +33,9 @@ public class CLIDeclSecurityTableRow extends CLITableRow<CLIDeclSecurityTableRow
     }
     if ((isSmall && (codedValue & 0xffff) == 0xffff)
         || (!isSmall && (codedValue & 0xffffffff) == 0xffffffff)) return null;
-    return new CLITablePtr(MAP_PARENT_TABLES[codedValue & 3], codedValue >> 2);
+    return new CLITablePtr(
+        MAP_PARENT_TABLES[codedValue & 3],
+        (isSmall ? (0x0000ffff & codedValue) : codedValue) >>> 2);
   }
 
   public final CLIBlobHeapPtr getPermissionSetHeapPtr() {
