@@ -7,7 +7,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
-import com.vztekoverflow.cilostazol.nodes.TypeHelpers;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
@@ -15,6 +14,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 public class PRINTNode extends NodeizedNodeBase {
@@ -86,9 +86,15 @@ public class PRINTNode extends NodeizedNodeBase {
     // handle Console.WriteLine(Object)
     var definingType = (NamedTypeSymbol) obj.getTypeSymbol();
     var objectToString =
-        SymbolResolver.resolveMethod(
-            definingType, "ToString", definingType.getTypeArguments(), new TypeSymbol[0], 0);
-    var toString = TypeHelpers.getVirtualMethodOnInstance(objectToString, obj);
+        Objects.requireNonNull(SymbolResolver.resolveMethod(
+                definingType, "ToString", definingType.getTypeArguments(), new TypeSymbol[0], 0)).member;
+    var toString =
+              Objects.requireNonNull(SymbolResolver.resolveMethod(
+                      definingType,
+                      objectToString.getName(),
+                      objectToString.getTypeArguments(),
+                      objectToString.getParameterTypes(),
+                      objectToString.getTypeParameters().length)).member;
 
     // default object.ToString() implementation
     if (toString.getDefiningType().getNamespace().equals("System")
