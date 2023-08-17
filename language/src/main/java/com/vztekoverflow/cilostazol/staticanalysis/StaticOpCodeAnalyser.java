@@ -760,7 +760,7 @@ public class StaticOpCodeAnalyser {
       }
       case NativeFloat -> {
         types[pc] = OpCodeType.NativeFloat;
-        replace(stack, topStack, StackType.NativeInt);
+        replace(stack, topStack, StackType.NativeFloat);
       }
       default -> ThrowInvalidCLI(
           CILOSTAZOLBundle.message(
