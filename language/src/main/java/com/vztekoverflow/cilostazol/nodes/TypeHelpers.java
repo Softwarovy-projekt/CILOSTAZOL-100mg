@@ -1,6 +1,5 @@
 package com.vztekoverflow.cilostazol.nodes;
 
-
 /** Helper methods for converting between various integer representations. */
 public final class TypeHelpers {
 
