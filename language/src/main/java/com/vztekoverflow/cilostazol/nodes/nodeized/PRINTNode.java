@@ -86,15 +86,23 @@ public class PRINTNode extends NodeizedNodeBase {
     // handle Console.WriteLine(Object)
     var definingType = (NamedTypeSymbol) obj.getTypeSymbol();
     var objectToString =
-        Objects.requireNonNull(SymbolResolver.resolveMethod(
-                definingType, "ToString", definingType.getTypeArguments(), new TypeSymbol[0], 0)).member;
+        Objects.requireNonNull(
+                SymbolResolver.resolveMethod(
+                    definingType,
+                    "ToString",
+                    definingType.getTypeArguments(),
+                    new TypeSymbol[0],
+                    0))
+            .member;
     var toString =
-              Objects.requireNonNull(SymbolResolver.resolveMethod(
-                      definingType,
-                      objectToString.getName(),
-                      objectToString.getTypeArguments(),
-                      objectToString.getParameterTypes(),
-                      objectToString.getTypeParameters().length)).member;
+        Objects.requireNonNull(
+                SymbolResolver.resolveMethod(
+                    definingType,
+                    objectToString.getName(),
+                    objectToString.getTypeArguments(),
+                    objectToString.getParameterTypes(),
+                    objectToString.getTypeParameters().length))
+            .member;
 
     // default object.ToString() implementation
     if (toString.getDefiningType().getNamespace().equals("System")
