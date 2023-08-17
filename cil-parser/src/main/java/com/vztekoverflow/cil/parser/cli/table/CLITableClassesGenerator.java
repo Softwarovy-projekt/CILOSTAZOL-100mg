@@ -242,7 +242,7 @@ public class CLITableClassesGenerator {
             writer.println(
                 "\t\tif (areSmallEnough(MAP"
                     + nameToConstName(fieldName)
-                    + "_TABLES)) {rowNo = getShort(offset);} else {rowNo = getInt(offset);}");
+                    + "_TABLES)) {rowNo = getShort(offset)  & 0xFFFF;} else {rowNo = getInt(offset);}");
             writer.println("\t\treturn new CLITablePtr(" + tableConstant + ", rowNo);");
             penalties.tablePenalties.add(
                 "if (!areSmallEnough(MAP" + nameToConstName(fieldName) + "_TABLES)) offset += 2;");
@@ -273,7 +273,7 @@ public class CLITableClassesGenerator {
             writer.println(
                 "\t\tvar isSmall = areSmallEnough(MAP" + nameToConstName(fieldName) + "_TABLES);");
             writer.println(
-                "\t\tif (isSmall) {codedValue = getShort(offset);} else {codedValue = getInt(offset);}");
+                "\t\tif (isSmall) {codedValue = getShort(offset) & 0xFFFF; } else {codedValue = getInt(offset);}");
             penalties.tablePenalties.add(
                 "if (!areSmallEnough(MAP" + nameToConstName(fieldName) + "_TABLES)) offset += 2;");
 
