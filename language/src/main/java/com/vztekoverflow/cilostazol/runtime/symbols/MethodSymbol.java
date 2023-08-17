@@ -38,6 +38,7 @@ public class MethodSymbol extends Symbol {
   protected final byte[] originalCil;
   // body
   protected final int maxStack;
+  protected final boolean isInternalCall;
   protected final MethodHeaderFlags methodHeaderFlags;
   @CompilerDirectives.CompilationFinal protected RootNode node;
 
@@ -58,7 +59,8 @@ public class MethodSymbol extends Symbol {
       ExceptionHandlerSymbol[] exceptionHandlers,
       byte[] cil,
       int maxStack,
-      MethodHeaderFlags methodHeaderFlags) {
+      MethodHeaderFlags methodHeaderFlags,
+      boolean isInternalCall) {
     super(ContextProviderImpl.getInstance());
     this.name = name;
     this.module = module;
@@ -75,6 +77,7 @@ public class MethodSymbol extends Symbol {
     this.originalCil = cil.clone();
     this.maxStack = maxStack;
     this.methodHeaderFlags = methodHeaderFlags;
+    this.isInternalCall = isInternalCall;
   }
 
   // region Getters
@@ -172,6 +175,8 @@ public class MethodSymbol extends Symbol {
   public String toString() {
     return returnSymbol.toString()
         + " "
+        + getDefiningType().toString()
+        + "::"
         + getName()
         + "("
         + Arrays.stream(getParameterTypes()).map(TypeSymbol::toString).collect(Collectors.joining())
@@ -240,6 +245,10 @@ public class MethodSymbol extends Symbol {
         && getReturnType().getType().isCovariantTo(other.getReturnType().getType());
   }
 
+  public boolean isInternalCall() {
+    return isInternalCall;
+  }
+
   public static class MethodSymbolFactory {
     public static MethodSymbol create(CLIMethodDefTableRow mDef, NamedTypeSymbol definingType) {
       final TypeSymbol[] definingTypeTypeParams = definingType.getTypeArguments();
@@ -266,9 +275,11 @@ public class MethodSymbol extends Symbol {
       final int headerSize;
       final byte[] cil;
       final ExceptionHandlerSymbol[] handlers;
+      boolean isInternalCall = false;
 
       int rva = mDef.getRVA();
       if (rva == 0) {
+        isInternalCall = true;
         System.err.println(
             "Warning: Method "
                 + definingType.getName()
@@ -386,7 +397,8 @@ public class MethodSymbol extends Symbol {
           handlers,
           cil,
           maxStackSize,
-          methodHeaderFlags);
+          methodHeaderFlags,
+          isInternalCall);
     }
   }
 

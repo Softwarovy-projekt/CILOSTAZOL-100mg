@@ -39,7 +39,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   @Children private NodeizedNodeBase[] nodes = new NodeizedNodeBase[0];
   @CompilerDirectives.CompilationFinal private Object osrMetadata;
 
-  private CILMethodNode(MethodSymbol method) {
+  CILMethodNode(MethodSymbol method) {
     this.method = method;
     cil = method.getCIL();
     frameDescriptor =

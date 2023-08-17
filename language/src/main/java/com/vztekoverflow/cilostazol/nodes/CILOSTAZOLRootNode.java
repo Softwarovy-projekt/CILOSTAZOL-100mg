@@ -16,7 +16,12 @@ public final class CILOSTAZOLRootNode extends RootNode {
   }
 
   public static CILOSTAZOLRootNode create(MethodSymbol method) {
-    final CILMethodNode node = CILMethodNode.create(method);
+    final CILMethodNode node;
+    if (method.isInternalCall()) {
+      node = CILRuntimeSpecificMethodNode.create(method);
+    } else {
+      node = CILMethodNode.create(method);
+    }
     return new CILOSTAZOLRootNode(node.getFrameDescriptor(), node);
   }
 
