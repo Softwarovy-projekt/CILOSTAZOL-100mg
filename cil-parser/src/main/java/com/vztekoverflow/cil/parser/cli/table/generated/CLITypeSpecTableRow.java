@@ -1,8 +1,6 @@
 package com.vztekoverflow.cil.parser.cli.table.generated;
 
-import com.vztekoverflow.cil.parser.cli.table.CLIBlobHeapPtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITableRow;
-import com.vztekoverflow.cil.parser.cli.table.CLITables;
+import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLITypeSpecTableRow extends CLITableRow<CLITypeSpecTableRow> {
 

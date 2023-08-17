@@ -64,6 +64,11 @@ public final class TypeParameterSymbol extends TypeSymbol {
   }
 
   @Override
+  public boolean isClosed() {
+    return false;
+  }
+
+  @Override
   public NamedTypeSymbol[] getInterfaces() {
     throw new InvalidOperationException();
   }

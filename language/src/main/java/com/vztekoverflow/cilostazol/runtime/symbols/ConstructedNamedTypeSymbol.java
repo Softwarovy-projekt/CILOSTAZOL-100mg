@@ -28,6 +28,11 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
   }
 
   @Override
+  public boolean isClosed() {
+    return Arrays.stream(typeArguments).allMatch(TypeSymbol::isClosed);
+  }
+
+  @Override
   public ConstructedNamedTypeSymbol construct(TypeSymbol[] typeArguments) {
     return new ConstructedNamedTypeSymbol(originalDefinition, this, typeArguments);
   }
@@ -80,22 +85,6 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
     }
 
     return lazyMethods;
-  }
-
-  @Override
-  public MethodSymbol[] getVMT() {
-    if (lazyVMethodTable == null) {
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-      lazyVMethodTable =
-          Arrays.stream(constructedFrom.getVMT())
-              .map(
-                  x ->
-                      SubstitutedMethodSymbol.SubstitutedMethodSymbolFactory.create(
-                          x.getDefinition(), x, this))
-              .toArray(MethodSymbol[]::new);
-    }
-
-    return lazyVMethodTable;
   }
 
   @Override

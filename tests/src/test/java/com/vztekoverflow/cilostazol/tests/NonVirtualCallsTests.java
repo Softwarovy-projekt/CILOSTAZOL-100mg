@@ -203,7 +203,11 @@ public class NonVirtualCallsTests extends TestBase {
   public void consoleWriteLine() {
     var result = runTestFromDll("ConsoleWriteLine");
     assertEquals(0, result.exitCode());
-    assertEquals(String.format("Hello World!%s", System.lineSeparator()), result.output());
+    assertEquals(
+        String.format(
+            "Hello World!%1$s42%1$s42.0%s1%1$s99%1$sMyString%1$sMyApp::WithoutOverride%1$s",
+            System.lineSeparator()),
+        result.output());
   }
 
   @Test

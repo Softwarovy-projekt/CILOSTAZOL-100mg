@@ -1,16 +1,9 @@
 package com.vztekoverflow.cil.parser.cli.table.generated;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.vztekoverflow.cil.parser.cli.table.CLIStringHeapPtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITableRow;
-import com.vztekoverflow.cil.parser.cli.table.CLITables;
+import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIGenericParamTableRow extends CLITableRow<CLIGenericParamTableRow> {
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_OWNER_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF, CLITableConstants.CLI_TABLE_METHOD_DEF};
 
   public CLIGenericParamTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
@@ -26,6 +19,10 @@ public class CLIGenericParamTableRow extends CLITableRow<CLIGenericParamTableRow
     return getShort(offset);
   }
 
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_OWNER_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF, CLITableConstants.CLI_TABLE_METHOD_DEF};
+
   public final CLITablePtr getOwnerTablePtr() {
     int offset = 4;
     int codedValue;
@@ -37,7 +34,8 @@ public class CLIGenericParamTableRow extends CLITableRow<CLIGenericParamTableRow
     }
     if ((isSmall && (codedValue & 0xffff) == 0xffff)
         || (!isSmall && (codedValue & 0xffffffff) == 0xffffffff)) return null;
-    return new CLITablePtr(MAP_OWNER_TABLES[codedValue & 1], codedValue >> 1);
+    return new CLITablePtr(
+        MAP_OWNER_TABLES[codedValue & 1], (isSmall ? (0x0000ffff & codedValue) : codedValue) >>> 1);
   }
 
   public final CLIStringHeapPtr getNameHeapPtr() {

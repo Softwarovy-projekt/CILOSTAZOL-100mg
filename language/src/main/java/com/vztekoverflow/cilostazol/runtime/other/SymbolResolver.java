@@ -76,6 +76,14 @@ public final class SymbolResolver {
   public static NamedTypeSymbol getArray(CILOSTAZOLContext ctx) {
     return ctx.getArray();
   }
+
+  public static NamedTypeSymbol getIntPtr(CILOSTAZOLContext ctx) {
+    return ctx.getIntPtr();
+  }
+
+  public static NamedTypeSymbol getUIntPtr(CILOSTAZOLContext ctx) {
+    return ctx.getUIntPtr();
+  }
   // endregion
 
   // region assembly resolution - CLI file
@@ -206,13 +214,15 @@ public final class SymbolResolver {
       case TypeSig.ELEMENT_TYPE_U4 -> getUInt32(module.getContext());
       case TypeSig.ELEMENT_TYPE_U8 -> getUInt64(module.getContext());
       case TypeSig.ELEMENT_TYPE_U2 -> getUInt16(module.getContext());
+      case TypeSig.ELEMENT_TYPE_U -> getUIntPtr(module.getContext());
+      case TypeSig.ELEMENT_TYPE_I -> getIntPtr(module.getContext());
       case TypeSig.ELEMENT_TYPE_U1 -> getByte(module.getContext());
       case TypeSig.ELEMENT_TYPE_R4 -> getSingle(module.getContext());
       case TypeSig.ELEMENT_TYPE_R8 -> getDouble(module.getContext());
       case TypeSig.ELEMENT_TYPE_BOOLEAN -> getBoolean(module.getContext());
       case TypeSig.ELEMENT_TYPE_CHAR -> getChar(module.getContext());
-      case TypeSig.ELEMENT_TYPE_OBJECT, TypeSig.ELEMENT_TYPE_STRING -> getObject(
-          module.getContext());
+      case TypeSig.ELEMENT_TYPE_OBJECT -> getObject(module.getContext());
+      case TypeSig.ELEMENT_TYPE_STRING -> getString(module.getContext());
       case TypeSig.ELEMENT_TYPE_VOID -> getVoid(module.getContext());
       case TypeSig.ELEMENT_TYPE_ARRAY -> {
         var shapeSig = signature.getArrayShapeSig();
@@ -387,24 +397,53 @@ public final class SymbolResolver {
         MethodRefSig.parse(
             new SignatureReader(
                 row.getSignatureHeapPtr().read(module.getDefiningFile().getBlobHeap())));
-    var paramTypes = new TypeSymbol[sig.getParams().length];
-    for (int i = 0; i < paramTypes.length; i++) {
-      paramTypes[i] =
-          resolveType(
-              sig.getParams()[i].getTypeSig(),
-              methodTypeArgs,
-              ((NamedTypeSymbol) type).getTypeArguments(),
-              module);
+    var currentType = type;
+    while (currentType != null) {
+      if (currentType instanceof NamedTypeSymbol n) {
+        for (MethodSymbol method : n.getMethods()) {
+          if (sig.getGenParamCount() != method.getTypeParameters().length
+              || !method.getName().equals(name)) {
+            continue;
+          }
+
+          var paramTypes = new TypeSymbol[sig.getParams().length];
+          for (int i = 0; i < paramTypes.length; i++) {
+            paramTypes[i] =
+                resolveType(
+                    sig.getParams()[i].getTypeSig(),
+                    method.getTypeArguments(),
+                    ((NamedTypeSymbol) type).getTypeArguments(),
+                    module);
+          }
+
+          if (isCompatible(method, name, paramTypes, sig.getGenParamCount()))
+            return new ClassMember<MethodSymbol>(n, method);
+        }
+
+        for (var kv : n.getMethodsImpl().entrySet()) {
+          if (sig.getGenParamCount() != kv.getKey().getTypeParameters().length
+              || !kv.getKey().getName().equals(name)) {
+            continue;
+          }
+
+          var paramTypes = new TypeSymbol[sig.getParams().length];
+          for (int i = 0; i < paramTypes.length; i++) {
+            paramTypes[i] =
+                resolveType(
+                    sig.getParams()[i].getTypeSig(),
+                    kv.getKey().getTypeArguments(),
+                    ((NamedTypeSymbol) type).getTypeArguments(),
+                    module);
+          }
+
+          if (isCompatible(kv.getKey(), name, paramTypes, sig.getGenParamCount()))
+            return new ClassMember<MethodSymbol>(n, kv.getValue());
+        }
+        currentType = n.getDirectBaseClass();
+      }
     }
 
-    return resolveMethod(
-        type,
-        name,
-        (type instanceof NamedTypeSymbol)
-            ? ((NamedTypeSymbol) type).getTypeArguments()
-            : new TypeSymbol[0],
-        paramTypes,
-        sig.getGenParamCount());
+    return null;
   }
 
   public static ClassMember<MethodSymbol> resolveMethod(
@@ -445,6 +484,11 @@ public final class SymbolResolver {
         for (MethodSymbol method : n.getMethods()) {
           if (isCompatible(method, methodName, parameterTypes, genParams))
             return new ClassMember<MethodSymbol>(n, method);
+        }
+
+        for (var kv : n.getMethodsImpl().entrySet()) {
+          if (isCompatible(kv.getKey(), methodName, parameterTypes, genParams))
+            return new ClassMember<MethodSymbol>(n, kv.getValue());
         }
         currentType = n.getDirectBaseClass();
       }

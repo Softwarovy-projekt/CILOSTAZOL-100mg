@@ -27,8 +27,8 @@ public enum SystemType {
         case "Single" -> Float;
         case "Int64", "UInt64" -> Long;
         case "Void" -> Void;
+        case "UIntPtr", "IntPtr" -> Long;
         default -> Object;
-          // Decimal, UIntPtr, IntPtr ??
       };
     }
 

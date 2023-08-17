@@ -14,6 +14,7 @@ import com.vztekoverflow.cilostazol.exceptions.OpCodeNotSupportedException;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.SystemType;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.runtime.symbols.*;
+import java.util.Arrays;
 import java.util.Stack;
 
 public class StaticOpCodeAnalyser {
@@ -26,6 +27,7 @@ public class StaticOpCodeAnalyser {
         method.getParameterTypesIncludingInstance(),
         method.getLocals(),
         method.getReturnType(),
+        method.getExceptionHandlers(),
         method.getModule());
   }
 
@@ -35,6 +37,7 @@ public class StaticOpCodeAnalyser {
       TypeSymbol[] parameters,
       LocalSymbol[] locals,
       ReturnSymbol returnType,
+      ExceptionHandlerSymbol[] exceptionHandlers,
       ModuleSymbol module) {
     var bytecodeBuffer = new BytecodeBuffer(cil);
     OpCodeType[] types = new OpCodeType[cil.length];
@@ -43,23 +46,33 @@ public class StaticOpCodeAnalyser {
     var stack = new StackType[maxStack];
     var topStack = 0;
     int pc = 0;
-    visitStack.push(0);
-    while (!visitStack.isEmpty()) {
-      pc = visitStack.pop();
-      var nextPc = bytecodeBuffer.nextInstruction(pc);
-      if (nextPc < cil.length
-          && !visited[
-              nextPc]) { // !visited can be removed as a safety measure to traverse all the opcodes
-        visitStack.add(nextPc);
-      }
 
-      int curOpcode = bytecodeBuffer.getOpcode(pc);
-      if (!visited[pc])
+    var entrypointOffsets = getAnalysisEntryPoints(exceptionHandlers);
+    var entryPointCounter = 0;
+    for (var entrypointOffset : entrypointOffsets) {
+      topStack = 0;
+      if (entryPointCounter > 0) {
+        // push exception object
+        push(stack, topStack, Object);
+        topStack++;
+      }
+      visitStack.push(entrypointOffset);
+
+      while (!visitStack.isEmpty()) {
+        pc = visitStack.pop();
+        var nextPc = bytecodeBuffer.nextInstruction(pc);
+        if (nextPc < cil.length && !visited[nextPc]) {
+          visitStack.push(nextPc);
+          visited[nextPc] = true;
+        }
+
+        int curOpcode = bytecodeBuffer.getOpcode(pc);
         topStack =
             resolveOpCode(
                 parameters,
                 locals,
                 returnType,
+                exceptionHandlers,
                 module,
                 bytecodeBuffer,
                 types,
@@ -69,19 +82,35 @@ public class StaticOpCodeAnalyser {
                 topStack,
                 pc,
                 nextPc,
-                curOpcode);
+                curOpcode,
+                cil.length);
 
-      topStack += BytecodeInstructions.getStackEffect(curOpcode);
-      visited[pc] = true;
+        topStack += BytecodeInstructions.getStackEffect(curOpcode);
+        visited[pc] = true;
+      }
+      entryPointCounter++;
     }
 
     return types;
+  }
+
+  private static int[] getAnalysisEntryPoints(ExceptionHandlerSymbol[] exceptionHandlers) {
+    var entryPoints = new int[1 + exceptionHandlers.length];
+    // main body
+    entryPoints[0] = 0;
+    // catch clauses in reverse order
+    for (int i = 0; i < exceptionHandlers.length; i++) {
+      entryPoints[exceptionHandlers.length - i] = exceptionHandlers[i].getHandlerOffset();
+    }
+
+    return entryPoints;
   }
 
   private static int resolveOpCode(
       TypeSymbol[] parameters,
       LocalSymbol[] locals,
       ReturnSymbol returnType,
+      ExceptionHandlerSymbol[] exceptionHandlers,
       ModuleSymbol module,
       BytecodeBuffer bytecodeBuffer,
       OpCodeType[] types,
@@ -91,7 +120,8 @@ public class StaticOpCodeAnalyser {
       int topStack,
       int pc,
       int nextPc,
-      int curOpcode) {
+      int curOpcode,
+      int cilLength) {
     switch (curOpcode) {
       case NOP:
       case BREAK:
@@ -418,7 +448,16 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack, Object);
         break;
       case THROW:
-        clear(stack, topStack);
+      case RETHROW:
+        // clear stack from top to bottom
+        for (int i = topStack; i > 0; i--) {
+          clear(stack, i);
+        }
+
+        // delete nextPc visit because there might be catch clause which is handled separately
+        removeNextVisit(visited, visitStack, nextPc);
+
+        pushPcAfterCatchCaluse(exceptionHandlers, visited, visitStack, pc, nextPc, cilLength);
         break;
       case LDFLD:
         {
@@ -547,15 +586,25 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack, ManagedPointer); // typed reference is a managed pointer:
         // https://dotnet.github.io/dotNext/features/core/ref.html
         break;
+      case ENDFILTER:
       case ENDFAULT:
         // case ENDFINALLY: same opcode as ENDFAULT
+        break;
       case LEAVE_S:
-        handleOpCodeJumpShort(bytecodeBuffer, visited, visitStack, pc, nextPc);
-        break;
+        {
+          // delete nextPc visit because there might be catch clause
+          removeNextVisit(visited, visitStack, nextPc);
+          handleOpCodeJumpShort(bytecodeBuffer, visited, visitStack, pc, nextPc);
+          break;
+        }
       case LEAVE:
-        handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc);
-        // Nothing
-        break;
+        {
+          // delete nextPc visit because there might be catch clause
+          removeNextVisit(visited, visitStack, nextPc);
+          handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc);
+          // Nothing
+          break;
+        }
       case CEQ:
       case CGT:
       case CGT_UN:
@@ -596,6 +645,50 @@ public class StaticOpCodeAnalyser {
     return topStack;
   }
 
+  private static void pushPcAfterCatchCaluse(
+      ExceptionHandlerSymbol[] exceptionHandlers,
+      boolean[] visited,
+      Stack<Integer> visitStack,
+      int pc,
+      int nextPc,
+      int cilLength) {
+    // get all nearest exception handler and from them get the furthest offset
+    var activeHanlders =
+        Arrays.stream(exceptionHandlers)
+            .filter(
+                handler ->
+                    pc > handler.getTryOffset()
+                        && pc < handler.getTryOffset() + handler.getTryLength())
+            .toArray(ExceptionHandlerSymbol[]::new);
+    var maxTryOffset =
+        Arrays.stream(activeHanlders)
+            .map(ExceptionHandlerSymbol::getTryOffset)
+            .max(Integer::compare)
+            .orElse(nextPc); // there is no try block, so just push nextPc
+    Arrays.stream(activeHanlders)
+        // get all handlers with the same try block
+        .filter(handler -> handler.getTryOffset() == maxTryOffset)
+        // get the furthest handler offset
+        .map(handler -> handler.getHandlerOffset() + handler.getHandlerLength())
+        .max(Integer::compare)
+        // if there is no handler, then just push nextPc
+        .ifPresentOrElse(
+            handlerEndOffset -> {
+              if (handlerEndOffset < cilLength)
+                pushToVisitStackChecked(visited, visitStack, handlerEndOffset);
+            },
+            () -> {
+              if (nextPc < cilLength) pushToVisitStackChecked(visited, visitStack, nextPc);
+            });
+  }
+
+  private static void removeNextVisit(boolean[] visited, Stack<Integer> visitStack, int nextPc) {
+    if (!visitStack.isEmpty()) {
+      visitStack.pop();
+      visited[nextPc] = false;
+    }
+  }
+
   private static void handleOpCodeJump(
       BytecodeBuffer bytecodeBuffer,
       boolean[] visited,
@@ -604,7 +697,7 @@ public class StaticOpCodeAnalyser {
       int nextPc) {
     var offset = bytecodeBuffer.getImmInt(pc);
     var target = nextPc + offset;
-    if (!visited[target]) visitStack.push(target);
+    pushToVisitStackChecked(visited, visitStack, target);
   }
 
   private static void handleOpCodeJumpShort(
@@ -615,7 +708,7 @@ public class StaticOpCodeAnalyser {
       int nextPc) {
     var offset = bytecodeBuffer.getImmByte(pc);
     var target = nextPc + offset;
-    if (!visited[target]) visitStack.push(target);
+    pushToVisitStackChecked(visited, visitStack, target);
   }
 
   private static void handleLdsflda(
@@ -1101,6 +1194,15 @@ public class StaticOpCodeAnalyser {
 
   private static void push(StackType[] stack, int topStack, StackType stackType) {
     stack[topStack] = stackType;
+  }
+
+  private static void pushToVisitStackChecked(
+      boolean[] visited, Stack<Integer> visitStack, int target) {
+    if (!visited[target]) {
+      visitStack.push(target);
+      // set as visited beforehand to avoid duplicity pushes in one iteration
+      visited[target] = true;
+    }
   }
 
   public enum OpCodeType {

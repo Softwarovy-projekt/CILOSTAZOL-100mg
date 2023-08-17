@@ -1,26 +1,16 @@
 package com.vztekoverflow.cil.parser.cli.table.generated;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.vztekoverflow.cil.parser.cli.table.CLITablePtr;
-import com.vztekoverflow.cil.parser.cli.table.CLITableRow;
-import com.vztekoverflow.cil.parser.cli.table.CLITables;
+import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIMethodImplTableRow extends CLITableRow<CLIMethodImplTableRow> {
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_KLASS_TABLES = new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF};
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_METHOD_BODY_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_METHOD_DEF, CLITableConstants.CLI_TABLE_MEMBER_REF};
-
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_METHOD_DECLARATION_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_METHOD_DEF, CLITableConstants.CLI_TABLE_MEMBER_REF};
 
   public CLIMethodImplTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
   }
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_KLASS_TABLES = new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF};
 
   public final CLITablePtr getKlassTablePtr() {
     int offset = 0;
@@ -32,6 +22,14 @@ public class CLIMethodImplTableRow extends CLITableRow<CLIMethodImplTableRow> {
     }
     return new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, rowNo);
   }
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_METHOD_BODY_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_METHOD_DEF, CLITableConstants.CLI_TABLE_MEMBER_REF};
+
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_METHOD_DECLARATION_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_METHOD_DEF, CLITableConstants.CLI_TABLE_MEMBER_REF};
 
   public final CLITablePtr getMethodBodyTablePtr() {
     int offset = 2;
@@ -45,7 +43,9 @@ public class CLIMethodImplTableRow extends CLITableRow<CLIMethodImplTableRow> {
     }
     if ((isSmall && (codedValue & 0xffff) == 0xffff)
         || (!isSmall && (codedValue & 0xffffffff) == 0xffffffff)) return null;
-    return new CLITablePtr(MAP_METHOD_BODY_TABLES[codedValue & 1], codedValue >> 1);
+    return new CLITablePtr(
+        MAP_METHOD_BODY_TABLES[codedValue & 1],
+        (isSmall ? (0x0000ffff & codedValue) : codedValue) >>> 1);
   }
 
   public final CLITablePtr getMethodDeclarationTablePtr() {
@@ -61,7 +61,9 @@ public class CLIMethodImplTableRow extends CLITableRow<CLIMethodImplTableRow> {
     }
     if ((isSmall && (codedValue & 0xffff) == 0xffff)
         || (!isSmall && (codedValue & 0xffffffff) == 0xffffffff)) return null;
-    return new CLITablePtr(MAP_METHOD_DECLARATION_TABLES[codedValue & 1], codedValue >> 1);
+    return new CLITablePtr(
+        MAP_METHOD_DECLARATION_TABLES[codedValue & 1],
+        (isSmall ? (0x0000ffff & codedValue) : codedValue) >>> 1);
   }
 
   @Override

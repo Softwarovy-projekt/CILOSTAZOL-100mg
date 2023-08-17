@@ -301,7 +301,14 @@ public final class CILOSTAZOLFrame {
   }
   // endregion
 
-  // TODO: It should rely on Assembly as well...
+  public static void clearEvaluationStack(Frame frame, int top, MethodSymbol method) {
+    int evaluationStackStart = getStartStackOffset(method);
+    while (evaluationStackStart < top) {
+      frame.clear(top);
+      top--;
+    }
+  }
+
   public static StackType getStackTypeKind(
       String name, String namespace, AssemblyIdentity assembly) {
     if (AssemblyIdentity.isStandardLib(assembly) && Objects.equals(namespace, "System")) {

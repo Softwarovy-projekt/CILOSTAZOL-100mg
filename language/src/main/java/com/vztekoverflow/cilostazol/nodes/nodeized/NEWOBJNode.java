@@ -3,6 +3,7 @@ package com.vztekoverflow.cilostazol.nodes.nodeized;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.vztekoverflow.cilostazol.exceptions.RuntimeCILException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
@@ -34,8 +35,14 @@ public class NEWOBJNode extends NodeizedNodeBase {
     Object[] args = getMethodArgsFromStack(frame);
 
     // Then, create the object as arg0
-    StaticObject object =
-        CILOSTAZOLContext.get(this).getAllocator().createNew(type, frame, topStack);
+    StaticObject object = null;
+
+    try {
+      object = CILOSTAZOLContext.get(this).getAllocator().createNew(type, frame, topStack);
+    } catch (Exception ex) {
+      throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+          RuntimeCILException.Exception.OutOfMemory, constructor.getContext(), frame, topStack);
+    }
     args[0] = object;
 
     // Finally, call the constructor and push the result to the stack

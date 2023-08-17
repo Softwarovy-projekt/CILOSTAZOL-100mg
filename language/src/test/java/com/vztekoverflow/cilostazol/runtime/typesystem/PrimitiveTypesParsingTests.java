@@ -31,7 +31,7 @@ public class PrimitiveTypesParsingTests extends TypeSystemTestBase {
     return Stream.of(
         Arguments.of("CharClass", "Char", "System"),
         Arguments.of("BoolClass", "Boolean", "System"),
-        Arguments.of("StringClass", "Object", "System"),
+        Arguments.of("StringClass", "String", "System"),
         Arguments.of("ObjectClass", "Object", "System"));
   }
 

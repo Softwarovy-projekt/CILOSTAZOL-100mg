@@ -59,6 +59,10 @@ public abstract class TypeSymbol extends Symbol {
   public boolean isAssignableFrom(TypeSymbol other) {
     if (this == other) return true;
 
+    if (this instanceof TypeParameterSymbol && other instanceof TypeParameterSymbol) return true;
+
+    if (this instanceof TypeParameterSymbol || other instanceof TypeParameterSymbol) return false;
+
     // Partition I: 8.7.1 Assignment compatibility for signature types
     if (this.isArray() && other.isArray()) {
       ArrayTypeSymbol thisArray = (ArrayTypeSymbol) this;
@@ -87,7 +91,7 @@ public abstract class TypeSymbol extends Symbol {
    */
   public boolean checkOrdinaryClassSubclassing(TypeSymbol other) {
     int depth = getHierarchyDepth();
-    return other.getHierarchyDepth() >= depth && other.getSuperClasses()[depth] == this;
+    return other.getHierarchyDepth() > depth && other.getSuperClasses()[depth] == this;
   }
 
   /**
@@ -111,6 +115,8 @@ public abstract class TypeSymbol extends Symbol {
   public abstract boolean isInterface();
 
   public abstract boolean isArray();
+
+  public abstract boolean isClosed();
 
   public boolean isCovariantTo(TypeSymbol other) {
     return this.equals(other) || Arrays.asList(getSuperClasses()).contains(other);

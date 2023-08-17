@@ -88,6 +88,11 @@ public final class ArrayTypeSymbol extends NamedTypeSymbol {
   }
 
   @Override
+  public boolean isClosed() {
+    return elementType.isClosed();
+  }
+
+  @Override
   public NamedTypeSymbol[] getSuperClasses() {
     return arrayType.getSuperClasses();
   }
