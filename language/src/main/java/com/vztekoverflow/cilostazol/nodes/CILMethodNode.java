@@ -188,9 +188,11 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           case STLOC_2:
           case STLOC_3:
             CILOSTAZOLFrame.copyStatic(frame, topStack - 1, curOpcode - STLOC_0);
+            frame.clearStatic(topStack - 1);
             break;
           case STLOC_S:
             CILOSTAZOLFrame.copyStatic(frame, topStack - 1, bytecodeBuffer.getImmUByte(pc));
+            frame.clearStatic(topStack - 1);
             break;
 
             // Loading locals to top
@@ -786,8 +788,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           case MUL:
           case REM:
           case SUB:
-            doNumericBinary(
-                frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, false);
+            doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
             break;
 
           case OR:
@@ -812,20 +813,17 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           case ADD_OVF:
           case MUL_OVF:
           case SUB_OVF:
-            doNumericBinary(
-                frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], true, false);
+            doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
             break;
           case ADD_OVF_UN:
           case SUB_OVF_UN:
           case MUL_OVF_UN:
-            doNumericBinary(
-                frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], true, true);
+            doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
             break;
 
           case DIV_UN:
           case REM_UN:
-            doNumericBinary(
-                frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc], false, true);
+            doNumericBinary(frame, topStack, curOpcode, getMethod().getOpCodeTypes()[pc]);
             break;
 
             // Unmanaged memory manipulation
@@ -986,43 +984,60 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       int op1,
       int op2,
       int opcode,
-      boolean ovfCheck,
-      boolean unsigned,
       VirtualFrame frame,
       int tp) {
     return switch (opcode) {
       case ADD:
-        if (ovfCheck) {
-          try {
-            yield Math.addExact(op1, op2);
-          } catch (Exception ex) {
-            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
-                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
-          }
-        } else yield op1 + op2;
+        yield op1 + op2;
       case SUB:
         yield op1 - op2;
       case MUL:
-        if (ovfCheck) {
-          try {
-            yield Math.multiplyExact(op1, op2);
-          } catch (Exception ex) {
-            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
-                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
-          }
-        } else yield op1 * op2;
+        yield op1 * op2;
       case DIV:
         try {
-          if (unsigned) yield Integer.divideUnsigned(op1, op2);
-          else yield op1 / op2;
+          yield op1 / op2;
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
         }
       case REM:
         try {
-          if (unsigned) yield Integer.remainderUnsigned(op1, op2);
-          else yield op1 % op2;
+          yield op1 % op2;
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
+      case ADD_OVF, ADD_OVF_UN:
+        try {
+          yield Math.addExact(op1, op2);
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case MUL_OVF, MUL_OVF_UN:
+        try {
+          yield Math.multiplyExact(op1, op2);
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case SUB_OVF, SUB_OVF_UN:
+        try {
+          yield Math.subtractExact(op1, op2);
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case DIV_UN:
+        try {
+          yield Integer.divideUnsigned(op1, op2);
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
+      case REM_UN:
+        try {
+          yield Integer.remainderUnsigned(op1, op2);
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
@@ -1036,43 +1051,60 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       long op1,
       long op2,
       int opcode,
-      boolean ovfCheck,
-      boolean unsigned,
       VirtualFrame frame,
       int tp) {
     return switch (opcode) {
       case ADD:
-        if (ovfCheck) {
-          try {
-            yield Math.addExact(op1, op2);
-          } catch (Exception ex) {
-            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
-                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
-          }
-        } else yield op1 + op2;
+        yield op1 + op2;
       case SUB:
         yield op1 - op2;
       case MUL:
-        if (ovfCheck) {
-          try {
-            yield Math.multiplyExact(op1, op2);
-          } catch (Exception ex) {
-            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
-                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
-          }
-        } else yield op1 * op2;
+        yield op1 * op2;
       case DIV:
         try {
-          if (unsigned) yield Long.divideUnsigned(op1, op2);
-          else yield op1 / op2;
+          yield op1 / op2;
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
         }
       case REM:
         try {
-          if (unsigned) yield Long.remainderUnsigned(op1, op2);
-          else yield op1 % op2;
+          yield op1 % op2;
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
+      case ADD_OVF, ADD_OVF_UN:
+        try {
+          yield Math.addExact(op1, op2);
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case MUL_OVF, MUL_OVF_UN:
+        try {
+          yield Math.multiplyExact(op1, op2);
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case SUB_OVF, SUB_OVF_UN:
+        try {
+          yield Math.subtractExact(op1, op2);
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case DIV_UN:
+        try {
+          yield Long.divideUnsigned(op1, op2);
+        } catch (Exception ex) {
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
+        }
+      case REM_UN:
+        try {
+          yield Long.remainderUnsigned(op1, op2);
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
@@ -1082,12 +1114,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     };
   }
 
-  private double doNumericBinary(
-      double op1, double op2, int opcode, boolean ovfCheck, VirtualFrame frame, int tp) {
+  private double doNumericBinary(double op1, double op2, int opcode, VirtualFrame frame, int tp) {
     return switch (opcode) {
       case ADD:
+        yield op1 + op2;
+      case ADD_OVF:
         var result = op1 + op2;
-        if (ovfCheck && Double.isInfinite(result))
+        if (Double.isInfinite(result))
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         yield result;
@@ -1099,8 +1132,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
               RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
         }
       case MUL:
+        yield op1 * op2;
+      case MUL_OVF:
         result = op1 * op2;
-        if (ovfCheck && Double.isInfinite(result))
+        if (Double.isInfinite(result))
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         yield result;
@@ -1111,6 +1146,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
         }
+      case SUB_OVF:
+        result = op1 - op2;
+        if (Double.isInfinite(result))
+          throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+              RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        yield result;
       case SUB:
         yield op1 - op2;
       default:
@@ -1177,49 +1218,38 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void doNumericBinary(
-      VirtualFrame frame,
-      int top,
-      int opcode,
-      StaticOpCodeAnalyser.OpCodeType type,
-      boolean ovfCheck,
-      boolean unsigned) {
+      VirtualFrame frame, int top, int opcode, StaticOpCodeAnalyser.OpCodeType type) {
     switch (type) {
       case Int32 -> {
-        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 2);
         final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 1);
-        CILOSTAZOLFrame.putInt32(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        CILOSTAZOLFrame.putInt32(frame, top - 2, doNumericBinary(op1, op2, opcode, frame, top));
       }
       case Int64 -> {
-        final var op1 = CILOSTAZOLFrame.popInt64(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
-        CILOSTAZOLFrame.putInt64(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
+        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 1);
+        final var op1 = CILOSTAZOLFrame.popInt64(frame, top - 2);
+        CILOSTAZOLFrame.putInt64(frame, top - 2, doNumericBinary(op1, op2, opcode, frame, top));
       }
       case NativeInt -> {
-        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
-        CILOSTAZOLFrame.putNativeInt(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doNumericBinary(op1, op2, opcode, frame, top));
       }
       case NativeFloat -> {
-        if (unsigned) throw new InterpreterException();
-        final var op1 = CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popNativeFloat(frame, top - 2);
+        final var op2 = CILOSTAZOLFrame.popNativeFloat(frame, top - 1);
+        final var op1 = CILOSTAZOLFrame.popNativeFloat(frame, top - 2);
         CILOSTAZOLFrame.putNativeFloat(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, frame, top));
+            frame, top - 2, doNumericBinary(op1, op2, opcode, frame, top));
       }
       case Int32_NativeInt -> {
-        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
-        CILOSTAZOLFrame.putNativeInt(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doNumericBinary(op1, op2, opcode, frame, top));
       }
       case NativeInt_Int32 -> {
-        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
-        CILOSTAZOLFrame.putNativeInt(
-            frame, top - 2, doNumericBinary(op1, op2, opcode, ovfCheck, unsigned, frame, top));
+        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
+        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doNumericBinary(op1, op2, opcode, frame, top));
       }
       default -> throw new InterpreterException();
     }
@@ -1258,23 +1288,23 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       }
       case Int64_Int32 -> {
         final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
-        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doShiftBinary(op2, op1, opcode));
+        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
+        CILOSTAZOLFrame.putInt64(frame, top - 2, doShiftBinary(op2, op1, opcode));
       }
       case NativeInt_Int32 -> {
-        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popInt32(frame, top - 2);
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
         CILOSTAZOLFrame.putInt32(frame, top - 2, doShiftBinary(op2, op1, opcode));
       }
       case Int32_NativeInt -> {
-        final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
+        final var op1 = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
         CILOSTAZOLFrame.putInt64(frame, top - 2, doShiftBinary(op2, op1, opcode));
       }
       case Int64_NativeInt -> {
         final var op1 = CILOSTAZOLFrame.popNativeInt(frame, top - 1);
-        final var op2 = CILOSTAZOLFrame.popNativeInt(frame, top - 2);
-        CILOSTAZOLFrame.putNativeInt(frame, top - 2, doShiftBinary(op2, op1, opcode));
+        final var op2 = CILOSTAZOLFrame.popInt64(frame, top - 2);
+        CILOSTAZOLFrame.putInt64(frame, top - 2, doShiftBinary(op2, op1, opcode));
       }
 
       default -> throw new InterpreterException();

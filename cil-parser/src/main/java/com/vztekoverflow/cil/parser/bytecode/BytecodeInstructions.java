@@ -435,6 +435,14 @@ public class BytecodeInstructions {
     def(MUL, "mul", "o", -1);
     def(DIV, "div", "o", -1);
     def(REM, "rem", "o", -1);
+    def(ADD_OVF_UN, "add.ovf.un", "o", -1);
+    def(MUL_OVF_UN, "mul.ovf.un", "o", -1);
+    def(SUB_OVF_UN, "sub.ovf.un", "o", -1);
+    def(ADD_OVF, "add.ovf", "o", -1);
+    def(MUL_OVF, "mul.ovf", "o", -1);
+    def(SUB_OVF, "sub.ovf", "o", -1);
+    def(DIV_UN, "div.un", "o", -1);
+    def(REM_UN, "rem.un", "o", -1);
 
     def(AND, "and", "o", -1);
     def(OR, "or", "o", -1);
