@@ -408,7 +408,7 @@ public class BytecodeInstructions {
     def(STELEM_R8, "stelem.r8", "o", -3);
     def(STELEM_REF, "stelem.ref", "o", -3);
 
-    def(LDELEMA, "ldelema", "otttt", 0);
+    def(LDELEMA, "ldelema", "otttt", -1);
     defPrefixed(LDFTN, "ldftn", "otttt", 1);
     defPrefixed(LDVIRTFTN, "ldvirtftn", "otttt", 0);
 

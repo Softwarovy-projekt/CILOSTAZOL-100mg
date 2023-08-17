@@ -1734,7 +1734,8 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                     .getContext()
                     .getArrayElementReferenceArrayProperty()
                     .getObject(reference);
-        int index = getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(refArr);
+        int index =
+            getMethod().getContext().getArrayElementReferenceIndexProperty().getInt(reference);
         var javaArr = getMethod().getContext().getArrayProperty().getObject(refArr);
         Array.setInt(javaArr, index, value);
       }
