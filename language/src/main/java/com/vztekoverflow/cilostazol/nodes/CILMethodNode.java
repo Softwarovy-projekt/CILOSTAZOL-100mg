@@ -2166,7 +2166,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void unboxAny(VirtualFrame frame, int slot, CLITablePtr typePtr) {
-    var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var targetType =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                typePtr,
+                method.getTypeArguments(),
+                method.getDefiningType().getTypeArguments(),
+                method.getModule());
     var object = CILOSTAZOLFrame.popObject(frame, slot);
     var sourceType = (NamedTypeSymbol) object.getTypeSymbol();
     if (!sourceType.isValueType()) {
