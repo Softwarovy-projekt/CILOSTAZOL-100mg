@@ -21,6 +21,11 @@ public final class ConstructedMethodSymbol extends SubstitutedMethodSymbol {
     return new ConstructedMethodSymbol(getDefinition(), this, typeArguments);
   }
 
+  @Override
+  public TypeSymbol[] getTypeArguments() {
+    return typeArguments;
+  }
+
   public static final class ConstructedMethodSymbolFactory {
     public static ConstructedMethodSymbol create(
         MethodSymbol definition, MethodSymbol constructedFrom, TypeSymbol[] typeArguments) {

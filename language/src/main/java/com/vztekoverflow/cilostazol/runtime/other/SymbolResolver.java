@@ -392,7 +392,7 @@ public final class SymbolResolver {
       TypeSymbol[] typeTypeArgs,
       ModuleSymbol module) {
     var name = row.getNameHeapPtr().read(module.getDefiningFile().getStringHeap());
-    var type = resolveType(row.getKlassTablePtr(), module);
+    var type = resolveType(row.getKlassTablePtr(), methodTypeArgs, typeTypeArgs, module);
     var sig =
         MethodRefSig.parse(
             new SignatureReader(
