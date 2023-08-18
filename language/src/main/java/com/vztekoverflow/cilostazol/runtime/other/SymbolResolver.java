@@ -489,9 +489,19 @@ public final class SymbolResolver {
             return new ClassMember<MethodSymbol>(n, method);
         }
 
+        currentType = n.getDirectBaseClass();
+      }
+    }
+
+    return null;
+  }
+
+  public static ClassMember<MethodSymbol> resolveMethodImpl(MethodSymbol method, TypeSymbol type) {
+    var currentType = type;
+    while (currentType != null) {
+      if (currentType instanceof NamedTypeSymbol n) {
         for (var kv : n.getMethodsImpl().entrySet()) {
-          if (isCompatible(kv.getKey(), methodName, parameterTypes, genParams))
-            return new ClassMember<MethodSymbol>(n, kv.getValue());
+          if (kv.getKey() == method) return new ClassMember<MethodSymbol>(n, kv.getValue());
         }
         currentType = n.getDirectBaseClass();
       }
