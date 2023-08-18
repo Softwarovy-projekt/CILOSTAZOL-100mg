@@ -1977,7 +1977,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   // region object
   private void copyObject(VirtualFrame frame, CLITablePtr typePtr, int sourceSlot, int destSlot) {
-    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var type =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                typePtr,
+                method.getTypeArguments(),
+                method.getDefiningType().getTypeArguments(),
+                method.getModule());
     CILOSTAZOLFrame.copyStatic(frame, sourceSlot, destSlot);
   }
 
@@ -1993,7 +1999,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   private void checkIsInstance(VirtualFrame frame, int slot, CLITablePtr typePtr) {
     // TODO: The value can be a Nullable<T>, which is handled differently than T
-    var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var targetType =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                typePtr,
+                method.getTypeArguments(),
+                method.getDefiningType().getTypeArguments(),
+                method.getModule());
     var object = CILOSTAZOLFrame.popObject(frame, slot);
     var sourceType = object.getTypeSymbol();
     if (sourceType.isAssignableFrom(targetType)) {
@@ -2014,7 +2026,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     }
 
     // TODO: The value can be a Nullable<T>, which is handled differently than T
-    var targetType = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var targetType =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                typePtr,
+                method.getTypeArguments(),
+                method.getDefiningType().getTypeArguments(),
+                method.getModule());
     var sourceType = object.getTypeSymbol();
     if (targetType.isAssignableFrom(sourceType)) {
       // Success: put object back on stack with a new type
@@ -2026,7 +2044,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void box(VirtualFrame frame, int slot, CLITablePtr typePtr) {
-    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var type =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                typePtr,
+                method.getTypeArguments(),
+                method.getDefiningType().getTypeArguments(),
+                method.getModule());
     if (!type.isValueType()) return;
 
     // TODO: Nullable<T> requires special handling
@@ -2041,7 +2065,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void unbox(VirtualFrame frame, int slot, CLITablePtr typePtr) {
-    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var type =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                typePtr,
+                method.getTypeArguments(),
+                method.getDefiningType().getTypeArguments(),
+                method.getModule());
     if (!type.isValueType()) return;
 
     StaticObject valueReference =
@@ -2147,7 +2177,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void getSize(VirtualFrame frame, int slot, CLITablePtr typePtr) {
-    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var type =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                typePtr,
+                method.getTypeArguments(),
+                method.getDefiningType().getTypeArguments(),
+                method.getModule());
     CILOSTAZOLFrame.putInt32(frame, slot, type.getSize(frame, slot));
   }
 
@@ -2158,7 +2194,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   private void initializeObject(VirtualFrame frame, int top, CLITablePtr typePtr) {
-    var type = (NamedTypeSymbol) SymbolResolver.resolveType(typePtr, method.getModule());
+    var type =
+        (NamedTypeSymbol)
+            SymbolResolver.resolveType(
+                typePtr,
+                method.getTypeArguments(),
+                method.getDefiningType().getTypeArguments(),
+                method.getModule());
     var destReference = CILOSTAZOLFrame.popObject(frame, top - 1);
     assert ((ReferenceSymbol) destReference.getTypeSymbol()).getReferenceType()
         == ReferenceSymbol.ReferenceType.Local;
