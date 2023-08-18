@@ -981,12 +981,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   }
 
   // region arithmetics
-  private int doNumericBinary(
-      int op1,
-      int op2,
-      int opcode,
-      VirtualFrame frame,
-      int tp) {
+  private int doNumericBinary(int op1, int op2, int opcode, VirtualFrame frame, int tp) {
     return switch (opcode) {
       case ADD:
         yield op1 + op2;
@@ -1048,12 +1043,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     };
   }
 
-  private long doNumericBinary(
-      long op1,
-      long op2,
-      int opcode,
-      VirtualFrame frame,
-      int tp) {
+  private long doNumericBinary(long op1, long op2, int opcode, VirtualFrame frame, int tp) {
     return switch (opcode) {
       case ADD:
         yield op1 + op2;
