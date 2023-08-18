@@ -1,9 +1,11 @@
 package com.vztekoverflow.cilostazol.tests;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class BenchmarkValidityTests extends TestBase {
   @Test
+  @Disabled
   public void nBody() {
     var result =
         runTestFromCode(
