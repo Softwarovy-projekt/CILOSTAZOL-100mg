@@ -81,7 +81,7 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         return _array[index];
     }
 
-    public void Set(T value, int index1, int index2)
+    public void Set(int index1, int index2, T value)
     {
         if (_rank != 2)
         {
@@ -91,7 +91,7 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         _array[GetFlatIndex(index1, index2)] = value;
     }
 
-    public void Set(T value, int index1, int index2, int index3)
+    public void Set(int index1, int index2, int index3, T value)
     {
         if (_rank != 3)
         {
@@ -101,7 +101,7 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         _array[GetFlatIndex(index1, index2, index3)] = value;
     }
 
-    public void Set(T value, params int[] indices)
+    public void Set(int[] indices, T value)
     {
         if (indices.Length != _rank)
         {
@@ -160,7 +160,7 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         return Get(intIndices);
     }
 
-    public void Set(T value, long index1, long index2)
+    public void Set(long index1, long index2, T value)
     {
         int iindex1 = (int)index1;
         int iindex2 = (int)index2;
@@ -169,10 +169,10 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         if (index2 != iindex2)
             throw new ArgumentOutOfRangeException("Huge array not supported.");
 
-        Set(value, iindex1, iindex2);
+        Set(iindex1, iindex2, value);
     }
 
-    public void Set(T value, long index1, long index2, long index3)
+    public void Set(long index1, long index2, long index3, T value)
     {
         int iindex1 = (int)index1;
         int iindex2 = (int)index2;
@@ -184,10 +184,10 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         if (index3 != iindex3)
             throw new ArgumentOutOfRangeException("Huge array not supported.");
 
-        Set(value, iindex1, iindex2, iindex3);
+        Set(iindex1, iindex2, iindex3, value);
     }
 
-    public void Set(T value, params long[] indices)
+    public void Set(long[] indices, T value)
     {
         if (indices == null)
             throw new ArgumentNullException(nameof(indices));
@@ -206,7 +206,7 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
             intIndices[i] = iindex;
         }
 
-        Set(value, intIndices);
+        Set(intIndices, value);
     }
 
 
@@ -425,23 +425,23 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
 
     private int GetFlatIndex(int index1, int index2)
     {
-        return index1 * _lengths[0] + index2 * _lengths[1];
+        return index1 * _lengths[0] + index2;
     }
 
     private int GetFlatIndex(int index1, int index2, int index3)
     {
-        return index1 * _lengths[0] + index2 * _lengths[1] + index3 * _lengths[2];
+        return index1 * _lengths[0] + index2 * _lengths[1] + index3;
     }
 
     private int GetFlatIndex(int[] indices)
     {
         int index = 0;
-        for (int i = 0; i < _rank; i++)
+        for (int i = 0; i < _rank - 1; i++)
         {
             index += indices[i] * _lengths[i];
         }
-
-        return index;
+        
+        return index + indices[_rank - 1];
     }
 
     #endregion
