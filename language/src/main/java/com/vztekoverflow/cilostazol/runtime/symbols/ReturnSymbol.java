@@ -16,6 +16,10 @@ public final class ReturnSymbol extends Symbol {
 
   @Override
   public String toString() {
+    if (type == null) {
+      return "null";
+    }
+
     return type.toString();
   }
 

@@ -36,10 +36,10 @@ public final class CALLNode extends NodeizedNodeBase {
 
     if (method.hasReturnValue()) {
       CILOSTAZOLFrame.put(frame, returnValue, returnStackTop, method.getReturnType().getType());
+      return returnStackTop + 1;
     }
 
-    // +1 for return value
-    return returnStackTop + (method.hasReturnValue() ? 1 : 0);
+    return returnStackTop;
   }
 
   @NotNull

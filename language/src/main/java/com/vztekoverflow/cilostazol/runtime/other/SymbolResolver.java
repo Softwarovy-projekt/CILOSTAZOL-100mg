@@ -374,6 +374,7 @@ public final class SymbolResolver {
           module);
       case CLITableConstants.CLI_TABLE_METHOD_SPEC -> resolveMethod(
           module.getDefiningFile().getTableHeads().getMethodSpecTableHead().skip(row),
+          methodTypeArgs,
           typeTypeArgs,
           module);
       default -> throw new CILParserException();
@@ -447,17 +448,19 @@ public final class SymbolResolver {
   }
 
   public static ClassMember<MethodSymbol> resolveMethod(
-      CLIMethodSpecTableRow row, TypeSymbol[] typeTypeArgs, ModuleSymbol module) {
+      CLIMethodSpecTableRow row,
+      TypeSymbol[] methodTypeArgs,
+      TypeSymbol[] typeTypeArgs,
+      ModuleSymbol module) {
     var signature =
         MethodSpecSig.read(
             new SignatureReader(
                 row.getInstantiationHeapPtr().read(module.getDefiningFile().getBlobHeap())));
     TypeSymbol[] typeArgs = new TypeSymbol[signature.getGenArgCount()];
     for (int i = 0; i < typeArgs.length; i++) {
-      typeArgs[i] =
-          resolveType(signature.getTypeArgs()[i], new TypeSymbol[0], typeTypeArgs, module);
+      typeArgs[i] = resolveType(signature.getTypeArgs()[i], methodTypeArgs, typeTypeArgs, module);
     }
-    var genMethod = resolveMethod(row.getMethodTablePtr(), new TypeSymbol[0], typeTypeArgs, module);
+    var genMethod = resolveMethod(row.getMethodTablePtr(), methodTypeArgs, typeTypeArgs, module);
 
     return new ClassMember<MethodSymbol>(
         genMethod.symbol, resolveMethod(genMethod.member, typeArgs, module.getContext()));

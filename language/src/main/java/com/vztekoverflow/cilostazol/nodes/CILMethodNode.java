@@ -39,7 +39,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   @Children private NodeizedNodeBase[] nodes = new NodeizedNodeBase[0];
   @CompilerDirectives.CompilationFinal private Object osrMetadata;
 
-  private CILMethodNode(MethodSymbol method) {
+  CILMethodNode(MethodSymbol method) {
     this.method = method;
     cil = method.getCIL();
     frameDescriptor =
@@ -1317,11 +1317,13 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   private void doNeg(VirtualFrame frame, int top, StaticOpCodeAnalyser.OpCodeType type) {
     switch (type) {
       case Int32 -> CILOSTAZOLFrame.putInt32(
-          frame, top - 1, CILOSTAZOLFrame.popInt32(frame, top - 1));
+          frame, top - 1, -CILOSTAZOLFrame.popInt32(frame, top - 1));
       case Int64 -> CILOSTAZOLFrame.putInt64(
-          frame, top - 1, CILOSTAZOLFrame.popInt64(frame, top - 1));
+          frame, top - 1, -CILOSTAZOLFrame.popInt64(frame, top - 1));
       case NativeInt -> CILOSTAZOLFrame.putNativeInt(
-          frame, top - 1, CILOSTAZOLFrame.popNativeInt(frame, top - 1));
+          frame, top - 1, -CILOSTAZOLFrame.popNativeInt(frame, top - 1));
+      case NativeFloat -> CILOSTAZOLFrame.putNativeFloat(
+          frame, top - 1, -CILOSTAZOLFrame.popNativeFloat(frame, top - 1));
       default -> throw new InterpreterException();
     }
   }
@@ -2286,6 +2288,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         boolean value = field.getBoolean(object);
         CILOSTAZOLFrame.putInt32(frame, top - 1, value ? 1 : 0);
       }
+      case Byte -> {
+        byte value = field.getByte(object);
+        CILOSTAZOLFrame.putInt32(frame, top - 1, value);
+      }
       case Char -> {
         char value = field.getChar(object);
         CILOSTAZOLFrame.putInt32(frame, top - 1, value);
@@ -2346,6 +2352,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       case Boolean -> {
         int value = CILOSTAZOLFrame.popInt32(frame, top - 1);
         field.setBoolean(object, value != 0);
+      }
+      case Byte -> {
+        int value = CILOSTAZOLFrame.popInt32(frame, top - 1);
+        field.setByte(object, (byte) value);
       }
       case Short -> {
         int value = CILOSTAZOLFrame.popInt32(frame, top - 1);

@@ -26,7 +26,8 @@ public class SubstitutedMethodSymbol extends MethodSymbol {
         createHandlers(constructedFrom.exceptionHandlers, map),
         constructedFrom.cil,
         constructedFrom.maxStack,
-        constructedFrom.methodHeaderFlags);
+        constructedFrom.methodHeaderFlags,
+        constructedFrom.isInternalCall);
     this.definition = definition;
     this.constructedFrom = constructedFrom;
     this.map = map;
