@@ -62,7 +62,8 @@ public class NamedTypeSymbol extends TypeSymbol {
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> staticShape;
 
-  @CompilerDirectives.CompilationFinal private StaticObject staticInstance;
+  @CompilerDirectives.CompilationFinal
+  private StaticObject staticInstance;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private StaticField[] instanceFields;
@@ -436,7 +437,7 @@ public class NamedTypeSymbol extends TypeSymbol {
 
   @Override
   public String toString() {
-    return this.namespace + "::" + this.name;
+    return this.namespace + "." + this.name;
   }
 
   // region Flags
