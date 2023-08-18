@@ -5,6 +5,10 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIAssemblyRefOSTableRow extends CLITableRow<CLIAssemblyRefOSTableRow> {
 
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_ASSEMBLY_REF_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_ASSEMBLY_REF};
+
   public CLIAssemblyRefOSTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
   }
@@ -24,15 +28,11 @@ public class CLIAssemblyRefOSTableRow extends CLITableRow<CLIAssemblyRefOSTableR
     return getInt(offset);
   }
 
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_ASSEMBLY_REF_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_ASSEMBLY_REF};
-
   public final CLITablePtr getAssemblyRefTablePtr() {
     int offset = 12;
     final int rowNo;
     if (areSmallEnough(MAP_ASSEMBLY_REF_TABLES)) {
-      rowNo = getShort(offset);
+      rowNo = getShort(offset) & 0xFFFF;
     } else {
       rowNo = getInt(offset);
     }

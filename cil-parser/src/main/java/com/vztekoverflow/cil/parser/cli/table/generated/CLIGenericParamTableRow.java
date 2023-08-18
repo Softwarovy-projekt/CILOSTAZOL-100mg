@@ -5,6 +5,10 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIGenericParamTableRow extends CLITableRow<CLIGenericParamTableRow> {
 
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_OWNER_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF, CLITableConstants.CLI_TABLE_METHOD_DEF};
+
   public CLIGenericParamTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
   }
@@ -19,16 +23,12 @@ public class CLIGenericParamTableRow extends CLITableRow<CLIGenericParamTableRow
     return getShort(offset);
   }
 
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_OWNER_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF, CLITableConstants.CLI_TABLE_METHOD_DEF};
-
   public final CLITablePtr getOwnerTablePtr() {
     int offset = 4;
     int codedValue;
     var isSmall = areSmallEnough(MAP_OWNER_TABLES);
     if (isSmall) {
-      codedValue = getShort(offset);
+      codedValue = getShort(offset) & 0xFFFF;
     } else {
       codedValue = getInt(offset);
     }

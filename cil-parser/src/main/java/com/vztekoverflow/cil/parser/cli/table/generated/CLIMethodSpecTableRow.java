@@ -5,20 +5,20 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIMethodSpecTableRow extends CLITableRow<CLIMethodSpecTableRow> {
 
-  public CLIMethodSpecTableRow(CLITables tables, int cursor, int rowIndex) {
-    super(tables, cursor, rowIndex);
-  }
-
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private static final byte[] MAP_METHOD_TABLES =
       new byte[] {CLITableConstants.CLI_TABLE_METHOD_DEF, CLITableConstants.CLI_TABLE_MEMBER_REF};
+
+  public CLIMethodSpecTableRow(CLITables tables, int cursor, int rowIndex) {
+    super(tables, cursor, rowIndex);
+  }
 
   public final CLITablePtr getMethodTablePtr() {
     int offset = 0;
     int codedValue;
     var isSmall = areSmallEnough(MAP_METHOD_TABLES);
     if (isSmall) {
-      codedValue = getShort(offset);
+      codedValue = getShort(offset) & 0xFFFF;
     } else {
       codedValue = getInt(offset);
     }

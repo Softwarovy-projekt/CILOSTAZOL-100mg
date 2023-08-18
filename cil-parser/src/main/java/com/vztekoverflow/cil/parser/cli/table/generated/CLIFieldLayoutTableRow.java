@@ -5,6 +5,9 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIFieldLayoutTableRow extends CLITableRow<CLIFieldLayoutTableRow> {
 
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_FIELD_TABLES = new byte[] {CLITableConstants.CLI_TABLE_FIELD};
+
   public CLIFieldLayoutTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
   }
@@ -14,14 +17,11 @@ public class CLIFieldLayoutTableRow extends CLITableRow<CLIFieldLayoutTableRow> 
     return getInt(offset);
   }
 
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_FIELD_TABLES = new byte[] {CLITableConstants.CLI_TABLE_FIELD};
-
   public final CLITablePtr getFieldTablePtr() {
     int offset = 4;
     final int rowNo;
     if (areSmallEnough(MAP_FIELD_TABLES)) {
-      rowNo = getShort(offset);
+      rowNo = getShort(offset) & 0xFFFF;
     } else {
       rowNo = getInt(offset);
     }

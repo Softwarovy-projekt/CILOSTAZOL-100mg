@@ -5,6 +5,14 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIManifestResourceTableRow extends CLITableRow<CLIManifestResourceTableRow> {
 
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_IMPLEMENTATION_TABLES =
+      new byte[] {
+        CLITableConstants.CLI_TABLE_FILE,
+        CLITableConstants.CLI_TABLE_ASSEMBLY_REF,
+        CLITableConstants.CLI_TABLE_EXPORTED_TYPE
+      };
+
   public CLIManifestResourceTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
   }
@@ -30,21 +38,13 @@ public class CLIManifestResourceTableRow extends CLITableRow<CLIManifestResource
     return new CLIStringHeapPtr(heapOffset);
   }
 
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_IMPLEMENTATION_TABLES =
-      new byte[] {
-        CLITableConstants.CLI_TABLE_FILE,
-        CLITableConstants.CLI_TABLE_ASSEMBLY_REF,
-        CLITableConstants.CLI_TABLE_EXPORTED_TYPE
-      };
-
   public final CLITablePtr getImplementationTablePtr() {
     int offset = 10;
     if (tables.isStringHeapBig()) offset += 2;
     int codedValue;
     var isSmall = areSmallEnough(MAP_IMPLEMENTATION_TABLES);
     if (isSmall) {
-      codedValue = getShort(offset);
+      codedValue = getShort(offset) & 0xFFFF;
     } else {
       codedValue = getInt(offset);
     }

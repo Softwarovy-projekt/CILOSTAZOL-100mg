@@ -5,6 +5,10 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIMethodDefTableRow extends CLITableRow<CLIMethodDefTableRow> {
 
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_PARAM_LIST_TABLES =
+      new byte[] {CLITableConstants.CLI_TABLE_PARAM};
+
   public CLIMethodDefTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
   }
@@ -47,17 +51,13 @@ public class CLIMethodDefTableRow extends CLITableRow<CLIMethodDefTableRow> {
     return new CLIBlobHeapPtr(heapOffset);
   }
 
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_PARAM_LIST_TABLES =
-      new byte[] {CLITableConstants.CLI_TABLE_PARAM};
-
   public final CLITablePtr getParamListTablePtr() {
     int offset = 12;
     if (tables.isStringHeapBig()) offset += 2;
     if (tables.isBlobHeapBig()) offset += 2;
     final int rowNo;
     if (areSmallEnough(MAP_PARAM_LIST_TABLES)) {
-      rowNo = getShort(offset);
+      rowNo = getShort(offset) & 0xFFFF;
     } else {
       rowNo = getInt(offset);
     }

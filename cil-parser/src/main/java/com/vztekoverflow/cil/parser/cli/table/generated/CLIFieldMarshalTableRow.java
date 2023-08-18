@@ -5,20 +5,20 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIFieldMarshalTableRow extends CLITableRow<CLIFieldMarshalTableRow> {
 
-  public CLIFieldMarshalTableRow(CLITables tables, int cursor, int rowIndex) {
-    super(tables, cursor, rowIndex);
-  }
-
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private static final byte[] MAP_PARENT_TABLES =
       new byte[] {CLITableConstants.CLI_TABLE_FIELD, CLITableConstants.CLI_TABLE_PARAM};
+
+  public CLIFieldMarshalTableRow(CLITables tables, int cursor, int rowIndex) {
+    super(tables, cursor, rowIndex);
+  }
 
   public final CLITablePtr getParentTablePtr() {
     int offset = 0;
     int codedValue;
     var isSmall = areSmallEnough(MAP_PARENT_TABLES);
     if (isSmall) {
-      codedValue = getShort(offset);
+      codedValue = getShort(offset) & 0xFFFF;
     } else {
       codedValue = getInt(offset);
     }

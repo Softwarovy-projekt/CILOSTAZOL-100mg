@@ -304,7 +304,7 @@ public final class CILOSTAZOLFrame {
   public static void clearEvaluationStack(Frame frame, int top, MethodSymbol method) {
     int evaluationStackStart = getStartStackOffset(method);
     while (evaluationStackStart < top) {
-      frame.clear(top);
+      frame.clearStatic(top);
       top--;
     }
   }

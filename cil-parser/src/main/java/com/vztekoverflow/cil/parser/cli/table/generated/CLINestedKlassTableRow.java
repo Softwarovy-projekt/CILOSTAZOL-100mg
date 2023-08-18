@@ -6,26 +6,26 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 public class CLINestedKlassTableRow extends CLITableRow<CLINestedKlassTableRow> {
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_ENCLOSING_KLASS_TABLES =
+  private static final byte[] MAP_NESTED_KLASS_TABLES =
       new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF};
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_NESTED_KLASS_TABLES =
+  private static final byte[] MAP_ENCLOSING_KLASS_TABLES =
       new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF};
+
+  public CLINestedKlassTableRow(CLITables tables, int cursor, int rowIndex) {
+    super(tables, cursor, rowIndex);
+  }
 
   public final CLITablePtr getNestedKlassTablePtr() {
     int offset = 0;
     final int rowNo;
     if (areSmallEnough(MAP_NESTED_KLASS_TABLES)) {
-      rowNo = getShort(offset);
+      rowNo = getShort(offset) & 0xFFFF;
     } else {
       rowNo = getInt(offset);
     }
     return new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, rowNo);
-  }
-
-  public CLINestedKlassTableRow(CLITables tables, int cursor, int rowIndex) {
-    super(tables, cursor, rowIndex);
   }
 
   public final CLITablePtr getEnclosingKlassTablePtr() {
@@ -33,7 +33,7 @@ public class CLINestedKlassTableRow extends CLITableRow<CLINestedKlassTableRow> 
     if (!areSmallEnough(MAP_NESTED_KLASS_TABLES)) offset += 2;
     final int rowNo;
     if (areSmallEnough(MAP_ENCLOSING_KLASS_TABLES)) {
-      rowNo = getShort(offset);
+      rowNo = getShort(offset) & 0xFFFF;
     } else {
       rowNo = getInt(offset);
     }

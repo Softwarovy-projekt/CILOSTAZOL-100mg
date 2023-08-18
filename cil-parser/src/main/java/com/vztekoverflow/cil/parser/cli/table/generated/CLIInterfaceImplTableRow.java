@@ -5,23 +5,8 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIInterfaceImplTableRow extends CLITableRow<CLIInterfaceImplTableRow> {
 
-  public CLIInterfaceImplTableRow(CLITables tables, int cursor, int rowIndex) {
-    super(tables, cursor, rowIndex);
-  }
-
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private static final byte[] MAP_KLASS_TABLES = new byte[] {CLITableConstants.CLI_TABLE_TYPE_DEF};
-
-  public final CLITablePtr getKlassTablePtr() {
-    int offset = 0;
-    final int rowNo;
-    if (areSmallEnough(MAP_KLASS_TABLES)) {
-      rowNo = getShort(offset);
-    } else {
-      rowNo = getInt(offset);
-    }
-    return new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, rowNo);
-  }
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private static final byte[] MAP_INTERFACE_TABLES =
@@ -31,13 +16,28 @@ public class CLIInterfaceImplTableRow extends CLITableRow<CLIInterfaceImplTableR
         CLITableConstants.CLI_TABLE_TYPE_SPEC
       };
 
+  public CLIInterfaceImplTableRow(CLITables tables, int cursor, int rowIndex) {
+    super(tables, cursor, rowIndex);
+  }
+
+  public final CLITablePtr getKlassTablePtr() {
+    int offset = 0;
+    final int rowNo;
+    if (areSmallEnough(MAP_KLASS_TABLES)) {
+      rowNo = getShort(offset) & 0xFFFF;
+    } else {
+      rowNo = getInt(offset);
+    }
+    return new CLITablePtr(CLITableConstants.CLI_TABLE_TYPE_DEF, rowNo);
+  }
+
   public final CLITablePtr getInterfaceTablePtr() {
     int offset = 2;
     if (!areSmallEnough(MAP_KLASS_TABLES)) offset += 2;
     int codedValue;
     var isSmall = areSmallEnough(MAP_INTERFACE_TABLES);
     if (isSmall) {
-      codedValue = getShort(offset);
+      codedValue = getShort(offset) & 0xFFFF;
     } else {
       codedValue = getInt(offset);
     }

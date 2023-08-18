@@ -5,6 +5,14 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIEventTableRow extends CLITableRow<CLIEventTableRow> {
 
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_EVENT_TYPE_TABLES =
+      new byte[] {
+        CLITableConstants.CLI_TABLE_TYPE_DEF,
+        CLITableConstants.CLI_TABLE_TYPE_REF,
+        CLITableConstants.CLI_TABLE_TYPE_SPEC
+      };
+
   public CLIEventTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
   }
@@ -25,21 +33,13 @@ public class CLIEventTableRow extends CLITableRow<CLIEventTableRow> {
     return new CLIStringHeapPtr(heapOffset);
   }
 
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_EVENT_TYPE_TABLES =
-      new byte[] {
-        CLITableConstants.CLI_TABLE_TYPE_DEF,
-        CLITableConstants.CLI_TABLE_TYPE_REF,
-        CLITableConstants.CLI_TABLE_TYPE_SPEC
-      };
-
   public final CLITablePtr getEventTypeTablePtr() {
     int offset = 4;
     if (tables.isStringHeapBig()) offset += 2;
     int codedValue;
     var isSmall = areSmallEnough(MAP_EVENT_TYPE_TABLES);
     if (isSmall) {
-      codedValue = getShort(offset);
+      codedValue = getShort(offset) & 0xFFFF;
     } else {
       codedValue = getInt(offset);
     }

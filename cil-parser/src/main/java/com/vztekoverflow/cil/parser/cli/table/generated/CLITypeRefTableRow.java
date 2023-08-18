@@ -5,10 +5,6 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLITypeRefTableRow extends CLITableRow<CLITypeRefTableRow> {
 
-  public CLITypeRefTableRow(CLITables tables, int cursor, int rowIndex) {
-    super(tables, cursor, rowIndex);
-  }
-
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private static final byte[] MAP_RESOLUTION_SCOPE_TABLES =
       new byte[] {
@@ -18,12 +14,16 @@ public class CLITypeRefTableRow extends CLITableRow<CLITypeRefTableRow> {
         CLITableConstants.CLI_TABLE_TYPE_REF
       };
 
+  public CLITypeRefTableRow(CLITables tables, int cursor, int rowIndex) {
+    super(tables, cursor, rowIndex);
+  }
+
   public final CLITablePtr getResolutionScopeTablePtr() {
     int offset = 0;
     int codedValue;
     var isSmall = areSmallEnough(MAP_RESOLUTION_SCOPE_TABLES);
     if (isSmall) {
-      codedValue = getShort(offset);
+      codedValue = getShort(offset) & 0xFFFF;
     } else {
       codedValue = getInt(offset);
     }

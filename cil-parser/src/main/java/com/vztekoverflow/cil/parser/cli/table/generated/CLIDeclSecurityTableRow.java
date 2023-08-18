@@ -5,6 +5,14 @@ import com.vztekoverflow.cil.parser.cli.table.*;
 
 public class CLIDeclSecurityTableRow extends CLITableRow<CLIDeclSecurityTableRow> {
 
+  @CompilerDirectives.CompilationFinal(dimensions = 1)
+  private static final byte[] MAP_PARENT_TABLES =
+      new byte[] {
+        CLITableConstants.CLI_TABLE_TYPE_DEF,
+        CLITableConstants.CLI_TABLE_METHOD_DEF,
+        CLITableConstants.CLI_TABLE_ASSEMBLY
+      };
+
   public CLIDeclSecurityTableRow(CLITables tables, int cursor, int rowIndex) {
     super(tables, cursor, rowIndex);
   }
@@ -14,20 +22,12 @@ public class CLIDeclSecurityTableRow extends CLITableRow<CLIDeclSecurityTableRow
     return getShort(offset);
   }
 
-  @CompilerDirectives.CompilationFinal(dimensions = 1)
-  private static final byte[] MAP_PARENT_TABLES =
-      new byte[] {
-        CLITableConstants.CLI_TABLE_TYPE_DEF,
-        CLITableConstants.CLI_TABLE_METHOD_DEF,
-        CLITableConstants.CLI_TABLE_ASSEMBLY
-      };
-
   public final CLITablePtr getParentTablePtr() {
     int offset = 2;
     int codedValue;
     var isSmall = areSmallEnough(MAP_PARENT_TABLES);
     if (isSmall) {
-      codedValue = getShort(offset);
+      codedValue = getShort(offset) & 0xFFFF;
     } else {
       codedValue = getInt(offset);
     }
