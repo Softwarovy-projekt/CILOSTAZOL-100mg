@@ -188,11 +188,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           case STLOC_2:
           case STLOC_3:
             CILOSTAZOLFrame.copyStatic(frame, topStack - 1, curOpcode - STLOC_0);
-            frame.clearStatic(topStack - 1);
+            if (topStack - 1 != curOpcode - STLOC_0) frame.clearStatic(topStack - 1);
             break;
           case STLOC_S:
-            CILOSTAZOLFrame.copyStatic(frame, topStack - 1, bytecodeBuffer.getImmUByte(pc));
-            frame.clearStatic(topStack - 1);
+            int slot = bytecodeBuffer.getImmUByte(pc);
+            CILOSTAZOLFrame.copyStatic(frame, topStack - 1, slot);
+            if (topStack - 1 != slot) frame.clearStatic(topStack - 1);
             break;
 
             // Loading locals to top
@@ -2415,13 +2416,19 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             CILOSTAZOLFrame.getLocalObject(frame, top - 1 - method.member.getParameters().length);
 
         if (method.member.getMethodFlags().hasFlag(Flag.VIRTUAL)) {
-          method =
+          var candidateMethod =
               SymbolResolver.resolveMethod(
                   instance.getTypeSymbol(),
                   method.member.getName(),
                   method.member.getTypeArguments(),
                   method.member.getParameterTypes(),
                   method.member.getTypeParameters().length);
+
+          if (candidateMethod == null) // search impl table also
+          candidateMethod =
+                SymbolResolver.resolveMethodImpl(method.member, instance.getTypeSymbol());
+
+          method = candidateMethod;
         }
 
         node = getCheckedCALLNode(method.member, top);

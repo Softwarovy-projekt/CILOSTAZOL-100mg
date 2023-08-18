@@ -39,7 +39,7 @@ public final class CALLNode extends NodeizedNodeBase {
     }
 
     // +1 for return value
-    return returnStackTop + 1;
+    return returnStackTop + (method.hasReturnValue() ? 1 : 0);
   }
 
   @NotNull
