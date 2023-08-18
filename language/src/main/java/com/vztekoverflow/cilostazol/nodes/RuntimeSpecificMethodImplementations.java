@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public final class RuntimeSpecificMethodImplementations {
-  public static final Map<String, Function<VirtualFrame, Object>> methodImplementations =
+  private static final Map<String, Function<VirtualFrame, Object>> methodImplementations =
       new HashMap<>() {
         {
           put(
@@ -87,5 +87,9 @@ public final class RuntimeSpecificMethodImplementations {
 
   public static Function<VirtualFrame, Object> getImplementation(String methodIdentifier) {
     return methodImplementations.get(methodIdentifier);
+  }
+
+  public static boolean hasCustomImplementation(String methodIdentifier) {
+    return methodImplementations.containsKey(methodIdentifier);
   }
 }

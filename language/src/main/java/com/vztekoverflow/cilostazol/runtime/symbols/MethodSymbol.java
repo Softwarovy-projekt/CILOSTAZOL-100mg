@@ -15,6 +15,7 @@ import com.vztekoverflow.cil.parser.cli.table.generated.CLIParamTableRow;
 import com.vztekoverflow.cilostazol.CILOSTAZOLBundle;
 import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLRootNode;
+import com.vztekoverflow.cilostazol.nodes.RuntimeSpecificMethodImplementations;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
 import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
 import java.util.Arrays;
@@ -179,7 +180,9 @@ public class MethodSymbol extends Symbol {
         + "::"
         + getName()
         + "("
-        + Arrays.stream(getParameterTypes()).map(TypeSymbol::toString).collect(Collectors.joining())
+        + Arrays.stream(getParameters())
+            .map(ParameterSymbol::toString)
+            .collect(Collectors.joining())
         + ")";
   }
 
@@ -382,6 +385,24 @@ public class MethodSymbol extends Symbol {
               typeParameters,
               definingTypeTypeParams,
               definingType.getDefiningModule());
+
+      if (!isInternalCall) {
+        String methodIdentifier =
+            returnSymbol
+                + " "
+                + definingType
+                + "::"
+                + name
+                + "("
+                + Arrays.stream(parameters)
+                    .map(ParameterSymbol::toString)
+                    .collect(Collectors.joining())
+                + ")";
+
+        if (RuntimeSpecificMethodImplementations.hasCustomImplementation(methodIdentifier)) {
+          isInternalCall = true;
+        }
+      }
 
       return new MethodSymbol(
           name,
