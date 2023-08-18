@@ -574,6 +574,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                   getMethod().getContext(),
                   frame,
                   topStack);
+            } catch (IndexOutOfBoundsException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.IndexOutOfRange,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
             }
             break;
           case STELEM_REF:
@@ -594,6 +600,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             } catch (IllegalArgumentException ex) {
               throw RuntimeCILException.RuntimeCILExceptionFactory.create(
                   RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IndexOutOfBoundsException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.IndexOutOfRange,
                   getMethod().getContext(),
                   frame,
                   topStack);
@@ -620,6 +632,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                   getMethod().getContext(),
                   frame,
                   topStack);
+            } catch (IndexOutOfBoundsException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.IndexOutOfRange,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
             }
             break;
           case STELEM_I1:
@@ -640,6 +658,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             } catch (IllegalArgumentException ex) {
               throw RuntimeCILException.RuntimeCILExceptionFactory.create(
                   RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IndexOutOfBoundsException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.IndexOutOfRange,
                   getMethod().getContext(),
                   frame,
                   topStack);
@@ -666,6 +690,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                   getMethod().getContext(),
                   frame,
                   topStack);
+            } catch (IndexOutOfBoundsException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.IndexOutOfRange,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
             }
             break;
           case STELEM_R4:
@@ -689,6 +719,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                   getMethod().getContext(),
                   frame,
                   topStack);
+            } catch (IndexOutOfBoundsException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.IndexOutOfRange,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
             }
             break;
           case STELEM_R8:
@@ -709,6 +745,12 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             } catch (IllegalArgumentException ex) {
               throw RuntimeCILException.RuntimeCILExceptionFactory.create(
                   RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IndexOutOfBoundsException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.IndexOutOfRange,
                   getMethod().getContext(),
                   frame,
                   topStack);
@@ -1003,26 +1045,47 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
         }
-      case ADD_OVF, ADD_OVF_UN:
+      case ADD_OVF:
         try {
           yield Math.addExact(op1, op2);
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         }
-      case MUL_OVF, MUL_OVF_UN:
+      case ADD_OVF_UN:
+        {
+          var res = op1 + op2;
+          if (Integer.compareUnsigned(res, op1) < 0)
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case MUL_OVF:
         try {
           yield Math.multiplyExact(op1, op2);
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         }
-      case SUB_OVF, SUB_OVF_UN:
+      case MUL_OVF_UN:
+        {
+          var res = op1 * op2;
+          if (Integer.divideUnsigned(res, op2) != op1)
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case SUB_OVF:
         try {
           yield Math.subtractExact(op1, op2);
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case SUB_OVF_UN:
+        {
+          var res = op1 - op2;
+          if (Integer.compareUnsigned(res, op1) > 0)
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         }
       case DIV_UN:
         try {
@@ -1065,26 +1128,47 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.DivideByZero, getMethod().getContext(), frame, tp);
         }
-      case ADD_OVF, ADD_OVF_UN:
+      case ADD_OVF:
         try {
           yield Math.addExact(op1, op2);
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         }
-      case MUL_OVF, MUL_OVF_UN:
+      case ADD_OVF_UN:
+        {
+          var res = op1 + op2;
+          if (Long.compareUnsigned(res, op1) < 0)
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case MUL_OVF:
         try {
           yield Math.multiplyExact(op1, op2);
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         }
-      case SUB_OVF, SUB_OVF_UN:
+      case MUL_OVF_UN:
+        {
+          var res = op1 * op2;
+          if (Long.divideUnsigned(res, op2) != op1)
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case SUB_OVF:
         try {
           yield Math.subtractExact(op1, op2);
         } catch (Exception ex) {
           throw RuntimeCILException.RuntimeCILExceptionFactory.create(
               RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
+        }
+      case SUB_OVF_UN:
+        {
+          var res = op1 - op2;
+          if (Long.compareUnsigned(res, op1) > 0)
+            throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, tp);
         }
       case DIV_UN:
         try {
