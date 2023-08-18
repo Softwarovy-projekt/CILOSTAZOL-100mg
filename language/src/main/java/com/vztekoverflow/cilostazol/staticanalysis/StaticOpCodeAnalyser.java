@@ -28,7 +28,9 @@ public class StaticOpCodeAnalyser {
         method.getLocals(),
         method.getReturnType(),
         method.getExceptionHandlers(),
-        method.getModule());
+        method.getModule(),
+        method.getTypeArguments(),
+        method.getDefiningType().getTypeArguments());
   }
 
   private static OpCodeType[] getOpcodeTypes(
@@ -38,7 +40,9 @@ public class StaticOpCodeAnalyser {
       LocalSymbol[] locals,
       ReturnSymbol returnType,
       ExceptionHandlerSymbol[] exceptionHandlers,
-      ModuleSymbol module) {
+      ModuleSymbol module,
+      TypeSymbol[] methodTypeArgs,
+      TypeSymbol[] typeTypeArgs) {
     var bytecodeBuffer = new BytecodeBuffer(cil);
     OpCodeType[] types = new OpCodeType[cil.length];
     boolean[] visited = new boolean[cil.length];
@@ -83,7 +87,9 @@ public class StaticOpCodeAnalyser {
                 pc,
                 nextPc,
                 curOpcode,
-                cil.length);
+                cil.length,
+                methodTypeArgs,
+                typeTypeArgs);
 
         topStack += BytecodeInstructions.getStackEffect(curOpcode);
         visited[pc] = true;
@@ -121,7 +127,9 @@ public class StaticOpCodeAnalyser {
       int pc,
       int nextPc,
       int curOpcode,
-      int cilLength) {
+      int cilLength,
+      TypeSymbol[] methodTypeArgs,
+      TypeSymbol[] typeTypeArgs) {
     switch (curOpcode) {
       case NOP:
       case BREAK:
@@ -414,7 +422,7 @@ public class StaticOpCodeAnalyser {
         {
           var typePtr = bytecodeBuffer.getImmToken(pc);
           setTypeByStack(types, stack, topStack, pc, curOpcode);
-          var type = SymbolResolver.resolveType(typePtr, module);
+          var type = SymbolResolver.resolveType(typePtr, methodTypeArgs, typeTypeArgs, module);
           replace(stack, topStack, type.getStackTypeKind());
           break;
         }
@@ -439,7 +447,7 @@ public class StaticOpCodeAnalyser {
       case UNBOX_ANY:
         {
           var objPtr = bytecodeBuffer.getImmToken(pc);
-          var objType = SymbolResolver.resolveType(objPtr, module);
+          var objType = SymbolResolver.resolveType(objPtr, methodTypeArgs, typeTypeArgs, module);
           replace(stack, topStack, objType.getStackTypeKind());
           break;
         }
@@ -515,7 +523,8 @@ public class StaticOpCodeAnalyser {
       case LDELEM:
         {
           var elemTypePtr = bytecodeBuffer.getImmToken(pc);
-          var elemType = SymbolResolver.resolveType(elemTypePtr, module);
+          var elemType =
+              SymbolResolver.resolveType(elemTypePtr, methodTypeArgs, typeTypeArgs, module);
           setTypeByStack(types, stack, topStack, pc, curOpcode);
           clear(stack, topStack);
           replace(stack, topStack - 1, elemType.getStackTypeKind());
@@ -571,7 +580,7 @@ public class StaticOpCodeAnalyser {
       case REFANYVAL:
         {
           var typePtr = bytecodeBuffer.getImmToken(pc);
-          var type = SymbolResolver.resolveType(typePtr, module);
+          var type = SymbolResolver.resolveType(typePtr, methodTypeArgs, typeTypeArgs, module);
           types[pc] = getUnaryOpCodeType(type.getStackTypeKind(), curOpcode);
           replace(stack, topStack, ManagedPointer);
           break;
