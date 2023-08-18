@@ -182,7 +182,7 @@ public class MethodSymbol extends Symbol {
         + "("
         + Arrays.stream(getParameters())
             .map(ParameterSymbol::toString)
-            .collect(Collectors.joining())
+            .collect(Collectors.joining(", "))
         + ")";
   }
 

@@ -67,6 +67,10 @@ public final class AssemblyIdentity {
     return new AssemblyIdentity((short) 7, (short) 0, (short) 0, (short) 0, "System.Runtime");
   }
 
+  public static AssemblyIdentity CILOSTAZOLInternalImpl() {
+    return new AssemblyIdentity((short) 1, (short) 0, (short) 0, (short) 0, "CILOSTAZOLInternalImpl");
+  }
+
   public static boolean isStandardLib(AssemblyIdentity identity) {
     return identity.equalsVersionAgnostic(SystemRuntimeLib700())
         || identity.equalsVersionAgnostic(SystemPrivateCoreLib700());

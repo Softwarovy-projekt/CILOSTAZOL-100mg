@@ -4,14 +4,14 @@ import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
 import com.vztekoverflow.cil.parser.cli.signature.ArrayShapeSig;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
-public final class ArrayTypeSymbol extends NamedTypeSymbol {
+public class ArrayTypeSymbol extends NamedTypeSymbol {
   private final TypeSymbol elementType;
   private final NamedTypeSymbol arrayType;
   private final int rank;
   private final int[] lengths;
   private final int[] lowerBounds;
 
-  private ArrayTypeSymbol(
+  protected ArrayTypeSymbol(
       TypeSymbol elementType,
       int rank,
       int[] lengths,
@@ -99,20 +99,13 @@ public final class ArrayTypeSymbol extends NamedTypeSymbol {
 
   public static class ArrayTypeSymbolFactory {
     public static ArrayTypeSymbol create(
-        TypeSymbol elementType, ArrayShapeSig arrayShapeSig, ModuleSymbol definingModule) {
-      return new ArrayTypeSymbol(
-          elementType,
-          arrayShapeSig.rank(),
-          arrayShapeSig.lengths(),
-          arrayShapeSig.lowerBounds(),
-          definingModule);
-    }
-
-    public static ArrayTypeSymbol create(
         TypeSymbol elementType, int rank, ModuleSymbol definingModule) {
       return new ArrayTypeSymbol(elementType, rank, new int[0], new int[0], definingModule);
     }
 
+    /**
+     * Creates zero-based single-dimensional array.
+     * */
     public static ArrayTypeSymbol create(TypeSymbol elementType, ModuleSymbol definingModule) {
       return new ArrayTypeSymbol(elementType, 1, new int[0], new int[0], definingModule);
     }

@@ -226,23 +226,23 @@ public final class SymbolResolver {
       case TypeSig.ELEMENT_TYPE_VOID -> getVoid(module.getContext());
       case TypeSig.ELEMENT_TYPE_ARRAY -> {
         var shapeSig = signature.getArrayShapeSig();
-        if (shapeSig.lengths().length == 0 && shapeSig.lowerBounds().length == 0)
+        if (shapeSig.rank() == 1)
           yield resolveArray(
               resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
-              shapeSig.rank(),
               module.getContext());
-        else
-          // TODO: maybe throw NotImplemented exception as non-vector arrays are not supported
+        else{
           // Partition IV 4.1.2
-          yield ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
-              resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
-              shapeSig,
-              module);
+          yield resolveArray(
+                  resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
+                  shapeSig.rank(),
+                  shapeSig.lengths(),
+                  shapeSig.lowerBounds(),
+                  module.getContext());
+        }
       }
       case TypeSig.ELEMENT_TYPE_SZARRAY -> resolveArray(
           resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
-          1,
-          module.getContext());
+              module.getContext());
       default -> null;
     };
   }
@@ -262,8 +262,12 @@ public final class SymbolResolver {
   // endregion
 
   // region type resolution - other
-  public static ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank, CILOSTAZOLContext ctx) {
-    return ctx.resolveArray(elemType, rank);
+  public static ArrayTypeSymbol resolveArray(TypeSymbol elemType, CILOSTAZOLContext ctx) {
+    return ctx.resolveArray(elemType, 1, new int[0], new int[0]);
+  }
+
+  public static ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank, int[] lengths, int[] lowerBounds, CILOSTAZOLContext ctx) {
+    return ctx.resolveArray(elemType, rank, lengths, lowerBounds);
   }
 
   public static TypeSymbol resolveType(
@@ -398,6 +402,7 @@ public final class SymbolResolver {
         MethodRefSig.parse(
             new SignatureReader(
                 row.getSignatureHeapPtr().read(module.getDefiningFile().getBlobHeap())));
+
     var currentType = type;
     while (currentType != null) {
       if (currentType instanceof NamedTypeSymbol n) {
@@ -444,6 +449,7 @@ public final class SymbolResolver {
       }
     }
 
+    System.err.println("Method not found: " + name);
     return null;
   }
 

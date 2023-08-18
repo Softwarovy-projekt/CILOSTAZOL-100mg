@@ -505,12 +505,34 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             getArrayLength(frame, topStack - 1);
             break;
 
-          case LDELEM:
-            CILOSTAZOLFrame.putObject(
-                frame,
-                topStack - 2,
-                (StaticObject) ((StaticObject) getJavaArrElem(frame, topStack - 1)).clone());
+          case LDELEM:{
+            var element = getJavaArrElem(frame, topStack - 1);
+            switch (method.getOpCodeTypes()[pc]){
+              case Int32 -> CILOSTAZOLFrame.putInt32(
+                  frame,
+                  topStack - 2,
+                  (int) element);
+              case Int64 -> CILOSTAZOLFrame.putInt64(
+                  frame,
+                  topStack - 2,
+                  (long) element);
+              case NativeFloat -> CILOSTAZOLFrame.putNativeFloat(
+                  frame,
+                  topStack - 2,
+                  (float) element);
+              case NativeInt -> CILOSTAZOLFrame.putNativeInt(
+                  frame,
+                  topStack - 2,
+                  (int) element);
+              case Object -> CILOSTAZOLFrame.putObject(
+                  frame,
+                  topStack - 2,
+                  (StaticObject) element);
+              default ->
+                throw new InterpreterException("Invalid ldelem type");
+            }
             break;
+          }
           case LDELEM_REF:
             CILOSTAZOLFrame.putObject(
                 frame, topStack - 2, (StaticObject) getJavaArrElem(frame, topStack - 1));
@@ -555,13 +577,19 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           case STELEM:
             try {
-              Array.set(
-                  getMethod()
+              var array = getMethod()
                       .getContext()
                       .getArrayProperty()
-                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                  CILOSTAZOLFrame.popObject(frame, topStack - 1).clone());
+                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3));
+              var idx = CILOSTAZOLFrame.popInt32(frame, topStack - 2);
+              switch (method.getOpCodeTypes()[pc]) {
+                case Int32, ManagedPointer -> Array.set(array, idx, CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Int64 -> Array.set(array, idx, CILOSTAZOLFrame.popInt64(frame, topStack - 1));
+                case Object -> Array.set(array, idx, CILOSTAZOLFrame.popObject(frame, topStack - 1));
+                case NativeFloat -> Array.set(array, idx, CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+                case NativeInt -> Array.set(array, idx, CILOSTAZOLFrame.popNativeInt(frame, topStack - 1));
+                default -> throw new InterpreterException("Invalid array type");
+              }
             } catch (NullPointerException ex) {
               throw RuntimeCILException.RuntimeCILExceptionFactory.create(
                   RuntimeCILException.Exception.NullReference,
@@ -1341,7 +1369,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     if (num < 0)
       throw RuntimeCILException.RuntimeCILExceptionFactory.create(
           RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, top);
-    var arrayType = SymbolResolver.resolveArray(elemType, 1, getMethod().getContext());
+    var arrayType = SymbolResolver.resolveArray(elemType, getMethod().getContext());
     StaticObject object = null;
     try {
       object = getMethod().getContext().getArrayShape().getFactory().create(arrayType);
@@ -2467,10 +2495,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                   method.member.getTypeParameters().length);
 
           if (candidateMethod == null) // search impl table also
-          candidateMethod =
+            candidateMethod =
                 SymbolResolver.resolveMethodImpl(method.member, instance.getTypeSymbol());
 
-          method = candidateMethod;
+        method = candidateMethod;
         }
 
         node = getCheckedCALLNode(method.member, top);
