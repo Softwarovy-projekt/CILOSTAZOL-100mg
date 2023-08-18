@@ -1,11 +1,11 @@
 package com.vztekoverflow.cilostazol.tests;
 
-import org.junit.jupiter.api.Disabled;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Test;
 
 public class BenchmarkValidityTests extends TestBase {
   @Test
-  @Disabled
   public void nBody() {
     var result =
         runTestFromCode(
@@ -26,16 +26,15 @@ public class BenchmarkValidityTests extends TestBase {
                     {
                         public static void Main(String[] args)
                         {
-                                int n = args.Length > 0 ? Int32.Parse(args[0]) : 10000;
+                                int n = args.Length > 0 ? Int32.Parse(args[0]) : 1_000;
                                 NBodySystem bodies = new NBodySystem();
-                                Console.WriteLine("{0:f9}", bodies.Energy());
+                                Console.WriteLine(bodies.Energy());
                                 for (int i = 0; i < n; i++) bodies.Advance(0.01);
-                                Console.WriteLine("{0:f9}", bodies.Energy());
+                                Console.WriteLine(bodies.Energy());
                         }
                     }
 
                     public class Body { public double x, y, z, vx, vy, vz, mass; }
-                   \s
 
                     public class NBodySystem
                     {
@@ -161,5 +160,7 @@ public class BenchmarkValidityTests extends TestBase {
                     }
                 }
                 """);
+    assertEquals(
+        "-0.16907516382852447\n-0.169087605234606\n", result.output().replace("\r\n", "\n"));
   }
 }
