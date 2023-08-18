@@ -42,6 +42,15 @@ public final class ParameterSymbol extends Symbol {
     return type;
   }
 
+  @Override
+  public String toString() {
+    if (type == null) {
+      return "null";
+    }
+
+    return type.toString();
+  }
+
   public static final class ParameterSymbolFactory {
     public static ParameterSymbol create(
         ParamSig paramSig,
