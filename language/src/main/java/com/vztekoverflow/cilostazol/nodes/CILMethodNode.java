@@ -505,34 +505,28 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             getArrayLength(frame, topStack - 1);
             break;
 
-          case LDELEM:{
-            var element = getJavaArrElem(frame, topStack - 1);
-            switch (method.getOpCodeTypes()[pc]){
-              case Int32 -> CILOSTAZOLFrame.putInt32(
-                  frame,
-                  topStack - 2,
-                  (int) element);
-              case Int64 -> CILOSTAZOLFrame.putInt64(
-                  frame,
-                  topStack - 2,
-                  (long) element);
-              case NativeFloat -> CILOSTAZOLFrame.putNativeFloat(
-                  frame,
-                  topStack - 2,
-                  (float) element);
-              case NativeInt -> CILOSTAZOLFrame.putNativeInt(
-                  frame,
-                  topStack - 2,
-                  (int) element);
-              case Object -> CILOSTAZOLFrame.putObject(
-                  frame,
-                  topStack - 2,
-                  (StaticObject) element);
-              default ->
-                throw new InterpreterException("Invalid ldelem type");
+          case LDELEM:
+            {
+              var arrType = CILOSTAZOLFrame.getLocalObject(frame, topStack - 2).getTypeSymbol();
+              var elementSystemType = ((ArrayTypeSymbol) arrType).getElementType().getSystemType();
+              var element = getJavaArrElem(frame, topStack - 1);
+              switch (elementSystemType) {
+                case Boolean -> CILOSTAZOLFrame.putInt32(
+                    frame, topStack - 2, (boolean) element ? (byte) 1 : (byte) 0);
+                case Byte -> CILOSTAZOLFrame.putInt32(frame, topStack - 2, (byte) element);
+                case Char -> CILOSTAZOLFrame.putInt32(frame, topStack - 2, (char) element);
+                case Short -> CILOSTAZOLFrame.putInt32(frame, topStack - 2, (short) element);
+                case Int -> CILOSTAZOLFrame.putInt32(frame, topStack - 2, (int) element);
+                case Long -> CILOSTAZOLFrame.putInt64(frame, topStack - 2, (long) element);
+                case Float -> CILOSTAZOLFrame.putNativeFloat(frame, topStack - 2, (float) element);
+                case Double -> CILOSTAZOLFrame.putNativeFloat(
+                    frame, topStack - 2, (double) element);
+                case Object -> CILOSTAZOLFrame.putObject(
+                    frame, topStack - 2, (StaticObject) element);
+                case Void -> throw new InterpreterException();
+              }
+              break;
             }
-            break;
-          }
           case LDELEM_REF:
             CILOSTAZOLFrame.putObject(
                 frame, topStack - 2, (StaticObject) getJavaArrElem(frame, topStack - 1));
@@ -577,18 +571,29 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           case STELEM:
             try {
-              var array = getMethod()
-                      .getContext()
-                      .getArrayProperty()
-                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3));
+              var stackArray = CILOSTAZOLFrame.popObject(frame, topStack - 3);
+              var array = getMethod().getContext().getArrayProperty().getObject(stackArray);
               var idx = CILOSTAZOLFrame.popInt32(frame, topStack - 2);
-              switch (method.getOpCodeTypes()[pc]) {
-                case Int32, ManagedPointer -> Array.set(array, idx, CILOSTAZOLFrame.popInt32(frame, topStack - 1));
-                case Int64 -> Array.set(array, idx, CILOSTAZOLFrame.popInt64(frame, topStack - 1));
-                case Object -> Array.set(array, idx, CILOSTAZOLFrame.popObject(frame, topStack - 1));
-                case NativeFloat -> Array.set(array, idx, CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
-                case NativeInt -> Array.set(array, idx, CILOSTAZOLFrame.popNativeInt(frame, topStack - 1));
-                default -> throw new InterpreterException("Invalid array type");
+              switch (((ArrayTypeSymbol) (stackArray).getTypeSymbol())
+                  .getElementType()
+                  .getSystemType()) {
+                case Boolean -> Array.set(
+                    array, idx, CILOSTAZOLFrame.popInt32(frame, topStack - 1) != 0);
+                case Byte -> Array.set(
+                    array, idx, (byte) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Int -> Array.set(array, idx, CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Short -> Array.set(
+                    array, idx, (short) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Char -> Array.set(
+                    array, idx, (char) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Float -> Array.set(
+                    array, idx, (float) CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+                case Long -> Array.set(array, idx, CILOSTAZOLFrame.popInt64(frame, topStack - 1));
+                case Double -> Array.set(
+                    array, idx, CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+                case Void -> throw new InterpreterException();
+                case Object -> Array.set(
+                    array, idx, CILOSTAZOLFrame.popObject(frame, topStack - 1));
               }
             } catch (NullPointerException ex) {
               throw RuntimeCILException.RuntimeCILExceptionFactory.create(
@@ -2485,7 +2490,16 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         var instance =
             CILOSTAZOLFrame.getLocalObject(frame, top - 1 - method.member.getParameters().length);
 
-        if (method.member.getMethodFlags().hasFlag(Flag.VIRTUAL)) {
+        if (method.member.getMethodFlags().hasFlag(Flag.VIRTUAL)
+            // Allow looking for overrides on Multidimensional Array implementation
+            || (instance.getTypeSymbol() instanceof ConstructedNamedTypeSymbol constrType
+                && constrType
+                    .getName()
+                    .equals(CILOSTAZOLBundle.message("cilostazol.multidimensional.array.name"))
+                && constrType
+                    .getNamespace()
+                    .equals(
+                        CILOSTAZOLBundle.message("cilostazol.multidimensional.array.namespace")))) {
           var candidateMethod =
               SymbolResolver.resolveMethod(
                   instance.getTypeSymbol(),
@@ -2495,10 +2509,10 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                   method.member.getTypeParameters().length);
 
           if (candidateMethod == null) // search impl table also
-            candidateMethod =
+          candidateMethod =
                 SymbolResolver.resolveMethodImpl(method.member, instance.getTypeSymbol());
 
-        method = candidateMethod;
+          method = candidateMethod;
         }
 
         node = getCheckedCALLNode(method.member, top);

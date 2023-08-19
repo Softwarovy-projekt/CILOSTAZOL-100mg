@@ -143,7 +143,7 @@ public class StaticOpCodeAnalyser {
       case STLOC:
       case STARG_S:
       case STARG:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         break;
 
@@ -209,11 +209,11 @@ public class StaticOpCodeAnalyser {
         push(stack, topStack, StackType.NativeFloat);
         break;
       case DUP:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         push(stack, topStack, stack[topStack - 1]);
         break;
       case POP:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         break;
       case JMP:
@@ -252,13 +252,13 @@ public class StaticOpCodeAnalyser {
       case BRFALSE_S:
       case BRTRUE_S:
         handleOpCodeJumpShort(bytecodeBuffer, visited, visitStack, pc, nextPc);
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         break;
       case BRFALSE:
       case BRTRUE:
         handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc);
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         break;
       case BEQ_S:
@@ -385,7 +385,7 @@ public class StaticOpCodeAnalyser {
       case CONV_OVF_U2_UN:
       case CONV_OVF_U4_UN:
         checkRestrictedConversionOperations(stack, topStack, curOpcode);
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         replace(stack, topStack, Int32);
         break;
       case CONV_I8:
@@ -395,14 +395,14 @@ public class StaticOpCodeAnalyser {
       case CONV_OVF_I8_UN:
       case CONV_OVF_U8_UN:
         // is not restricted to any type
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         replace(stack, topStack, Int64);
         break;
       case CONV_R4:
       case CONV_R_UN:
       case CONV_R8:
         checkRestrictedConversionOperations(stack, topStack, curOpcode);
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         replace(stack, topStack, NativeFloat);
         break;
       case CONV_I:
@@ -412,7 +412,7 @@ public class StaticOpCodeAnalyser {
       case CONV_OVF_I_UN:
       case CONV_OVF_U_UN:
         // is not restricted to any type
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         replace(stack, topStack, NativeInt);
         break;
       case CPOBJ:
@@ -421,7 +421,7 @@ public class StaticOpCodeAnalyser {
       case LDOBJ:
         {
           var typePtr = bytecodeBuffer.getImmToken(pc);
-          setTypeByStack(types, stack, topStack, pc, curOpcode);
+          setTypeByStack(types, stack, topStack, pc);
           var type = SymbolResolver.resolveType(typePtr,methodTypeArgs, classTypeArgs, module);
           replace(stack, topStack, type.getStackTypeKind());
           break;
@@ -452,7 +452,7 @@ public class StaticOpCodeAnalyser {
           break;
         }
       case BOX:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         replace(stack, topStack, Object);
         break;
       case THROW:
@@ -495,28 +495,28 @@ public class StaticOpCodeAnalyser {
           break;
         }
       case STFLD:
-        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or managed pointer
+        setTypeByStack(types, stack, topStack, pc); // native int or managed pointer
         clear(stack, topStack);
         clear(stack, topStack - 1);
         break;
       case STSFLD:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         break;
       case STOBJ:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         clear(stack, topStack - 1);
         break;
       case NEWARR:
-        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the size
+        setTypeByStack(types, stack, topStack, pc); // native int or int32 for the size
         replace(stack, topStack, Object);
         break;
       case LDLEN:
         replace(stack, topStack, Int32); // native usnigned int
         break;
       case LDELEMA:
-        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, ManagedPointer);
         break;
@@ -524,7 +524,7 @@ public class StaticOpCodeAnalyser {
         {
           var elemTypePtr = bytecodeBuffer.getImmToken(pc);
           var elemType = SymbolResolver.resolveType(elemTypePtr, methodTypeArgs, classTypeArgs, module);
-          types[pc] = getUnaryOpCodeType(elemType.getStackTypeKind());
+          setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
           clear(stack, topStack);
           replace(stack, topStack - 1, elemType.getStackTypeKind());
           break;
@@ -535,29 +535,29 @@ public class StaticOpCodeAnalyser {
       case LDELEM_U1:
       case LDELEM_U2:
       case LDELEM_U4:
-        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, Int32);
         break;
       case LDELEM_I8:
         // case LDELEM_U8: //same opcode as LDELEM_I8
-        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, Int64);
         break;
       case LDELEM_I:
-        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, NativeInt);
         break;
       case LDELEM_R4:
       case LDELEM_R8:
-        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, NativeFloat);
         break;
       case LDELEM_REF:
-        setTypeByStack(types, stack, topStack, pc, curOpcode); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
         clear(stack, topStack);
         replace(stack, topStack - 1, Object);
         break;
@@ -571,7 +571,7 @@ public class StaticOpCodeAnalyser {
       case STELEM_REF:
       case STELEM_I:
         setTypeByStack(
-            types, stack, topStack - 1, pc, curOpcode); // native int or int32 for the index
+            types, stack, topStack, pc); // native int or int32 for the index
         clear(stack, topStack);
         clear(stack, topStack - 1);
         clear(stack, topStack - 2);
@@ -588,7 +588,7 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack, Int32);
         break;
       case CKFINITE:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         break;
       case MKREFANY:
         replace(stack, topStack, ManagedPointer); // typed reference is a managed pointer:
@@ -622,7 +622,7 @@ public class StaticOpCodeAnalyser {
         replace(stack, topStack - 1, Int32); // 1st operand cleared inside handleBinaryComparison
         break;
       case INITOBJ:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         break;
       case SIZEOF:
@@ -775,7 +775,7 @@ public class StaticOpCodeAnalyser {
    * @param topStack Points to the idx + 1 of a value on the stack we care about
    */
   private static void setTypeByStack(
-      OpCodeType[] types, StackType[] stack, int topStack, int pc, int opCode) {
+      OpCodeType[] types, StackType[] stack, int topStack, int pc) {
     types[pc] = getUnaryOpCodeType(stack[topStack - 1]);
   }
 
