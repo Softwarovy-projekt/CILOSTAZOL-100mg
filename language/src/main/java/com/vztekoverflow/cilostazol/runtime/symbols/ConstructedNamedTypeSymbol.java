@@ -121,9 +121,10 @@ public final class ConstructedNamedTypeSymbol extends NamedTypeSymbol {
 
   @Override
   public String toString() {
-    return super.toString() + "<" + Arrays.stream(typeArguments)
-            .map(TypeSymbol::toString)
-            .collect(Collectors.joining(", ")) + ">";
+    return super.toString()
+        + "<"
+        + Arrays.stream(typeArguments).map(TypeSymbol::toString).collect(Collectors.joining(", "))
+        + ">";
   }
 
   // endregion

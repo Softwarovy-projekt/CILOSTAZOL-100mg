@@ -1,7 +1,6 @@
 package com.vztekoverflow.cilostazol.runtime.symbols;
 
 import com.vztekoverflow.cil.parser.cli.AssemblyIdentity;
-import com.vztekoverflow.cil.parser.cli.signature.ArrayShapeSig;
 import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 
 public class ArrayTypeSymbol extends NamedTypeSymbol {
@@ -103,9 +102,7 @@ public class ArrayTypeSymbol extends NamedTypeSymbol {
       return new ArrayTypeSymbol(elementType, rank, new int[0], new int[0], definingModule);
     }
 
-    /**
-     * Creates zero-based single-dimensional array.
-     * */
+    /** Creates zero-based single-dimensional array. */
     public static ArrayTypeSymbol create(TypeSymbol elementType, ModuleSymbol definingModule) {
       return new ArrayTypeSymbol(elementType, 1, new int[0], new int[0], definingModule);
     }

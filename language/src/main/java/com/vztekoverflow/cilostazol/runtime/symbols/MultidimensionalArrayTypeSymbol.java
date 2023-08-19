@@ -8,22 +8,24 @@ public final class MultidimensionalArrayTypeSymbol extends ArrayTypeSymbol {
   private final NamedTypeSymbol arrayImplementation;
 
   private MultidimensionalArrayTypeSymbol(
-          TypeSymbol elementType,
-          int rank,
-          int[] lengths,
-          int[] lowerBounds,
-          ModuleSymbol definingModule) {
+      TypeSymbol elementType,
+      int rank,
+      int[] lengths,
+      int[] lowerBounds,
+      ModuleSymbol definingModule) {
     super(elementType, rank, lengths, lowerBounds, definingModule);
 
-    this.arrayImplementation = (NamedTypeSymbol) SymbolResolver.resolveType(
-            ((NamedTypeSymbol)
+    this.arrayImplementation =
+        (NamedTypeSymbol)
             SymbolResolver.resolveType(
-                "MultidimensionalArray`1",
-                "CILOSTAZOLInternalImpl",
-                AssemblyIdentity.CILOSTAZOLInternalImpl(),
-                definingModule.getContext())),
-            new TypeSymbol[] {elementType},
-            definingModule.getContext());
+                ((NamedTypeSymbol)
+                    SymbolResolver.resolveType(
+                        "MultidimensionalArray`1",
+                        "CILOSTAZOLInternalImpl",
+                        AssemblyIdentity.CILOSTAZOLInternalImpl(),
+                        definingModule.getContext())),
+                new TypeSymbol[] {elementType},
+                definingModule.getContext());
   }
 
   @Override
@@ -36,16 +38,15 @@ public final class MultidimensionalArrayTypeSymbol extends ArrayTypeSymbol {
     return arrayImplementation.getFields();
   }
 
-
   public static class MultidimensionalArrayTypeSymbolFactory {
     public static MultidimensionalArrayTypeSymbol create(
-            TypeSymbol elementType,
-            int rank,
-            int[] lengths,
-            int[] lowerBounds,
-            ModuleSymbol definingModule) {
-      return new MultidimensionalArrayTypeSymbol(elementType, rank, lengths, lowerBounds, definingModule);
+        TypeSymbol elementType,
+        int rank,
+        int[] lengths,
+        int[] lowerBounds,
+        ModuleSymbol definingModule) {
+      return new MultidimensionalArrayTypeSymbol(
+          elementType, rank, lengths, lowerBounds, definingModule);
     }
   }
-
 }

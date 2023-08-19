@@ -152,7 +152,8 @@ public class CILOSTAZOLContext {
   }
 
   // region symbol resolution
-  public ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank, int[] lengths, int[] lowerBounds) {
+  public ArrayTypeSymbol resolveArray(
+      TypeSymbol elemType, int rank, int[] lengths, int[] lowerBounds) {
     var cacheKey = new ArrayCacheKey(elemType, rank);
 
     return arrayCache.computeIfAbsent(

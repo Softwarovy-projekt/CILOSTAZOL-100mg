@@ -1,8 +1,8 @@
 package com.vztekoverflow.cilostazol.tests;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 public class MultidimensionalArraysTests extends TestBase {
 

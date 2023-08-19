@@ -68,7 +68,8 @@ public final class AssemblyIdentity {
   }
 
   public static AssemblyIdentity CILOSTAZOLInternalImpl() {
-    return new AssemblyIdentity((short) 1, (short) 0, (short) 0, (short) 0, "CILOSTAZOLInternalImpl");
+    return new AssemblyIdentity(
+        (short) 1, (short) 0, (short) 0, (short) 0, "CILOSTAZOLInternalImpl");
   }
 
   public static boolean isStandardLib(AssemblyIdentity identity) {

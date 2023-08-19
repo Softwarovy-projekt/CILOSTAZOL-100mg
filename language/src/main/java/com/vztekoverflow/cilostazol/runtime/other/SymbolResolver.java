@@ -230,19 +230,19 @@ public final class SymbolResolver {
           yield resolveArray(
               resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
               module.getContext());
-        else{
+        else {
           // Partition IV 4.1.2
           yield resolveArray(
-                  resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
-                  shapeSig.rank(),
-                  shapeSig.lengths(),
-                  shapeSig.lowerBounds(),
-                  module.getContext());
+              resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
+              shapeSig.rank(),
+              shapeSig.lengths(),
+              shapeSig.lowerBounds(),
+              module.getContext());
         }
       }
       case TypeSig.ELEMENT_TYPE_SZARRAY -> resolveArray(
           resolveType(signature.getInnerType(), methodTypeArgs, typeTypeArgs, module),
-              module.getContext());
+          module.getContext());
       default -> null;
     };
   }
@@ -266,7 +266,8 @@ public final class SymbolResolver {
     return ctx.resolveArray(elemType, 1, new int[0], new int[0]);
   }
 
-  public static ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank, int[] lengths, int[] lowerBounds, CILOSTAZOLContext ctx) {
+  public static ArrayTypeSymbol resolveArray(
+      TypeSymbol elemType, int rank, int[] lengths, int[] lowerBounds, CILOSTAZOLContext ctx) {
     return ctx.resolveArray(elemType, rank, lengths, lowerBounds);
   }
 
