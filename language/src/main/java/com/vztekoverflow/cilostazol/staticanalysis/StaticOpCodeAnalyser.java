@@ -221,14 +221,16 @@ public class StaticOpCodeAnalyser {
       case CALL:
         {
           var methodPtr = bytecodeBuffer.getImmToken(pc);
-          var method = SymbolResolver.resolveMethod(methodPtr, methodTypeArgs, classTypeArgs, module).member;
+          var method =
+              SymbolResolver.resolveMethod(methodPtr, methodTypeArgs, classTypeArgs, module).member;
           topStack = handleMethod(method, stack, topStack);
           break;
         }
       case CALLVIRT:
         {
           var methodPtr = bytecodeBuffer.getImmToken(pc);
-          var method = SymbolResolver.resolveMethod(methodPtr, methodTypeArgs, classTypeArgs, module).member;
+          var method =
+              SymbolResolver.resolveMethod(methodPtr, methodTypeArgs, classTypeArgs, module).member;
           topStack = handleMethod(method, stack, topStack);
           break;
         }
@@ -422,7 +424,7 @@ public class StaticOpCodeAnalyser {
         {
           var typePtr = bytecodeBuffer.getImmToken(pc);
           setTypeByStack(types, stack, topStack, pc);
-          var type = SymbolResolver.resolveType(typePtr,methodTypeArgs, classTypeArgs, module);
+          var type = SymbolResolver.resolveType(typePtr, methodTypeArgs, classTypeArgs, module);
           replace(stack, topStack, type.getStackTypeKind());
           break;
         }
@@ -470,10 +472,7 @@ public class StaticOpCodeAnalyser {
       case LDFLD:
         {
           var fieldPtr = bytecodeBuffer.getImmToken(pc);
-          var field =
-              SymbolResolver.resolveField(
-                      fieldPtr, classTypeArgs, module)
-                  .member;
+          var field = SymbolResolver.resolveField(fieldPtr, classTypeArgs, module).member;
           replace(stack, topStack, field.getType().getStackTypeKind());
           break;
         }
@@ -523,7 +522,8 @@ public class StaticOpCodeAnalyser {
       case LDELEM:
         {
           var elemTypePtr = bytecodeBuffer.getImmToken(pc);
-          var elemType = SymbolResolver.resolveType(elemTypePtr, methodTypeArgs, classTypeArgs, module);
+          var elemType =
+              SymbolResolver.resolveType(elemTypePtr, methodTypeArgs, classTypeArgs, module);
           setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
           clear(stack, topStack);
           replace(stack, topStack - 1, elemType.getStackTypeKind());
@@ -570,8 +570,7 @@ public class StaticOpCodeAnalyser {
       case STELEM_R8:
       case STELEM_REF:
       case STELEM_I:
-        setTypeByStack(
-            types, stack, topStack, pc); // native int or int32 for the index
+        setTypeByStack(types, stack, topStack, pc); // native int or int32 for the index
         clear(stack, topStack);
         clear(stack, topStack - 1);
         clear(stack, topStack - 2);
@@ -737,8 +736,12 @@ public class StaticOpCodeAnalyser {
   }
 
   private static int handleCtor(
-      CLITablePtr ctorPtr, TypeSymbol[] methodTypeArgs,
-      TypeSymbol[] classTypeArgs, StackType[] stack, int topStack, ModuleSymbol module) {
+      CLITablePtr ctorPtr,
+      TypeSymbol[] methodTypeArgs,
+      TypeSymbol[] classTypeArgs,
+      StackType[] stack,
+      int topStack,
+      ModuleSymbol module) {
     var ctor = SymbolResolver.resolveMethod(ctorPtr, methodTypeArgs, classTypeArgs, module).member;
     // A new argument is added during the constructor call -> topStack + 1
     topStack = updateStackByMethod(stack, topStack + 1, ctor);
@@ -774,8 +777,7 @@ public class StaticOpCodeAnalyser {
   /**
    * @param topStack Points to the idx + 1 of a value on the stack we care about
    */
-  private static void setTypeByStack(
-      OpCodeType[] types, StackType[] stack, int topStack, int pc) {
+  private static void setTypeByStack(OpCodeType[] types, StackType[] stack, int topStack, int pc) {
     types[pc] = getUnaryOpCodeType(stack[topStack - 1]);
   }
 

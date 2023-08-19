@@ -62,8 +62,7 @@ public class NamedTypeSymbol extends TypeSymbol {
   @CompilerDirectives.CompilationFinal
   private StaticShape<StaticObject.StaticObjectFactory> staticShape;
 
-  @CompilerDirectives.CompilationFinal
-  private StaticObject staticInstance;
+  @CompilerDirectives.CompilationFinal private StaticObject staticInstance;
 
   @CompilerDirectives.CompilationFinal(dimensions = 1)
   private StaticField[] instanceFields;

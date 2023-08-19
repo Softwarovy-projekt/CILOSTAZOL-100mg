@@ -1,6 +1,5 @@
 package com.vztekoverflow.cilostazol.tests;
 
-import org.graalvm.polyglot.PolyglotException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +15,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void simpleArray2D() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -37,7 +38,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void simpleArray3D() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -58,7 +61,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void simpleArray5D() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -78,8 +83,10 @@ public class MultidimensionalArraysTests extends TestBase {
   }
 
   @Test
-  public void arrayTouchAllElementsBig(){
-    var result = runTestFromCode("""
+  public void arrayTouchAllElementsBig() {
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -110,8 +117,10 @@ public class MultidimensionalArraysTests extends TestBase {
   }
 
   @Test
-  public void arrayTouchAllElementsSmall(){
-    var result = runTestFromCode("""
+  public void arrayTouchAllElementsSmall() {
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -137,10 +146,10 @@ public class MultidimensionalArraysTests extends TestBase {
   }
 
   @Test
-  public void printAllElementsSmall(){
+  public void printAllElementsSmall() {
     var result =
-            runTestFromCode(
-                    """
+        runTestFromCode(
+            """
                     using System;
                     namespace CustomTest
                     {
@@ -153,7 +162,7 @@ public class MultidimensionalArraysTests extends TestBase {
                             for(int i = 0; i < 2; i++)
                               for(int j = 0; j < 3; j++)
                                   arr[i, j] = counter++;
-        
+
                             foreach(var i in arr)
                               System.Console.Write(i);
                             return counter;
@@ -167,8 +176,10 @@ public class MultidimensionalArraysTests extends TestBase {
   }
 
   @Test
-  public void printAllElementsBig(){
-    var result = runTestFromCode("""
+  public void printAllElementsBig() {
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -192,14 +203,16 @@ public class MultidimensionalArraysTests extends TestBase {
             }
             """);
     assertEquals(97, result.exitCode());
-    assertEquals("123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596", result.output());
+    assertEquals(
+        "123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596",
+        result.output());
   }
 
   @Test
-  public void checkRowBasedMemorySavingSmall(){
+  public void checkRowBasedMemorySavingSmall() {
     var result =
-            runTestFromCode(
-                    """
+        runTestFromCode(
+            """
                     using System;
                     namespace CustomTest
                     {
@@ -211,7 +224,7 @@ public class MultidimensionalArraysTests extends TestBase {
                             for(int i = 0; i < 2; i++)
                               for(int j = 0; j < 4; j++)
                                   arr[i, j] = i;
-        
+
                             foreach(var i in arr)
                               System.Console.Write(i);
                             return 42;
@@ -225,8 +238,10 @@ public class MultidimensionalArraysTests extends TestBase {
   }
 
   @Test
-  public void checkRowBasedMemorySavingBig(){
-    var result = runTestFromCode("""
+  public void checkRowBasedMemorySavingBig() {
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -251,12 +266,16 @@ public class MultidimensionalArraysTests extends TestBase {
             """);
 
     assertEquals(42, result.exitCode());
-    assertEquals("001122331122334411223344223344552233445533445566112233442233445522334455334455663344556644556677", result.output());
+    assertEquals(
+        "001122331122334411223344223344552233445533445566112233442233445522334455334455663344556644556677",
+        result.output());
   }
 
   @Test
-  public void testArrayEnumerationSmall(){
-    var result = runTestFromCode("""
+  public void testArrayEnumerationSmall() {
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -281,8 +300,10 @@ public class MultidimensionalArraysTests extends TestBase {
   }
 
   @Test
-  public void testArrayEnumerationBig(){
-    var result = runTestFromCode("""
+  public void testArrayEnumerationBig() {
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -312,7 +333,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void simpleArray3DInitialization() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -332,7 +355,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void simpleArray3Dbool() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -355,7 +380,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void simpleArray3DboolInitialization() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -377,7 +404,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void array2DObject() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
           using System;
           namespace CustomTest
           {
@@ -389,11 +418,11 @@ public class MultidimensionalArraysTests extends TestBase {
                     var a = new A();
                     a.prop = 42;
                     arr[3, 4] = a;
-                    
+
                     return arr[3, 4].prop;
                 }
             }
-            
+
             class A {
               public int prop;
             }
@@ -405,7 +434,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void array2DObjectInitialization() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -416,11 +447,11 @@ public class MultidimensionalArraysTests extends TestBase {
                       var arr = new A[5, 8];
                       if (arr[3, 4] == null)
                         return 42;
-                      
+
                       return -1;
                   }
               }
-              
+
               class A {
                 public int prop;
               }
@@ -432,7 +463,9 @@ public class MultidimensionalArraysTests extends TestBase {
 
   @Test
   public void array2DObjectInitialization2() {
-    var result = runTestFromCode("""
+    var result =
+        runTestFromCode(
+            """
             using System;
             namespace CustomTest
             {
@@ -442,14 +475,14 @@ public class MultidimensionalArraysTests extends TestBase {
                   {
                       var arr = new A[5, 8];
                       arr[0, 0] = new A();
-                      
+
                       if (arr[3, 4] == null)
                         return 42;
-                      
+
                       return -1;
                   }
               }
-              
+
               class A {
                 public int prop;
               }
@@ -458,5 +491,4 @@ public class MultidimensionalArraysTests extends TestBase {
 
     assertEquals(42, result.exitCode());
   }
-
 }
