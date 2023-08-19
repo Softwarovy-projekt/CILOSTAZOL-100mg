@@ -3,7 +3,6 @@ package com.vztekoverflow.cilostazol.tests;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.graalvm.polyglot.PolyglotException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class ExceptionTests extends TestBase {
@@ -370,7 +369,6 @@ public class ExceptionTests extends TestBase {
   }
 
   @Test
-  @Disabled("Static analysis blocks it")
   public void simpleEx11() {
     var result =
         runTestFromCode(
@@ -380,6 +378,10 @@ public class ExceptionTests extends TestBase {
                             {
                                 public class Program
                                 {
+                                    public class A\s
+                                    {
+                                      public void Foo() {}
+                                    }
                                     public static int Main()
                                     {
                                         try
@@ -396,10 +398,9 @@ public class ExceptionTests extends TestBase {
                                         {
                                           Console.Write("2");
                                         }
-
                                         try
                                         {
-                                          uint a = uint.MaxValue;
+                                          int a = int.MaxValue;
                                           checked
                                           {
                                               a = a + 3;
@@ -414,55 +415,152 @@ public class ExceptionTests extends TestBase {
                                           Console.Write("2");
                                         }
 
-                                        try
-                                        {
-                                          object a = null;
-                                          Console.WriteLine(a.ToString());
-                                        }
-                                        catch(NullReferenceException ex)
-                                        {
-                                          Console.Write("1");
-                                        }
-                                        catch(NotImplementedException ex)
-                                        {
-                                          Console.Write("2");
-                                        }
-
-                                        try
-                                        {
-                                          int[] a = new int[2];
-                                          a[3] = 1;
-                                          Console.WriteLine(a[1]);
-                                        }
-                                        catch(IndexOutOfRangeException ex)
-                                        {
-                                          Console.Write("1");
-                                        }
-                                        catch(NotImplementedException ex)
-                                        {
-                                          Console.Write("2");
-                                        }
-
-                                        try
-                                        {
-                                          object a = new object();
-                                          Console.WriteLine((string)a);
-                                        }
-                                        catch(InvalidCastException ex)
-                                        {
-                                          Console.Write("1");
-                                        }
-                                        catch(NotImplementedException ex)
-                                        {
-                                          Console.Write("2");
-                                        }
-
                                         return 42;
                                     }
                                 }
                             }
                               """);
-    assertEquals("11111", result.output());
+    assertEquals("11", result.output());
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void simpleEx15() {
+    var result =
+        runTestFromCode(
+            """
+                                    using System;
+                                    namespace CustomTest
+                                    {
+                                        public class Program
+                                        {
+                                            public class A\s
+                                            {
+                                              public void Foo() {}
+                                            }
+                                            public static int Main()
+                                            {
+                                                try
+                                                {
+                                                  uint a = uint.MaxValue;
+                                                  checked
+                                                  {
+                                                      a = a + 3;
+                                                  }
+                                                }
+                                                catch(OverflowException ex)
+                                                {
+                                                  Console.Write("1");
+                                                }
+                                                catch(NotImplementedException ex)
+                                                {
+                                                  Console.Write("2");
+                                                }
+
+                                                return 42;
+                                            }
+                                        }
+                                    }
+                                      """);
+    assertEquals("1", result.output());
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void simpleEx12() {
+    var result =
+        runTestFromCode(
+            """
+                                    using System;
+                                    namespace CustomTest
+                                    {
+                                        public class Program
+                                        {
+
+                                            public static int Main()
+                                            {
+                                              try
+                                              {
+                                                int[] a = new int[2];
+                                                a[3] = 1;
+                                                Console.WriteLine(a[1]);
+                                              }
+                                              catch(IndexOutOfRangeException ex)
+                                              {
+                                                Console.Write("1");
+                                              }
+                                              catch(NotImplementedException ex)
+                                              {
+                                                Console.Write("2");
+                                              }
+                                                return 42;
+                                            }
+                                        }
+                                    }
+                                      """);
+    assertEquals("1", result.output());
+    assertEquals(42, result.exitCode());
+  }
+
+  @Test
+  public void simpleEx13() {
+    var result =
+        runTestFromCode(
+            """
+                                  try
+                                  {
+                                    object a = new object();
+                                    Console.WriteLine((string)a);
+                                  }
+                                  catch(InvalidCastException ex)
+                                  {
+                                    Console.Write("1");
+                                  }
+                                  catch(NotImplementedException ex)
+                                  {
+                                    Console.Write("2");
+                                  }
+                                      """);
+    assertEquals("1", result.output());
+  }
+
+  @Test
+  public void simpleEx14() {
+    var result =
+        runTestFromCode(
+            """
+                                    using System;
+                                    namespace CustomTest
+                                    {
+                                        public class A
+                                        {
+                                          public void Foo() {}
+                                        }
+                                        public class Program
+                                        {
+
+                                            public static int Main()
+                                            {
+                                              try
+                                              {
+                                                A a = null;
+                                                a.Foo();
+                                              }
+                                              catch(NullReferenceException ex)
+                                              {
+                                                Console.Write("1");
+                                              }
+                                              catch(NotImplementedException ex)
+                                              {
+                                                Console.Write("2");
+                                              }
+
+                                                return 42;
+                                            }
+                                        }
+                                    }
+                                      """);
+    assertEquals("1", result.output());
     assertEquals(42, result.exitCode());
   }
 }
