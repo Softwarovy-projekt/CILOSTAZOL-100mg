@@ -17,7 +17,7 @@ public final class CallEntryPointCallTarget implements CallTarget {
     this.shouldAddArgs = shouldAddArgs;
     if (shouldAddArgs) {
       var ctx = CILOSTAZOLContext.get(null);
-      var arrayOfString = SymbolResolver.resolveArray(SymbolResolver.getString(ctx), 1, ctx);
+      var arrayOfString = SymbolResolver.resolveArray(SymbolResolver.getString(ctx), ctx);
       arg =
           ctx.getAllocator()
               .createNewReferenceArray(
