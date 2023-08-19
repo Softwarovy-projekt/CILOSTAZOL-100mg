@@ -702,6 +702,36 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                   topStack);
             }
             break;
+          case STELEM_I2:
+            try {
+              StaticObject array = CILOSTAZOLFrame.popObject(frame, topStack - 3);
+              if (((ArrayTypeSymbol) array.getTypeSymbol())
+                  .getElementType()
+                  .equals(method.getContext().getChar())) {
+                Array.set(
+                    getMethod().getContext().getArrayProperty().getObject(array),
+                    CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                    (char) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+              } else {
+                Array.set(
+                    getMethod().getContext().getArrayProperty().getObject(array),
+                    CILOSTAZOLFrame.popInt32(frame, topStack - 2),
+                    (short) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+              }
+            } catch (NullPointerException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.NullReference,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            } catch (IllegalArgumentException ex) {
+              throw RuntimeCILException.RuntimeCILExceptionFactory.create(
+                  RuntimeCILException.Exception.ArrayTypeMismatch,
+                  getMethod().getContext(),
+                  frame,
+                  topStack);
+            }
+            break;
           case STELEM_I8:
             try {
               Array.set(
@@ -1051,7 +1081,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
   @CompilerDirectives.TruffleBoundary
   private void LogUnsupportedOpcode(int curOpcode) {
-    System.out.println(
+    System.err.println(
         CILOSTAZOLBundle.message("cilostazol.exception.not.supported.OpCode", curOpcode));
   }
 
@@ -2631,12 +2661,6 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
       // Either native support must be supported or some workaround must be implemented
       throw new NotImplementedException();
     }
-    if ((method.getName().equals("WriteLine") || method.getName().equals("Write"))
-        && method.getDefiningType().getName().equals("Console")
-        && method.getDefiningType().getNamespace().equals("System")) {
-      return new PRINTNode(top, method.getName().equals("WriteLine"), method.getParameterTypes());
-    }
-
     return new CALLNode(method, top);
   }
 

@@ -283,16 +283,10 @@ public class MethodSymbol extends Symbol {
       int rva = mDef.getRVA();
       if (rva == 0) {
         isInternalCall = true;
-        System.err.println(
-            "Warning: Method "
-                + definingType.getName()
-                + "::"
-                + name
-                + " has no RVA (likely tagged as extern), skipping.");
       }
 
       // Method header parsing
-      if (rva != 0 && !flags.hasFlag(MethodFlags.Flag.ABSTRACT)) {
+      if (!isInternalCall && !flags.hasFlag(MethodFlags.Flag.ABSTRACT)) {
         final ByteSequenceBuffer buf = file.getBuffer(rva);
         final byte firstByte = buf.getByte();
         final MethodHeaderFlags pom = new MethodHeaderFlags(firstByte);
