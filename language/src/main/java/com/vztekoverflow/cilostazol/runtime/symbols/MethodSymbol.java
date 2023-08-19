@@ -17,6 +17,7 @@ import com.vztekoverflow.cilostazol.exceptions.TypeSystemException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLRootNode;
 import com.vztekoverflow.cilostazol.nodes.RuntimeSpecificMethodImplementations;
 import com.vztekoverflow.cilostazol.runtime.context.ContextProviderImpl;
+import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
 import com.vztekoverflow.cilostazol.staticanalysis.StaticOpCodeAnalyser;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -156,7 +157,10 @@ public class MethodSymbol extends Symbol {
 
     if (hasReceiver) {
       paramTypes = new TypeSymbol[getParameterCountIncludingInstance()];
-      paramTypes[0] = getDefiningType();
+      paramTypes[0] =
+          getDefiningType().isValueType()
+              ? SymbolResolver.resolveReference(ReferenceSymbol.ReferenceType.Local, getContext())
+              : getDefiningType();
       for (int i = 0; i < parameters.length; i++) {
         paramTypes[i + 1] = parameters[i].getType();
       }
