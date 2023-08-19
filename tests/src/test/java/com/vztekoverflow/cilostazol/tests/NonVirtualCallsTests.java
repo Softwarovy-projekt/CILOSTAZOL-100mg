@@ -205,7 +205,7 @@ public class NonVirtualCallsTests extends TestBase {
     assertEquals(0, result.exitCode());
     assertEquals(
         String.format(
-            "Hello World!%1$s42%1$s42.0%s1%1$s99%1$sMyString%1$sMyApp::WithoutOverride%1$s",
+            "Hello World!%1$s42%1$s42.0%s1%1$s99%1$sMyString%1$sMyApp.WithoutOverride%1$s",
             System.lineSeparator()),
         result.output());
   }
