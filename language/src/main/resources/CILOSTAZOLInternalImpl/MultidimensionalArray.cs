@@ -35,6 +35,22 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         _lengths = new int[] { length1, length2, length3 };
         _rank = 3;
     }
+    
+    public MultidimensionalArray(int length1, int length2, int length3, int length4)
+    {
+        _length = length1 * length2 * length3 * length4;
+        _array = new T[_length];
+        _lengths = new int[] { length1, length2, length3, length4 };
+        _rank = 4;
+    }
+    
+    public MultidimensionalArray(int length1, int length2, int length3, int length4, int length5)
+    {
+        _length = length1 * length2 * length3 * length4 * length5;
+        _array = new T[_length];
+        _lengths = new int[] { length1, length2, length3, length4, length5 };
+        _rank = 5;
+    }
 
     public MultidimensionalArray(int[] lengths)
     {
@@ -68,6 +84,26 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
 
         return _array[GetFlatIndex(index1, index2, index3)];
     }
+    
+    public T Get(int index1, int index2, int index3, int index4)
+    {
+        if (_rank != 4)
+        {
+            throw new ArgumentException("Need 4D array.");
+        }
+
+        return _array[GetFlatIndex(index1, index2, index3, index4)];
+    }
+    
+    public T Get(int index1, int index2, int index3, int index4, int index5)
+    {
+        if (_rank != 5)
+        {
+            throw new ArgumentException("Need 5D array.");
+        }
+
+        return _array[GetFlatIndex(index1, index2, index3, index4, index5)];
+    }
 
     public T Get(int[] indices)
     {
@@ -99,6 +135,26 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         }
 
         _array[GetFlatIndex(index1, index2, index3)] = value;
+    }
+    
+    public void Set(int index1, int index2, int index3, int index4, T value)
+    {
+        if (_rank != 4)
+        {
+            throw new ArgumentException("Need 4D array.");
+        }
+
+        _array[GetFlatIndex(index1, index2, index3, index4)] = value;
+    }
+    
+    public void Set(int index1, int index2, int index3, int index4, int index5, T value)
+    {
+        if (_rank != 5)
+        {
+            throw new ArgumentException("Need 5D array.");
+        }
+
+        _array[GetFlatIndex(index1, index2, index3, index4, index5)] = value;
     }
 
     public void Set(int[] indices, T value)
@@ -138,7 +194,7 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         return Get(iindex1, iindex2, iindex3);
     }
 
-    public T Get(params long[] indices)
+    public T Get(long[] indices)
     {
         if (indices == null)
             throw new ArgumentNullException(nameof(indices));
@@ -281,7 +337,10 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
 
     public IEnumerator GetEnumerator()
     {
-        return _array.GetEnumerator();
+        for (int i = 0; i < _array.Length; i++)
+        {
+            yield return _array[i];
+        }
     }
 
     public void CopyTo(Array array, int index)
@@ -425,12 +484,31 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
 
     private int GetFlatIndex(int index1, int index2)
     {
-        return index1 * _lengths[0] + index2;
+        return index1 * _lengths[1] + index2;
     }
-
+    
     private int GetFlatIndex(int index1, int index2, int index3)
     {
-        return index1 * _lengths[0] + index2 * _lengths[1] + index3;
+        return index1 * _lengths[1] * _lengths[2] 
+               + index2 * _lengths[2] 
+               + index3;
+    }
+    
+    private int GetFlatIndex(int index1, int index2, int index3, int index4)
+    {
+        return index1 * _lengths[1] * _lengths[2] * _lengths[3] 
+               + index2 * _lengths[2] * _lengths[3] 
+               + index3 * _lengths[3] 
+               + index4;
+    }
+    
+    private int GetFlatIndex(int index1, int index2, int index3, int index4, int index5)
+    {
+        return index1 * _lengths[1] * _lengths[2] * _lengths[3] * _lengths[4] 
+               + index2 * _lengths[2] * _lengths[3] * _lengths[4] 
+               + index3 * _lengths[3] * _lengths[4] 
+               + index4 * _lengths[4] 
+               + index5;
     }
 
     private int GetFlatIndex(int[] indices)
@@ -438,7 +516,13 @@ public class MultidimensionalArray<T> : ICloneable, IList, IStructuralComparable
         int index = 0;
         for (int i = 0; i < _rank - 1; i++)
         {
-            index += indices[i] * _lengths[i];
+            var product = 1;
+            for (int j = i + 1; j < _rank; j++)
+            {
+                product *= _lengths[j];
+            }
+            
+            index += indices[i] * product;
         }
         
         return index + indices[_rank - 1];
