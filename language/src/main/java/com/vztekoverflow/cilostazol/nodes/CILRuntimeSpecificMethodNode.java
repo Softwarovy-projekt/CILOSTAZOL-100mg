@@ -6,7 +6,7 @@ import java.util.function.Function;
 
 public class CILRuntimeSpecificMethodNode extends CILMethodNode {
 
-  Function<VirtualFrame, Object> implementation;
+  private final Function<VirtualFrame, Object> implementation;
 
   public CILRuntimeSpecificMethodNode(MethodSymbol method) {
     super(method);
