@@ -4,36 +4,29 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
-import com.vztekoverflow.cilostazol.nodes.TypeHelpers;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
-import com.vztekoverflow.cilostazol.runtime.other.SymbolResolver;
-import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
-import com.vztekoverflow.cilostazol.runtime.symbols.TypeSymbol;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.Objects;
-import org.jetbrains.annotations.NotNull;
 
 public final class ConsoleMethodImplementations {
 
-  public static Object ConsoleWriteBoolean(VirtualFrame frame) {
+  public static Object consoleWriteBoolean(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = booleanToString(frame);
+    String value = ToStringConvertor.booleanToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteChar(VirtualFrame frame) {
+  public static Object consoleWriteChar(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = charToString(frame);
+    String value = ToStringConvertor.charToString(frame);
     print(env.out(), value);
     return null;
   }
 
   // TODO
-  public static Object ConsoleWriteArray(VirtualFrame frame) {
+  public static Object consoleWriteArray(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
     StaticObject wrappedArray = (StaticObject) frame.getArguments()[0];
     char[] value = (char[]) CILOSTAZOLContext.get(null).getArrayProperty().getObject(wrappedArray);
@@ -42,192 +35,154 @@ public final class ConsoleMethodImplementations {
   }
 
   // TODO
-  public static Object ConsoleWriteArrayIntInt(VirtualFrame frame) {
+  public static Object consoleWriteArrayIntInt(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteDecimal(VirtualFrame frame) {
+  public static Object consoleWriteDecimal(VirtualFrame frame) {
     throw new InterpreterException("Decimal is not supported");
   }
 
-  public static Object ConsoleWriteDouble(VirtualFrame frame) {
+  public static Object consoleWriteDouble(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteInt32(VirtualFrame frame) {
+  public static Object consoleWriteInt32(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteUInt32(VirtualFrame frame) {
+  public static Object consoleWriteUInt32(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = unsignedIntToString(frame);
+    String value = ToStringConvertor.unsignedIntToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteInt64(VirtualFrame frame) {
+  public static Object consoleWriteInt64(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteUInt64(VirtualFrame frame) {
+  public static Object consoleWriteUInt64(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteObject(VirtualFrame frame) {
+  public static Object consoleWriteObject(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    char[] value = objectToString(frame);
+    char[] value = ToStringConvertor.objectToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteString(VirtualFrame frame) {
+  public static Object consoleWriteString(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    char[] value = stringToString(frame);
+    char[] value = ToStringConvertor.stringToString(frame);
     print(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteLine(VirtualFrame frame) {
+  public static Object consoleWriteLine(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
     println(env.out(), "");
     return null;
   }
 
-  public static Object ConsoleWriteLineBoolean(VirtualFrame frame) {
+  public static Object consoleWriteLineBoolean(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = booleanToString(frame);
+    String value = ToStringConvertor.booleanToString(frame);
     println(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteLineChar(VirtualFrame frame) {
+  public static Object consoleWriteLineChar(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = charToString(frame);
-    println(env.out(), value);
-    return null;
-  }
-
-  // TODO
-  public static Object ConsoleWriteLineArray(VirtualFrame frame) {
-    TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.charToString(frame);
     println(env.out(), value);
     return null;
   }
 
   // TODO
-  public static Object ConsoleWriteLineArrayIntInt(VirtualFrame frame) {
+  public static Object consoleWriteLineArray(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     println(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteLineDecimal(VirtualFrame frame) {
+  // TODO
+  public static Object consoleWriteLineArrayIntInt(VirtualFrame frame) {
+    TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
+    String value = ToStringConvertor.primitiveToString(frame);
+    println(env.out(), value);
+    return null;
+  }
+
+  public static Object consoleWriteLineDecimal(VirtualFrame frame) {
     throw new InterpreterException("Decimal is not supported");
   }
 
-  public static Object ConsoleWriteLineDouble(VirtualFrame frame) {
+  public static Object consoleWriteLineDouble(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     println(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteLineInt32(VirtualFrame frame) {
+  public static Object consoleWriteLineInt32(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     println(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteLineUInt32(VirtualFrame frame) {
+  public static Object consoleWriteLineUInt32(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = unsignedIntToString(frame);
+    String value = ToStringConvertor.unsignedIntToString(frame);
     println(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteLineInt64(VirtualFrame frame) {
+  public static Object consoleWriteLineInt64(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     println(env.out(), value);
     return null;
   }
 
   // TODO
-  public static Object ConsoleWriteLineUInt64(VirtualFrame frame) {
+  public static Object consoleWriteLineUInt64(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    String value = primitiveToString(frame);
+    String value = ToStringConvertor.primitiveToString(frame);
     println(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteLineObject(VirtualFrame frame) {
+  public static Object consoleWriteLineObject(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    char[] value = objectToString(frame);
+    char[] value = ToStringConvertor.objectToString(frame);
     println(env.out(), value);
     return null;
   }
 
-  public static Object ConsoleWriteLineString(VirtualFrame frame) {
+  public static Object consoleWriteLineString(VirtualFrame frame) {
     TruffleLanguage.Env env = CILOSTAZOLContext.get(null).getEnv();
-    char[] value = stringToString(frame);
+    char[] value = ToStringConvertor.stringToString(frame);
     println(env.out(), value);
     return null;
-  }
-
-  @NotNull
-  private static String booleanToString(VirtualFrame frame) {
-    return ((int) frame.getArguments()[0]) != 0 ? "True" : "False";
-  }
-
-  @NotNull
-  private static String charToString(VirtualFrame frame) {
-    return String.valueOf((char) (int) frame.getArguments()[0]);
-  }
-
-  private static String primitiveToString(VirtualFrame frame) {
-    return frame.getArguments()[0].toString();
-  }
-
-  @NotNull
-  private static String unsignedIntToString(VirtualFrame frame) {
-    return String.valueOf(TypeHelpers.zeroExtend32((int) frame.getArguments()[0]));
-  }
-
-  @NotNull
-  private static char[] objectToString(VirtualFrame frame) {
-    StaticObject object = (StaticObject) frame.getArguments()[0];
-    MethodSymbol toString =
-        Objects.requireNonNull(
-                SymbolResolver.resolveMethod(
-                    object.getTypeSymbol(), "ToString", new TypeSymbol[0], new TypeSymbol[0], 0))
-            .member;
-    StaticObject toStringResult = (StaticObject) toString.getNode().getCallTarget().call(object);
-    return handleStringToString(
-        frame, toStringResult, (NamedTypeSymbol) toStringResult.getTypeSymbol());
-  }
-
-  @NotNull
-  private static char[] stringToString(VirtualFrame frame) {
-    StaticObject string = (StaticObject) frame.getArguments()[0];
-    return handleStringToString(frame, string, (NamedTypeSymbol) string.getTypeSymbol());
   }
 
   @CompilerDirectives.TruffleBoundary
@@ -256,15 +211,5 @@ public final class ConsoleMethodImplementations {
     try (PrintStream p = new PrintStream(out)) {
       p.println(value);
     }
-  }
-
-  private static char[] handleStringToString(
-      VirtualFrame frame, StaticObject object, NamedTypeSymbol type) {
-    char[] charArray =
-        (char[])
-            CILOSTAZOLContext.get(null)
-                .getArrayProperty()
-                .getObject(type.getInstanceFields(frame, 0)[1].getObject(object));
-    return charArray;
   }
 }
