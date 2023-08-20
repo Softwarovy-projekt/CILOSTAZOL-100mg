@@ -263,13 +263,13 @@ public class StaticOpCodeAnalyser {
         break;
       case BRFALSE_S:
       case BRTRUE_S:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         handleOpCodeJumpShort(bytecodeBuffer, visited, visitStack, pc, nextPc, stack, topStack - 1);
         break;
       case BRFALSE:
       case BRTRUE:
-        setTypeByStack(types, stack, topStack, pc, curOpcode);
+        setTypeByStack(types, stack, topStack, pc);
         clear(stack, topStack);
         handleOpCodeJump(bytecodeBuffer, visited, visitStack, pc, nextPc, stack, topStack - 1);
         break;
@@ -474,7 +474,8 @@ public class StaticOpCodeAnalyser {
           clear(stack, i);
         }
 
-        pushPcAfterCatchClause(exceptionHandlers, visited, visitStack, pc, nextPc, cilLength, stack, topStack);
+        pushPcAfterCatchCaluse(
+            exceptionHandlers, visited, visitStack, pc, nextPc, cilLength, stack, topStack);
         break;
       case LDFLD:
         {
