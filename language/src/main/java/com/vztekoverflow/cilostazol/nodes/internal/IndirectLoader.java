@@ -37,7 +37,7 @@ public final class IndirectLoader {
       case ArrayElement -> {
         StaticObject refArr =
             (StaticObject) context.getArrayElementReferenceArrayProperty().getObject(reference);
-        int index = context.getArrayElementReferenceIndexProperty().getInt(refArr);
+        int index = context.getArrayElementReferenceIndexProperty().getInt(reference);
         Object javaArr = context.getArrayProperty().getObject(refArr);
         return (byte) Array.get(javaArr, index);
       }
@@ -73,7 +73,7 @@ public final class IndirectLoader {
       case ArrayElement -> {
         StaticObject refArr =
             (StaticObject) context.getArrayElementReferenceArrayProperty().getObject(reference);
-        int index = context.getArrayElementReferenceIndexProperty().getInt(refArr);
+        int index = context.getArrayElementReferenceIndexProperty().getInt(reference);
         Object javaArr = context.getArrayProperty().getObject(refArr);
         return (short) Array.get(javaArr, index);
       }
@@ -108,7 +108,7 @@ public final class IndirectLoader {
       case ArrayElement -> {
         StaticObject refArr =
             (StaticObject) context.getArrayElementReferenceArrayProperty().getObject(reference);
-        int index = context.getArrayElementReferenceIndexProperty().getInt(refArr);
+        int index = context.getArrayElementReferenceIndexProperty().getInt(reference);
         Object javaArr = context.getArrayProperty().getObject(refArr);
         return (int) Array.get(javaArr, index);
       }
@@ -143,7 +143,7 @@ public final class IndirectLoader {
       case ArrayElement -> {
         StaticObject refArr =
             (StaticObject) context.getArrayElementReferenceArrayProperty().getObject(reference);
-        int index = context.getArrayElementReferenceIndexProperty().getInt(refArr);
+        int index = context.getArrayElementReferenceIndexProperty().getInt(reference);
         Object javaArr = context.getArrayProperty().getObject(refArr);
         return (long) Array.get(javaArr, index);
       }
@@ -179,7 +179,7 @@ public final class IndirectLoader {
       case ArrayElement -> {
         StaticObject refArr =
             (StaticObject) context.getArrayElementReferenceArrayProperty().getObject(reference);
-        int index = context.getArrayElementReferenceIndexProperty().getInt(refArr);
+        int index = context.getArrayElementReferenceIndexProperty().getInt(reference);
         Object javaArr = context.getArrayProperty().getObject(refArr);
         return (float) Array.get(javaArr, index);
       }
@@ -215,7 +215,7 @@ public final class IndirectLoader {
       case ArrayElement -> {
         StaticObject refArr =
             (StaticObject) context.getArrayElementReferenceArrayProperty().getObject(reference);
-        int index = context.getArrayElementReferenceIndexProperty().getInt(refArr);
+        int index = context.getArrayElementReferenceIndexProperty().getInt(reference);
         Object javaArr = context.getArrayProperty().getObject(refArr);
         return (double) Array.get(javaArr, index);
       }
@@ -242,7 +242,7 @@ public final class IndirectLoader {
       case ArrayElement -> {
         StaticObject refArr =
             (StaticObject) context.getArrayElementReferenceArrayProperty().getObject(reference);
-        int index = context.getArrayElementReferenceIndexProperty().getInt(refArr);
+        int index = context.getArrayElementReferenceIndexProperty().getInt(reference);
         Object javaArr = context.getArrayProperty().getObject(refArr);
         return (StaticObject) Array.get(javaArr, index);
       }
