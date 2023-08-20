@@ -394,7 +394,7 @@ public class MethodSymbol extends Symbol {
                 + "("
                 + Arrays.stream(parameters)
                     .map(ParameterSymbol::toString)
-                    .collect(Collectors.joining())
+                    .collect(Collectors.joining(", "))
                 + ")";
 
         if (RuntimeSpecificMethodImplementations.hasCustomImplementation(methodIdentifier)) {

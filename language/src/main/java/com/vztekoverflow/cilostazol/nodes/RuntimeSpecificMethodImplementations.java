@@ -33,7 +33,7 @@ public final class RuntimeSpecificMethodImplementations {
               "System.Double System.Math::Atanh(System.Double)",
               MathMethodImplementations::mathAtanh);
           put(
-              "System.Double System.Math::Atan2(System.Double,System.Double)",
+              "System.Double System.Math::Atan2(System.Double, System.Double)",
               MathMethodImplementations::mathAtan2);
           put(
               "System.Double System.Math::Cbrt(System.Double)",
@@ -51,13 +51,13 @@ public final class RuntimeSpecificMethodImplementations {
               MathMethodImplementations::mathFloor);
           put("System.Double System.Math::Log(System.Double)", MathMethodImplementations::mathLog);
           put(
-              "System.Double System.Math::Log(System.Double,System.Double)",
+              "System.Double System.Math::Log(System.Double, System.Double)",
               MathMethodImplementations::mathLog2);
           put(
               "System.Double System.Math::Log10(System.Double)",
               MathMethodImplementations::mathLog10);
           put(
-              "System.Double System.Math::Pow(System.Double,System.Double)",
+              "System.Double System.Math::Pow(System.Double, System.Double)",
               MathMethodImplementations::mathPow);
           put("System.Double System.Math::Sin(System.Double)", MathMethodImplementations::mathSin);
           put(
@@ -71,10 +71,10 @@ public final class RuntimeSpecificMethodImplementations {
               "System.Double System.Math::Tanh(System.Double)",
               MathMethodImplementations::mathTanh);
           put(
-              "System.Double System.Math::ModF(System.Double,System.Double)",
+              "System.Double System.Math::ModF(System.Double, System.Double)",
               MathMethodImplementations::mathModF);
           put(
-              "System.Double[] System.Math::SinCos(System.Double,System.Double)",
+              "System.Double[] System.Math::SinCos(System.Double, System.Double)",
               MathMethodImplementations::mathSinCos);
           put(
               "System.Void System.Console::Write(System.Boolean)",
@@ -86,7 +86,7 @@ public final class RuntimeSpecificMethodImplementations {
               "System.Void System.Console::Write(System.Array)",
               ConsoleMethodImplementations::consoleWriteArray);
           put(
-              "System.Void System.Console::Write(System.ArraySystem.Int32System.Int32)",
+              "System.Void System.Console::Write(System.Array, System.Int32, System.Int32)",
               ConsoleMethodImplementations::consoleWriteArrayIntInt);
           put(
               "System.Void System.Console::Write(System.Decimal)",
@@ -128,7 +128,7 @@ public final class RuntimeSpecificMethodImplementations {
               "System.Void System.Console::WriteLine(System.Array)",
               ConsoleMethodImplementations::consoleWriteLineArray);
           put(
-              "System.Void System.Console::WriteLine(System.ArraySystem.Int32System.Int32)",
+              "System.Void System.Console::WriteLine(System.Array, System.Int32, System.Int32)",
               ConsoleMethodImplementations::consoleWriteLineArrayIntInt);
           put(
               "System.Void System.Console::WriteLine(System.Decimal)",
@@ -177,7 +177,7 @@ public final class RuntimeSpecificMethodImplementations {
               "System.String System.String::FastAllocateString(System.Int32)",
               StringMethodImplementations::stringFastAllocateString);
           put(
-              "System.Void System.String::FillStringChecked(System.StringSystem.Int32System.String)",
+              "System.Void System.String::FillStringChecked(System.String, System.Int32, System.String)",
               StringMethodImplementations::stringFillStringChecked);
           put(
               "System.Int32 System.String::get_Length()",

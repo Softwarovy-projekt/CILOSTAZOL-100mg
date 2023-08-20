@@ -348,7 +348,7 @@ public final class GuestAllocator {
     final var ctx = CILOSTAZOLContext.get(null);
     final var stringType = SymbolResolver.getString(ctx);
     final var charType = SymbolResolver.getChar(ctx);
-    final var charArrayType = SymbolResolver.resolveArray(charType, 1, ctx);
+    final var charArrayType = SymbolResolver.resolveArray(charType, ctx);
     final var charArray = createNewPrimitiveArray(charArrayType, length);
     ctx.getArrayProperty().setObject(charArray, new char[length]);
 
