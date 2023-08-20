@@ -9,7 +9,7 @@ public class ContextProviderImpl implements ContextProvider {
   @CompilerDirectives.CompilationFinal private Supplier<CILOSTAZOLContext> ctx;
 
   private ContextProviderImpl() {
-    ctx = () -> CILOSTAZOLContext.CONTEXT_REF.get(null);
+    ctx = () -> CILOSTAZOLContext.get(null);
   }
 
   public static synchronized ContextProviderImpl getInstance() {

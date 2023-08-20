@@ -1,9 +1,11 @@
 package com.vztekoverflow.cilostazol.nodes;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.vztekoverflow.cilostazol.nodes.internal.ConsoleMethodImplementations;
 import com.vztekoverflow.cilostazol.nodes.internal.MathMethodImplementations;
 import com.vztekoverflow.cilostazol.nodes.internal.ObjectMethodImplementations;
+import com.vztekoverflow.cilostazol.nodes.internal.StringMethodImplementations;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -14,157 +16,181 @@ public final class RuntimeSpecificMethodImplementations {
         {
           put(
               "System.Double System.Math::Acos(System.Double)",
-              MathMethodImplementations::MathAcos);
+              MathMethodImplementations::mathAcos);
           put(
               "System.Double System.Math::Acosh(System.Double)",
-              MathMethodImplementations::MathAcosh);
+              MathMethodImplementations::mathAcosh);
           put(
               "System.Double System.Math::Asin(System.Double)",
-              MathMethodImplementations::MathAsin);
+              MathMethodImplementations::mathAsin);
           put(
               "System.Double System.Math::Asinh(System.Double)",
-              MathMethodImplementations::MathAsinh);
+              MathMethodImplementations::mathAsinh);
           put(
               "System.Double System.Math::Atan(System.Double)",
-              MathMethodImplementations::MathAtan);
+              MathMethodImplementations::mathAtan);
           put(
               "System.Double System.Math::Atanh(System.Double)",
-              MathMethodImplementations::MathAtanh);
+              MathMethodImplementations::mathAtanh);
           put(
-              "System.Double System.Math::Atan2(System.Double,System.Double)",
-              MathMethodImplementations::MathAtan2);
+              "System.Double System.Math::Atan2(System.Double, System.Double)",
+              MathMethodImplementations::mathAtan2);
           put(
               "System.Double System.Math::Cbrt(System.Double)",
-              MathMethodImplementations::MathCbrt);
+              MathMethodImplementations::mathCbrt);
           put(
               "System.Double System.Math::Ceiling(System.Double)",
-              MathMethodImplementations::MathCeiling);
-          put("System.Double System.Math::Cos(System.Double)", MathMethodImplementations::MathCos);
+              MathMethodImplementations::mathCeiling);
+          put("System.Double System.Math::Cos(System.Double)", MathMethodImplementations::mathCos);
           put(
               "System.Double System.Math::Cosh(System.Double)",
-              MathMethodImplementations::MathCosh);
-          put("System.Double System.Math::Exp(System.Double)", MathMethodImplementations::MathExp);
+              MathMethodImplementations::mathCosh);
+          put("System.Double System.Math::Exp(System.Double)", MathMethodImplementations::mathExp);
           put(
               "System.Double System.Math::Floor(System.Double)",
-              MathMethodImplementations::MathFloor);
-          put("System.Double System.Math::Log(System.Double)", MathMethodImplementations::MathLog);
+              MathMethodImplementations::mathFloor);
+          put("System.Double System.Math::Log(System.Double)", MathMethodImplementations::mathLog);
           put(
-              "System.Double System.Math::Log(System.Double,System.Double)",
-              MathMethodImplementations::MathLog2);
+              "System.Double System.Math::Log(System.Double, System.Double)",
+              MathMethodImplementations::mathLog2);
           put(
               "System.Double System.Math::Log10(System.Double)",
-              MathMethodImplementations::MathLog10);
+              MathMethodImplementations::mathLog10);
           put(
-              "System.Double System.Math::Pow(System.Double,System.Double)",
-              MathMethodImplementations::MathPow);
-          put("System.Double System.Math::Sin(System.Double)", MathMethodImplementations::MathSin);
+              "System.Double System.Math::Pow(System.Double, System.Double)",
+              MathMethodImplementations::mathPow);
+          put("System.Double System.Math::Sin(System.Double)", MathMethodImplementations::mathSin);
           put(
               "System.Double System.Math::Sinh(System.Double)",
-              MathMethodImplementations::MathSinh);
+              MathMethodImplementations::mathSinh);
           put(
               "System.Double System.Math::Sqrt(System.Double)",
-              MathMethodImplementations::MathSqrt);
-          put("System.Double System.Math::Tan(System.Double)", MathMethodImplementations::MathTan);
+              MathMethodImplementations::mathSqrt);
+          put("System.Double System.Math::Tan(System.Double)", MathMethodImplementations::mathTan);
           put(
               "System.Double System.Math::Tanh(System.Double)",
-              MathMethodImplementations::MathTanh);
+              MathMethodImplementations::mathTanh);
           put(
-              "System.Double System.Math::ModF(System.Double,System.Double)",
-              MathMethodImplementations::MathModF);
+              "System.Double System.Math::ModF(System.Double, System.Double)",
+              MathMethodImplementations::mathModF);
           put(
-              "System.Double[] System.Math::SinCos(System.Double,System.Double)",
-              MathMethodImplementations::MathSinCos);
+              "System.Double[] System.Math::SinCos(System.Double, System.Double)",
+              MathMethodImplementations::mathSinCos);
           put(
               "System.Void System.Console::Write(System.Boolean)",
-              ConsoleMethodImplementations::ConsoleWriteBoolean);
+              ConsoleMethodImplementations::consoleWriteBoolean);
           put(
               "System.Void System.Console::Write(System.Char)",
-              ConsoleMethodImplementations::ConsoleWriteChar);
+              ConsoleMethodImplementations::consoleWriteChar);
           put(
               "System.Void System.Console::Write(System.Array)",
-              ConsoleMethodImplementations::ConsoleWriteArray);
+              ConsoleMethodImplementations::consoleWriteArray);
           put(
-              "System.Void System.Console::Write(System.ArraySystem.Int32System.Int32)",
-              ConsoleMethodImplementations::ConsoleWriteArrayIntInt);
+              "System.Void System.Console::Write(System.Array, System.Int32, System.Int32)",
+              ConsoleMethodImplementations::consoleWriteArrayIntInt);
           put(
               "System.Void System.Console::Write(System.Decimal)",
-              ConsoleMethodImplementations::ConsoleWriteDecimal);
+              ConsoleMethodImplementations::consoleWriteDecimal);
           put(
               "System.Void System.Console::Write(System.Double)",
-              ConsoleMethodImplementations::ConsoleWriteDouble);
+              ConsoleMethodImplementations::consoleWriteDouble);
           put(
               "System.Void System.Console::Write(System.Single)",
-              ConsoleMethodImplementations::ConsoleWriteDouble);
+              ConsoleMethodImplementations::consoleWriteDouble);
           put(
               "System.Void System.Console::Write(System.Int32)",
-              ConsoleMethodImplementations::ConsoleWriteInt32);
+              ConsoleMethodImplementations::consoleWriteInt32);
           put(
               "System.Void System.Console::Write(System.UInt32)",
-              ConsoleMethodImplementations::ConsoleWriteUInt32);
+              ConsoleMethodImplementations::consoleWriteUInt32);
           put(
               "System.Void System.Console::Write(System.Int64)",
-              ConsoleMethodImplementations::ConsoleWriteInt64);
+              ConsoleMethodImplementations::consoleWriteInt64);
           put(
               "System.Void System.Console::Write(System.UInt64)",
-              ConsoleMethodImplementations::ConsoleWriteUInt64);
+              ConsoleMethodImplementations::consoleWriteUInt64);
           put(
               "System.Void System.Console::Write(System.Object)",
-              ConsoleMethodImplementations::ConsoleWriteObject);
+              ConsoleMethodImplementations::consoleWriteObject);
           put(
               "System.Void System.Console::Write(System.String)",
-              ConsoleMethodImplementations::ConsoleWriteString);
+              ConsoleMethodImplementations::consoleWriteString);
           put(
               "System.Void System.Console::WriteLine()",
-              ConsoleMethodImplementations::ConsoleWriteLine);
+              ConsoleMethodImplementations::consoleWriteLine);
           put(
               "System.Void System.Console::WriteLine(System.Boolean)",
-              ConsoleMethodImplementations::ConsoleWriteLineBoolean);
+              ConsoleMethodImplementations::consoleWriteLineBoolean);
           put(
               "System.Void System.Console::WriteLine(System.Char)",
-              ConsoleMethodImplementations::ConsoleWriteLineChar);
+              ConsoleMethodImplementations::consoleWriteLineChar);
           put(
               "System.Void System.Console::WriteLine(System.Array)",
-              ConsoleMethodImplementations::ConsoleWriteLineArray);
+              ConsoleMethodImplementations::consoleWriteLineArray);
           put(
-              "System.Void System.Console::WriteLine(System.ArraySystem.Int32System.Int32)",
-              ConsoleMethodImplementations::ConsoleWriteLineArrayIntInt);
+              "System.Void System.Console::WriteLine(System.Array, System.Int32, System.Int32)",
+              ConsoleMethodImplementations::consoleWriteLineArrayIntInt);
           put(
               "System.Void System.Console::WriteLine(System.Decimal)",
-              ConsoleMethodImplementations::ConsoleWriteLineDecimal);
+              ConsoleMethodImplementations::consoleWriteLineDecimal);
           put(
               "System.Void System.Console::WriteLine(System.Double)",
-              ConsoleMethodImplementations::ConsoleWriteLineDouble);
+              ConsoleMethodImplementations::consoleWriteLineDouble);
           put(
               "System.Void System.Console::WriteLine(System.Single)",
-              ConsoleMethodImplementations::ConsoleWriteLineDouble);
+              ConsoleMethodImplementations::consoleWriteLineDouble);
           put(
               "System.Void System.Console::WriteLine(System.Int32)",
-              ConsoleMethodImplementations::ConsoleWriteLineInt32);
+              ConsoleMethodImplementations::consoleWriteLineInt32);
           put(
               "System.Void System.Console::WriteLine(System.UInt32)",
-              ConsoleMethodImplementations::ConsoleWriteLineUInt32);
+              ConsoleMethodImplementations::consoleWriteLineUInt32);
           put(
               "System.Void System.Console::WriteLine(System.Int64)",
-              ConsoleMethodImplementations::ConsoleWriteLineInt64);
+              ConsoleMethodImplementations::consoleWriteLineInt64);
           put(
               "System.Void System.Console::WriteLine(System.UInt64)",
-              ConsoleMethodImplementations::ConsoleWriteLineUInt64);
+              ConsoleMethodImplementations::consoleWriteLineUInt64);
           put(
               "System.Void System.Console::WriteLine(System.Object)",
-              ConsoleMethodImplementations::ConsoleWriteLineObject);
+              ConsoleMethodImplementations::consoleWriteLineObject);
           put(
               "System.Void System.Console::WriteLine(System.String)",
-              ConsoleMethodImplementations::ConsoleWriteLineString);
+              ConsoleMethodImplementations::consoleWriteLineString);
           put(
               "System.String System.Object::ToString()",
-              ObjectMethodImplementations::ObjectToString);
+              ObjectMethodImplementations::objectToString);
+          put("System.String System.Byte::ToString()", ObjectMethodImplementations::byteToString);
+          put("System.String System.Int16::ToString()", ObjectMethodImplementations::shortToString);
+          put("System.String System.Int32::ToString()", ObjectMethodImplementations::int32ToString);
+          put("System.String System.Int64::ToString()", ObjectMethodImplementations::int64ToString);
+          put(
+              "System.String System.Single::ToString()",
+              ObjectMethodImplementations::floatToString);
+          put(
+              "System.String System.Double::ToString()",
+              ObjectMethodImplementations::doubleToString);
+          put(
+              "System.String System.String::CreateFromChar(System.Char)",
+              StringMethodImplementations::stringCreateFromChar);
+          put(
+              "System.String System.String::FastAllocateString(System.Int32)",
+              StringMethodImplementations::stringFastAllocateString);
+          put(
+              "System.Void System.String::FillStringChecked(System.String, System.Int32, System.String)",
+              StringMethodImplementations::stringFillStringChecked);
+          put(
+              "System.Int32 System.String::get_Length()",
+              StringMethodImplementations::stringGetLength);
         }
       };
 
+  @CompilerDirectives.TruffleBoundary
   public static Function<VirtualFrame, Object> getImplementation(String methodIdentifier) {
     return methodImplementations.get(methodIdentifier);
   }
 
+  @CompilerDirectives.TruffleBoundary
   public static boolean hasCustomImplementation(String methodIdentifier) {
     return methodImplementations.containsKey(methodIdentifier);
   }

@@ -3,132 +3,132 @@ package com.vztekoverflow.cilostazol.nodes.internal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 public final class MathMethodImplementations {
-  public static Object MathAcos(VirtualFrame frame) {
+  public static Object mathAcos(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.acos(d);
   }
 
-  public static Object MathAcosh(VirtualFrame frame) {
+  public static Object mathAcosh(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.log(d + Math.sqrt(d * d - 1));
   }
 
-  public static Object MathAsin(VirtualFrame frame) {
+  public static Object mathAsin(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.asin(d);
   }
 
-  public static Object MathAsinh(VirtualFrame frame) {
+  public static Object mathAsinh(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.log(d + Math.sqrt(d * d + 1));
   }
 
-  public static Object MathAtan(VirtualFrame frame) {
+  public static Object mathAtan(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.atan(d);
   }
 
-  public static Object MathAtanh(VirtualFrame frame) {
+  public static Object mathAtanh(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.log((1 + d) / (1 - d)) / 2;
   }
 
-  public static Object MathAtan2(VirtualFrame frame) {
+  public static Object mathAtan2(VirtualFrame frame) {
     double y = (Double) frame.getArguments()[0];
     double x = (Double) frame.getArguments()[1];
     return Math.atan2(y, x);
   }
 
-  public static Object MathCbrt(VirtualFrame frame) {
+  public static Object mathCbrt(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.cbrt(d);
   }
 
-  public static Object MathCeiling(VirtualFrame frame) {
+  public static Object mathCeiling(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.ceil(d);
   }
 
-  public static Object MathCos(VirtualFrame frame) {
+  public static Object mathCos(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.cos(d);
   }
 
-  public static Object MathCosh(VirtualFrame frame) {
+  public static Object mathCosh(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.cosh(d);
   }
 
-  public static Object MathExp(VirtualFrame frame) {
+  public static Object mathExp(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.exp(d);
   }
 
-  public static Object MathFloor(VirtualFrame frame) {
+  public static Object mathFloor(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.floor(d);
   }
 
-  public static Object MathFusedMultiplyAdd(VirtualFrame frame) {
+  public static Object mathFusedMultiplyAdd(VirtualFrame frame) {
     double x = (Double) frame.getArguments()[0];
     double y = (Double) frame.getArguments()[1];
     double z = (Double) frame.getArguments()[2];
     return Math.fma(x, y, z);
   }
 
-  public static Object MathLog(VirtualFrame frame) {
+  public static Object mathLog(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.log(d);
   }
 
-  public static Object MathLog10(VirtualFrame frame) {
+  public static Object mathLog10(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.log10(d);
   }
 
-  public static Object MathLog2(VirtualFrame frame) {
+  public static Object mathLog2(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.log(d) / Math.log(2);
   }
 
-  public static Object MathPow(VirtualFrame frame) {
+  public static Object mathPow(VirtualFrame frame) {
     double x = (Double) frame.getArguments()[0];
     double y = (Double) frame.getArguments()[1];
     return Math.pow(x, y);
   }
 
-  public static Object MathSin(VirtualFrame frame) {
+  public static Object mathSin(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.sin(d);
   }
 
-  public static Object MathSinh(VirtualFrame frame) {
+  public static Object mathSinh(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.sinh(d);
   }
 
-  public static Object MathSqrt(VirtualFrame frame) {
+  public static Object mathSqrt(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.sqrt(d);
   }
 
-  public static Object MathTan(VirtualFrame frame) {
+  public static Object mathTan(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.tan(d);
   }
 
-  public static Object MathTanh(VirtualFrame frame) {
+  public static Object mathTanh(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return Math.tanh(d);
   }
 
-  public static Object MathModF(VirtualFrame frame) {
+  public static Object mathModF(VirtualFrame frame) {
     double x = (Double) frame.getArguments()[0];
     double y = (Double) frame.getArguments()[1];
     return Math.IEEEremainder(x, y);
   }
 
-  public static Object MathSinCos(VirtualFrame frame) {
+  public static Object mathSinCos(VirtualFrame frame) {
     double d = (Double) frame.getArguments()[0];
     return new double[] {Math.sin(d), Math.cos(d)};
   }

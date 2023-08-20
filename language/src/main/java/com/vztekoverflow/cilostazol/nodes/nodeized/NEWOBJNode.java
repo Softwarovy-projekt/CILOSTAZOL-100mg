@@ -11,7 +11,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import org.jetbrains.annotations.NotNull;
 
-public class NEWOBJNode extends NodeizedNodeBase {
+public final class NEWOBJNode extends NodeizedNodeBase {
 
   private final NamedTypeSymbol type;
   private final MethodSymbol constructor;

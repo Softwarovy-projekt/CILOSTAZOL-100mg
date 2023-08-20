@@ -326,11 +326,11 @@ public final class GuestAllocator {
     return stringCache.computeIfAbsent(
         value,
         k -> {
-          final var ctx = CILOSTAZOLContext.CONTEXT_REF.get(null);
+          final var ctx = CILOSTAZOLContext.get(null);
           final var stringChar = k.toCharArray();
 
           final var stringType = SymbolResolver.getString(ctx);
-          final var charType = SymbolResolver.getChar(CILOSTAZOLContext.CONTEXT_REF.get(null));
+          final var charType = SymbolResolver.getChar(CILOSTAZOLContext.get(null));
           final var charArrayType = SymbolResolver.resolveArray(charType, ctx);
           final var charArray = createNewPrimitiveArray(charArrayType, stringChar.length);
           ctx.getArrayProperty().setObject(charArray, stringChar);
@@ -342,6 +342,22 @@ public final class GuestAllocator {
               .getInstanceFields(frame, topStack)[1].setObject(result, charArray);
           return result;
         });
+  }
+
+  public StaticObject createStringWithoutContent(VirtualFrame frame, int topStack, int length) {
+    final var ctx = CILOSTAZOLContext.get(null);
+    final var stringType = SymbolResolver.getString(ctx);
+    final var charType = SymbolResolver.getChar(ctx);
+    final var charArrayType = SymbolResolver.resolveArray(charType, ctx);
+    final var charArray = createNewPrimitiveArray(charArrayType, length);
+    ctx.getArrayProperty().setObject(charArray, new char[length]);
+
+    final var result = createNew(stringType, frame, topStack);
+    ((NamedTypeSymbol) result.getTypeSymbol())
+        .getInstanceFields(frame, topStack)[0].setInt(result, length);
+    ((NamedTypeSymbol) result.getTypeSymbol())
+        .getInstanceFields(frame, topStack)[1].setObject(result, charArray);
+    return result;
   }
   // endregion
 

@@ -522,9 +522,9 @@ public class BytecodeInstructions {
     defPrefixed(REFANYVAL, "refanyval", "otttt", 0);
     defPrefixed(REFANYTYPE, "refanytype", "o", 0);
 
-    def(THROW, "throw", "o", 0);
+    def(THROW, "throw", "o", -1);
     defPrefixed(RETHROW, "rethrow", "o", 0);
-    defPrefixed(ENDFILTER, "endfilter", "o", 0);
+    defPrefixed(ENDFILTER, "endfilter", "o", -1);
     def(ENDFINALLY, "endfinally", "o", 0);
     def(LEAVE, "leave", "oiiii", 0);
     def(LEAVE_S, "leave.s", "oi", 0);
