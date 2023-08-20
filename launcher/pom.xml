@@ -17,6 +17,16 @@
             <artifactId>launcher-common</artifactId>
             <version>${org.graalvm.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>${org.graalvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vztekoverflow</groupId>
+            <artifactId>language</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
