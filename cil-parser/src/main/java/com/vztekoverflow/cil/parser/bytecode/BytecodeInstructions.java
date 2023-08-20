@@ -385,7 +385,7 @@ public class BytecodeInstructions {
     def(LDFLDA, "ldflda", "otttt", 0);
     def(LDSFLDA, "ldsfdla", "otttt", 1);
 
-    def(LDELEM, "ldelem", "otttt", 0);
+    def(LDELEM, "ldelem", "otttt", -1);
     def(LDELEM_I1, "ldelem.i1", "o", -1);
     def(LDELEM_U1, "ldelem.u1", "o", -1);
     def(LDELEM_I2, "ldelem.i2", "o", -1);

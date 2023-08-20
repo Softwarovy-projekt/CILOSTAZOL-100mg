@@ -331,7 +331,7 @@ public final class GuestAllocator {
 
           final var stringType = SymbolResolver.getString(ctx);
           final var charType = SymbolResolver.getChar(CILOSTAZOLContext.get(null));
-          final var charArrayType = SymbolResolver.resolveArray(charType, 1, ctx);
+          final var charArrayType = SymbolResolver.resolveArray(charType, ctx);
           final var charArray = createNewPrimitiveArray(charArrayType, stringChar.length);
           ctx.getArrayProperty().setObject(charArray, stringChar);
 
@@ -359,7 +359,6 @@ public final class GuestAllocator {
         .getInstanceFields(frame, topStack)[1].setObject(result, charArray);
     return result;
   }
-
   // endregion
 
   public interface AllocationProfiler {

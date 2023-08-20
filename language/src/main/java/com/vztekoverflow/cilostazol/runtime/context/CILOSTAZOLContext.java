@@ -152,14 +152,19 @@ public class CILOSTAZOLContext {
   }
 
   // region symbol resolution
-  public ArrayTypeSymbol resolveArray(TypeSymbol elemType, int rank) {
+  public ArrayTypeSymbol resolveArray(
+      TypeSymbol elemType, int rank, int[] lengths, int[] lowerBounds) {
     var cacheKey = new ArrayCacheKey(elemType, rank);
 
     return arrayCache.computeIfAbsent(
         cacheKey,
-        k ->
-            ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
-                k.elemType(), k.rank(), elemType.getDefiningModule()));
+        k -> {
+          if (k.rank() == 1)
+            return ArrayTypeSymbol.ArrayTypeSymbolFactory.create(
+                k.elemType(), k.rank(), elemType.getDefiningModule());
+          return MultidimensionalArrayTypeSymbol.MultidimensionalArrayTypeSymbolFactory.create(
+              k.elemType(), k.rank(), lengths, lowerBounds, elemType.getDefiningModule());
+        });
   }
 
   /** This should be used on any path that queries a type. @ApiNote uses cache. */

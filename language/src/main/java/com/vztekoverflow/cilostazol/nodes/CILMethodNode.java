@@ -507,11 +507,27 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
             break;
 
           case LDELEM:
-            CILOSTAZOLFrame.putObject(
-                frame,
-                topStack - 2,
-                (StaticObject) ((StaticObject) getJavaArrElem(frame, topStack - 1)).clone());
-            break;
+            {
+              var arrType = CILOSTAZOLFrame.getLocalObject(frame, topStack - 2).getTypeSymbol();
+              var elementSystemType = ((ArrayTypeSymbol) arrType).getElementType().getSystemType();
+              var element = getJavaArrElem(frame, topStack - 1);
+              switch (elementSystemType) {
+                case Boolean -> CILOSTAZOLFrame.putInt32(
+                    frame, topStack - 2, (boolean) element ? (byte) 1 : (byte) 0);
+                case Byte -> CILOSTAZOLFrame.putInt32(frame, topStack - 2, (byte) element);
+                case Char -> CILOSTAZOLFrame.putInt32(frame, topStack - 2, (char) element);
+                case Short -> CILOSTAZOLFrame.putInt32(frame, topStack - 2, (short) element);
+                case Int -> CILOSTAZOLFrame.putInt32(frame, topStack - 2, (int) element);
+                case Long -> CILOSTAZOLFrame.putInt64(frame, topStack - 2, (long) element);
+                case Float -> CILOSTAZOLFrame.putNativeFloat(frame, topStack - 2, (float) element);
+                case Double -> CILOSTAZOLFrame.putNativeFloat(
+                    frame, topStack - 2, (double) element);
+                case Object -> CILOSTAZOLFrame.putObject(
+                    frame, topStack - 2, (StaticObject) element);
+                case Void -> throw new InterpreterException();
+              }
+              break;
+            }
           case LDELEM_REF:
             CILOSTAZOLFrame.putObject(
                 frame, topStack - 2, (StaticObject) getJavaArrElem(frame, topStack - 1));
@@ -556,13 +572,30 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
 
           case STELEM:
             try {
-              Array.set(
-                  getMethod()
-                      .getContext()
-                      .getArrayProperty()
-                      .getObject(CILOSTAZOLFrame.popObject(frame, topStack - 3)),
-                  CILOSTAZOLFrame.popInt32(frame, topStack - 2),
-                  CILOSTAZOLFrame.popObject(frame, topStack - 1).clone());
+              var stackArray = CILOSTAZOLFrame.popObject(frame, topStack - 3);
+              var array = getMethod().getContext().getArrayProperty().getObject(stackArray);
+              var idx = CILOSTAZOLFrame.popInt32(frame, topStack - 2);
+              switch (((ArrayTypeSymbol) (stackArray).getTypeSymbol())
+                  .getElementType()
+                  .getSystemType()) {
+                case Boolean -> Array.set(
+                    array, idx, CILOSTAZOLFrame.popInt32(frame, topStack - 1) != 0);
+                case Byte -> Array.set(
+                    array, idx, (byte) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Int -> Array.set(array, idx, CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Short -> Array.set(
+                    array, idx, (short) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Char -> Array.set(
+                    array, idx, (char) CILOSTAZOLFrame.popInt32(frame, topStack - 1));
+                case Float -> Array.set(
+                    array, idx, (float) CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+                case Long -> Array.set(array, idx, CILOSTAZOLFrame.popInt64(frame, topStack - 1));
+                case Double -> Array.set(
+                    array, idx, CILOSTAZOLFrame.popNativeFloat(frame, topStack - 1));
+                case Void -> throw new InterpreterException();
+                case Object -> Array.set(
+                    array, idx, CILOSTAZOLFrame.popObject(frame, topStack - 1));
+              }
             } catch (NullPointerException ex) {
               throw RuntimeCILException.RuntimeCILExceptionFactory.create(
                   RuntimeCILException.Exception.NullReference,
@@ -1456,7 +1489,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     if (num < 0)
       throw RuntimeCILException.RuntimeCILExceptionFactory.create(
           RuntimeCILException.Exception.Overflow, getMethod().getContext(), frame, top);
-    var arrayType = SymbolResolver.resolveArray(elemType, 1, getMethod().getContext());
+    var arrayType = SymbolResolver.resolveArray(elemType, getMethod().getContext());
     StaticObject object = null;
     try {
       object = getMethod().getContext().getArrayShape().getFactory().create(arrayType);
@@ -2387,7 +2420,16 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         var instance =
             CILOSTAZOLFrame.getLocalObject(frame, top - 1 - method.member.getParameters().length);
 
-        if (method.member.getMethodFlags().hasFlag(Flag.VIRTUAL)) {
+        if (method.member.getMethodFlags().hasFlag(Flag.VIRTUAL)
+            // Allow looking for overrides on Multidimensional Array implementation
+            || (instance.getTypeSymbol() instanceof ConstructedNamedTypeSymbol constrType
+                && constrType
+                    .getName()
+                    .equals(CILOSTAZOLBundle.message("cilostazol.multidimensional.array.name"))
+                && constrType
+                    .getNamespace()
+                    .equals(
+                        CILOSTAZOLBundle.message("cilostazol.multidimensional.array.namespace")))) {
           var candidateMethod =
               SymbolResolver.resolveMethod(
                   instance.getTypeSymbol(),

@@ -48,7 +48,12 @@ public class TypeMap {
     if (symbol instanceof TypeParameterSymbol typeParameterSymbol) {
       return substituteTypeParameter(typeParameterSymbol);
     } else if (symbol instanceof ArrayTypeSymbol arrayTypeSymbol) {
-      return substitute(arrayTypeSymbol.getElementType());
+      return SymbolResolver.resolveArray(
+          substitute(arrayTypeSymbol.getElementType()),
+          arrayTypeSymbol.getRank(),
+          arrayTypeSymbol.getLengths(),
+          arrayTypeSymbol.getLowerBounds(),
+          arrayTypeSymbol.getContext());
     } else {
       return substituteNamedTypeSymbol((NamedTypeSymbol) symbol);
     }
