@@ -53,9 +53,15 @@ public class StaticOpCodeAnalyser {
 
     var entrypointOffsets = getAnalysisEntryPoints(exceptionHandlers);
     var entryPointCounter = 0;
-    for (var entrypointOffset : entrypointOffsets) {
+    for (int i = 0; i < entrypointOffsets.length; i++) {
+      var entrypointOffset = entrypointOffsets[i];
       topStack = 0;
-      if (entryPointCounter > 0) {
+      if (entryPointCounter > 0
+          && exceptionHandlers[exceptionHandlers.length - i]
+              .getFlags()
+              .hasFlag(
+                  ExceptionHandlerSymbol.ExceptionClauseFlags.Flag
+                      .COR_ILEXCEPTION_CLAUSE_EXCEPTION)) {
         // push exception object
         push(stack, topStack, Object);
         topStack++;
@@ -476,7 +482,7 @@ public class StaticOpCodeAnalyser {
         }
 
         pushPcAfterCatchCaluse(
-            exceptionHandlers, visited, visitStack, pc, nextPc, cilLength, stack, topStack);
+            exceptionHandlers, visited, visitStack, pc, nextPc, cilLength, stack, 0);
         break;
       case LDFLD:
         {
