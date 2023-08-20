@@ -104,23 +104,23 @@ public class StaticOpCodeAnalyser {
   }
 
   private static boolean checkExceptionHandling(int opCode) {
-      return switch (opCode) {
-          case LEAVE, LEAVE_S, THROW, RETHROW -> true;
-          default -> false;
-      };
+    return switch (opCode) {
+      case LEAVE, LEAVE_S, THROW, RETHROW -> true;
+      default -> false;
+    };
   }
 
-    private static int[] getAnalysisEntryPoints(ExceptionHandlerSymbol[] exceptionHandlers) {
-        var entryPoints = new int[1 + exceptionHandlers.length];
-        // main body
-        entryPoints[0] = 0;
-        // catch clauses in reverse order
-        for (int i = 0; i < exceptionHandlers.length; i++) {
-            entryPoints[exceptionHandlers.length - i] = exceptionHandlers[i].getHandlerOffset();
-        }
-
-        return entryPoints;
+  private static int[] getAnalysisEntryPoints(ExceptionHandlerSymbol[] exceptionHandlers) {
+    var entryPoints = new int[1 + exceptionHandlers.length];
+    // main body
+    entryPoints[0] = 0;
+    // catch clauses in reverse order
+    for (int i = 0; i < exceptionHandlers.length; i++) {
+      entryPoints[exceptionHandlers.length - i] = exceptionHandlers[i].getHandlerOffset();
     }
+
+    return entryPoints;
+  }
 
   private static int resolveOpCode(
       TypeSymbol[] parameters,
@@ -309,7 +309,8 @@ public class StaticOpCodeAnalyser {
           var numCases = bytecodeBuffer.getImmUInt(pc);
           for (var i = 0; i < numCases; i++) {
             var caseOffset = pc + 4 + i * 4;
-            handleOpCodeJump(bytecodeBuffer, visited, visitStack, caseOffset, nextPc, stack, topStack - 1);
+            handleOpCodeJump(
+                bytecodeBuffer, visited, visitStack, caseOffset, nextPc, stack, topStack - 1);
           }
           // is UInt32 by default
           break;
@@ -691,7 +692,8 @@ public class StaticOpCodeAnalyser {
                 pushToVisitStackChecked(visited, visitStack, handlerEndOffset, stack, topStack);
             },
             () -> {
-              if (nextPc < cilLength) pushToVisitStackChecked(visited, visitStack, nextPc, stack, topStack);
+              if (nextPc < cilLength)
+                pushToVisitStackChecked(visited, visitStack, nextPc, stack, topStack);
             });
   }
 
@@ -738,15 +740,16 @@ public class StaticOpCodeAnalyser {
     }
   }
 
-    private static int handleCtor(
-            CLITablePtr ctorPtr,
-            TypeSymbol[] methodTypeArgs,
-            TypeSymbol[] classTypeArgs,
-            StackType[] stack,
-            int topStack,
-            ModuleSymbol module) {
+  private static int handleCtor(
+      CLITablePtr ctorPtr,
+      TypeSymbol[] methodTypeArgs,
+      TypeSymbol[] classTypeArgs,
+      StackType[] stack,
+      int topStack,
+      ModuleSymbol module) {
     var ctor = SymbolResolver.resolveMethod(ctorPtr, methodTypeArgs, classTypeArgs, module).member;
-    topStack = updateStackByMethod(stack, topStack, ctor, ctor.getParameterCountIncludingInstance() - 1);
+    topStack =
+        updateStackByMethod(stack, topStack, ctor, ctor.getParameterCountIncludingInstance() - 1);
     // A new object is added to the stack after the constructor call -> topStack + 1
     topStack++;
     replace(stack, topStack, Object);
@@ -754,10 +757,12 @@ public class StaticOpCodeAnalyser {
   }
 
   private static int handleMethod(MethodSymbol method, StackType[] stack, int topStack) {
-    return updateStackByMethod(stack, topStack, method, method.getParameterCountIncludingInstance());
+    return updateStackByMethod(
+        stack, topStack, method, method.getParameterCountIncludingInstance());
   }
 
-  private static int updateStackByMethod(StackType[] stack, int topStack, MethodSymbol method, int numberOfParams) {
+  private static int updateStackByMethod(
+      StackType[] stack, int topStack, MethodSymbol method, int numberOfParams) {
     // remove args from stack
     // put ret type to stack
     for (int i = 0; i < numberOfParams; i++) {
@@ -771,13 +776,15 @@ public class StaticOpCodeAnalyser {
           topStack - numberOfParams + 1,
           method.getReturnType().getType().getStackTypeKind());
 
-    return topStack
-        - numberOfParams
-        + (method.hasReturnValue() ? 1 : 0);
+    return topStack - numberOfParams + (method.hasReturnValue() ? 1 : 0);
   }
 
   private static void pushToVisitStackChecked(
-      boolean[] visited, Stack<VisitState> visitStack, int target, StackType[] stack, int topStack) {
+      boolean[] visited,
+      Stack<VisitState> visitStack,
+      int target,
+      StackType[] stack,
+      int topStack) {
     if (!visited[target]) {
       visitStack.push(new VisitState(target, stack.clone(), topStack));
       // set as visited beforehand to avoid duplicity pushes in one iteration
@@ -1218,18 +1225,6 @@ public class StaticOpCodeAnalyser {
     stack[topStack] = stackType;
   }
 
-  private static class VisitState {
-    public int opcode;
-    public StackType[] stack;
-    public int topStack;
-
-    public VisitState(int opcode, StackType[] stack, int topStack) {
-      this.opcode = opcode;
-      this.stack = stack;
-      this.topStack = topStack;
-    }
-  }
-
   public enum OpCodeType {
     Int32,
     Int64,
@@ -1245,6 +1240,18 @@ public class StaticOpCodeAnalyser {
     ManagedPointer_NativeInt,
     Int64_Int32,
     Int64_NativeInt,
+  }
+
+  private static class VisitState {
+    public int opcode;
+    public StackType[] stack;
+    public int topStack;
+
+    public VisitState(int opcode, StackType[] stack, int topStack) {
+      this.opcode = opcode;
+      this.stack = stack;
+      this.topStack = topStack;
+    }
   }
   // endregion
 }
