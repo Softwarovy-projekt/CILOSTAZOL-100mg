@@ -1545,37 +1545,37 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
   // region indirect
   private void loadIndirectByte(VirtualFrame frame, int top) {
     var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
-    int value = IndirectLoader.loadByte(reference, getMethod().getContext());
+    int value = IndirectLoader.loadByteFromReference(reference, getMethod().getContext());
     CILOSTAZOLFrame.putInt32(frame, top - 1, value);
   }
 
   private void loadIndirectShort(VirtualFrame frame, int top) {
     var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
-    int value = IndirectLoader.loadShort(reference, getMethod().getContext());
+    int value = IndirectLoader.loadShortFromReference(reference, getMethod().getContext());
     CILOSTAZOLFrame.putInt32(frame, top - 1, value);
   }
 
   private void loadIndirectInt(VirtualFrame frame, int top) {
     var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
-    int value = IndirectLoader.loadInt32(reference, getMethod().getContext());
+    int value = IndirectLoader.loadInt32FromReference(reference, getMethod().getContext());
     CILOSTAZOLFrame.putInt32(frame, top - 1, value);
   }
 
   private void loadIndirectLong(VirtualFrame frame, int top) {
     var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
-    long value = IndirectLoader.loadInt64(reference, getMethod().getContext());
+    long value = IndirectLoader.loadInt64FromReference(reference, getMethod().getContext());
     CILOSTAZOLFrame.putInt64(frame, top - 1, value);
   }
 
   private void loadIndirectFloat(VirtualFrame frame, int top) {
     var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
-    double value = IndirectLoader.loadFloat(reference, getMethod().getContext());
+    double value = IndirectLoader.loadFloatFromReference(reference, getMethod().getContext());
     CILOSTAZOLFrame.putNativeFloat(frame, top - 1, value);
   }
 
   private void loadIndirectDouble(VirtualFrame frame, int top) {
     var reference = CILOSTAZOLFrame.popObject(frame, top - 1);
-    double value = IndirectLoader.loadDouble(reference, getMethod().getContext());
+    double value = IndirectLoader.loadDoubleFromReference(reference, getMethod().getContext());
     CILOSTAZOLFrame.putNativeFloat(frame, top - 1, value);
   }
 
@@ -2417,35 +2417,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
                 getMethod().getTypeArguments(),
                 getMethod().getDefiningType().getTypeArguments(),
                 getMethod().getModule());
-        var instance =
-            CILOSTAZOLFrame.getLocalObject(frame, top - 1 - method.member.getParameters().length);
-
-        if (method.member.getMethodFlags().hasFlag(Flag.VIRTUAL)
-            // Allow looking for overrides on Multidimensional Array implementation
-            || (instance.getTypeSymbol() instanceof ConstructedNamedTypeSymbol constrType
-                && constrType
-                    .getName()
-                    .equals(CILOSTAZOLBundle.message("cilostazol.multidimensional.array.name"))
-                && constrType
-                    .getNamespace()
-                    .equals(
-                        CILOSTAZOLBundle.message("cilostazol.multidimensional.array.namespace")))) {
-          var candidateMethod =
-              SymbolResolver.resolveMethod(
-                  instance.getTypeSymbol(),
-                  method.member.getName(),
-                  method.member.getTypeArguments(),
-                  method.member.getParameterTypes(),
-                  method.member.getTypeParameters().length);
-
-          if (candidateMethod == null) // search impl table also
-          candidateMethod =
-                SymbolResolver.resolveMethodImpl(method.member, instance.getTypeSymbol());
-
-          method = candidateMethod;
-        }
-
-        node = getCheckedCALLNode(method.member, top);
+        node = getCheckedCALLVIRTNode(method.member, top);
       }
       default -> {
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -2466,12 +2438,20 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
     return nodes[index].execute(frame);
   }
 
-  private NodeizedNodeBase getCheckedCALLNode(MethodSymbol method, int top) {
+  private CALLNode getCheckedCALLNode(MethodSymbol method, int top) {
     if (method.getMethodFlags().hasFlag(Flag.UNMANAGED_EXPORT)) {
       // Either native support must be supported or some workaround must be implemented
       throw new NotImplementedException();
     }
     return new CALLNode(method, top);
+  }
+
+  private CALLVIRTNode getCheckedCALLVIRTNode(MethodSymbol method, int top) {
+    if (method.getMethodFlags().hasFlag(Flag.UNMANAGED_EXPORT)) {
+      // Either native support must be supported or some workaround must be implemented
+      throw new NotImplementedException();
+    }
+    return new CALLVIRTNode(method, top);
   }
 
   private int addNode(NodeizedNodeBase node) {

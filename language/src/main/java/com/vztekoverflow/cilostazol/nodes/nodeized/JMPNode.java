@@ -7,7 +7,7 @@ import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import org.jetbrains.annotations.NotNull;
 
-public class JMPNode extends NodeizedNodeBase {
+public final class JMPNode extends NodeizedNodeBase {
   private final MethodSymbol method;
   private final int topStack;
 
