@@ -301,14 +301,6 @@ public class StaticOpCodeAnalysisTests extends StaticAnalysisTestBase {
 
     var opCodeTypes = method.getOpCodeTypes();
 
-    System.out.println("----------------------------");
-    System.out.println(className);
-    for (int i = 0; i < opCodeTypes.length; i++) {
-      if (opCodeTypes[i] != null) System.out.println(i + " " + opCodeTypes[i]);
-    }
-
-    System.out.println("----------------------------");
-
     assertEquals(
         intOpCodes.length,
         Arrays.stream(opCodeTypes).filter(x -> x == StaticOpCodeAnalyser.OpCodeType.Int32).count());
