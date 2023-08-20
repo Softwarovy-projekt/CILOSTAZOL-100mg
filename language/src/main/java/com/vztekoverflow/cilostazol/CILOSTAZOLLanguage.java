@@ -13,7 +13,7 @@ import com.vztekoverflow.cilostazol.runtime.symbols.MethodSymbol;
 import org.graalvm.options.OptionDescriptors;
 import org.graalvm.polyglot.Source;
 
-/** The BACIL language class implementing TruffleLanguage. */
+/** The CILOSTAZOL language class implementing TruffleLanguage. */
 @TruffleLanguage.Registration(
     id = CILOSTAZOLLanguage.ID,
     name = CILOSTAZOLLanguage.NAME,

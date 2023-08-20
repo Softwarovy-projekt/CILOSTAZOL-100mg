@@ -10,6 +10,4 @@ tests/target/**
 parser/target/**
 
 #CSharp
-BACILHelpersCS/**/bin/**
-BACILHelpersCS/**/obj/**
 language/src/test/resources/**/obj/**
