@@ -6,11 +6,20 @@ import com.vztekoverflow.cilostazol.exceptions.InterpreterException;
 import com.vztekoverflow.cilostazol.nodes.CILOSTAZOLFrame;
 import com.vztekoverflow.cilostazol.runtime.context.CILOSTAZOLContext;
 import com.vztekoverflow.cilostazol.runtime.objectmodel.StaticObject;
+import com.vztekoverflow.cilostazol.runtime.symbols.NamedTypeSymbol;
 import com.vztekoverflow.cilostazol.runtime.symbols.ReferenceSymbol;
 import java.lang.reflect.Array;
 
 public final class IndirectLoader {
-  public static int loadByte(StaticObject reference, CILOSTAZOLContext context) {
+  public static int loadByte(StaticObject object, CILOSTAZOLContext context) {
+    if (object.getTypeSymbol() instanceof ReferenceSymbol) {
+      return loadByteFromReference(object, context);
+    }
+
+    return ((NamedTypeSymbol) object.getTypeSymbol()).getInstanceFields(null, 0)[0].getByte(object);
+  }
+
+  public static int loadByteFromReference(StaticObject reference, CILOSTAZOLContext context) {
     ReferenceSymbol referenceType = (ReferenceSymbol) reference.getTypeSymbol();
     switch (referenceType.getReferenceType()) {
       case Local, Argument -> {
@@ -37,7 +46,16 @@ public final class IndirectLoader {
     throw new InterpreterException("Invalid reference type");
   }
 
-  public static int loadShort(StaticObject reference, CILOSTAZOLContext context) {
+  public static int loadShort(StaticObject object, CILOSTAZOLContext context) {
+    if (object.getTypeSymbol() instanceof ReferenceSymbol) {
+      return loadShortFromReference(object, context);
+    }
+
+    return ((NamedTypeSymbol) object.getTypeSymbol())
+        .getInstanceFields(null, 0)[0].getShort(object);
+  }
+
+  public static int loadShortFromReference(StaticObject reference, CILOSTAZOLContext context) {
     ReferenceSymbol referenceType = (ReferenceSymbol) reference.getTypeSymbol();
     switch (referenceType.getReferenceType()) {
       case Local, Argument -> {
@@ -64,7 +82,15 @@ public final class IndirectLoader {
     throw new InterpreterException("Invalid reference type");
   }
 
-  public static int loadInt32(StaticObject reference, CILOSTAZOLContext context) {
+  public static int loadInt32(StaticObject object, CILOSTAZOLContext context) {
+    if (object.getTypeSymbol() instanceof ReferenceSymbol) {
+      return loadInt32FromReference(object, context);
+    }
+
+    return ((NamedTypeSymbol) object.getTypeSymbol()).getInstanceFields(null, 0)[0].getInt(object);
+  }
+
+  public static int loadInt32FromReference(StaticObject reference, CILOSTAZOLContext context) {
     ReferenceSymbol referenceType = (ReferenceSymbol) reference.getTypeSymbol();
     switch (referenceType.getReferenceType()) {
       case Local, Argument -> {
@@ -91,7 +117,15 @@ public final class IndirectLoader {
     throw new InterpreterException("Invalid reference type");
   }
 
-  public static long loadInt64(StaticObject reference, CILOSTAZOLContext context) {
+  public static long loadInt64(StaticObject object, CILOSTAZOLContext context) {
+    if (object.getTypeSymbol() instanceof ReferenceSymbol) {
+      return loadInt64FromReference(object, context);
+    }
+
+    return ((NamedTypeSymbol) object.getTypeSymbol()).getInstanceFields(null, 0)[0].getLong(object);
+  }
+
+  public static long loadInt64FromReference(StaticObject reference, CILOSTAZOLContext context) {
     ReferenceSymbol referenceType = (ReferenceSymbol) reference.getTypeSymbol();
     switch (referenceType.getReferenceType()) {
       case Local, Argument -> {
@@ -118,7 +152,16 @@ public final class IndirectLoader {
     throw new InterpreterException("Invalid reference type");
   }
 
-  public static double loadFloat(StaticObject reference, CILOSTAZOLContext context) {
+  public static double loadFloat(StaticObject object, CILOSTAZOLContext context) {
+    if (object.getTypeSymbol() instanceof ReferenceSymbol) {
+      return loadFloatFromReference(object, context);
+    }
+
+    return ((NamedTypeSymbol) object.getTypeSymbol())
+        .getInstanceFields(null, 0)[0].getFloat(object);
+  }
+
+  public static double loadFloatFromReference(StaticObject reference, CILOSTAZOLContext context) {
     ReferenceSymbol referenceType = (ReferenceSymbol) reference.getTypeSymbol();
     switch (referenceType.getReferenceType()) {
       case Local, Argument -> {
@@ -145,7 +188,16 @@ public final class IndirectLoader {
     throw new InterpreterException("Invalid reference type");
   }
 
-  public static double loadDouble(StaticObject reference, CILOSTAZOLContext context) {
+  public static double loadDouble(StaticObject object, CILOSTAZOLContext context) {
+    if (object.getTypeSymbol() instanceof ReferenceSymbol) {
+      return loadDoubleFromReference(object, context);
+    }
+
+    return ((NamedTypeSymbol) object.getTypeSymbol())
+        .getInstanceFields(null, 0)[0].getDouble(object);
+  }
+
+  public static double loadDoubleFromReference(StaticObject reference, CILOSTAZOLContext context) {
     ReferenceSymbol referenceType = (ReferenceSymbol) reference.getTypeSymbol();
     switch (referenceType.getReferenceType()) {
       case Local, Argument -> {
