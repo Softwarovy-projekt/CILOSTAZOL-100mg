@@ -2431,7 +2431,7 @@ public class CILMethodNode extends CILNodeBase implements BytecodeOSRNode {
         preparePatch(
             (byte) TRUFFLE_NODE,
             index,
-            com.vztekoverflow.bacil.bytecode.BytecodeInstructions.getLength(opcode));
+            com.vztekoverflow.cil.parser.bytecode.BytecodeInstructions.getLength(opcode));
     bytecodeBuffer.patchBytecode(pc, patch);
 
     // execute the new node

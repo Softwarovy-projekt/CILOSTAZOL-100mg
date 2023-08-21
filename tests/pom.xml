@@ -34,7 +34,7 @@
         <dependency>
             <groupId>org.graalvm.truffle</groupId>
             <artifactId>truffle-api</artifactId>
-            <version>22.3.0</version>
+            <version>${org.graalvm.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>
