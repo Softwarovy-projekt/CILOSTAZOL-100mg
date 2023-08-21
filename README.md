@@ -1,10 +1,6 @@
 # CILOSTAZOL 💊
 
-![graalVM CE build](https://github.com/Softwarovy-projekt/CILOSTAZOL-100mg/actions/workflows/build_with_graalCE.yml/badge.svg)
 ![graalVM CE tests](https://github.com/Softwarovy-projekt/CILOSTAZOL-100mg/actions/workflows/test_with_graalCE.yml/badge.svg)
-
-![commit activity](https://img.shields.io/github/commit-activity/w/Softwarovy-projekt/CILOSTAZOL-100mg)
-![last commit](https://img.shields.io/github/last-commit/Softwarovy-projekt/CILOSTAZOL-100mg)
 
 CILOSTAZOL is a CIL interpreter and a continuation of the BACIL project.
 This project focuses on building a modern and extensible CIL interpreter with
@@ -102,6 +98,3 @@ of the interpreter using the same launcher.
 The project can be opened in IntelliJ IDEA as a Maven project.
 This way, the user can run the project from the IDE and debug it.
 During development, this was the preferred way of running the project.
-
-![LOC](https://img.shields.io/tokei/lines/github/Softwarovy-projekt/CILOSTAZOL-100mg)
-![code size](https://img.shields.io/github/languages/code-size/Softwarovy-projekt/CILOSTAZOL-100mg)
